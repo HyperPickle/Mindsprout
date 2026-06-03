@@ -1,15 +1,6 @@
-//
-//  RootView.swift
-//  Mindsprout
-//
-//  The app shell: root TabView (Adventures / Home / Profile, Home centered),
-//  the modal-flow presentation layer, and the first-launch onboarding gate.
-//
-
 import SwiftUI
 
 struct RootView: View {
-    /// Persisted onboarding completion flag (first-launch gate).
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     @State private var selection: AppTab = .home
@@ -21,7 +12,6 @@ struct RootView: View {
         self.featureFlags = featureFlags
     }
 
-    /// Onboarding shows only when enabled and not yet completed.
     private var shouldShowOnboarding: Bool {
         featureFlags.onboardingEnabled && !hasCompletedOnboarding
     }
@@ -42,8 +32,6 @@ struct RootView: View {
         }
         .tint(AppColor.primary)
         .environment(modalCoordinator)
-        // Phase 0: every flow presents as a sheet. Level-up becomes a
-        // full-screen cover in Phase 4 — only this modifier changes.
         .sheet(item: $coordinator.presented) { modal in
             ModalContainer(modal: modal)
         }

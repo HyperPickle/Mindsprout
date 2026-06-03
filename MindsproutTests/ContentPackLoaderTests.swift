@@ -1,11 +1,3 @@
-//
-//  ContentPackLoaderTests.swift
-//  MindsproutTests
-//
-//  The bundled content pack must load offline from the app bundle. Hosted unit
-//  tests run inside the app process, so `Bundle.main` is the host app bundle.
-//
-
 import Testing
 import Foundation
 @testable import Mindsprout
@@ -39,5 +31,4 @@ struct ContentPackLoaderTests {
     }
 }
 
-/// Anchors a bundle that does not contain the content-pack JSON.
 private final class BundleMarker {}

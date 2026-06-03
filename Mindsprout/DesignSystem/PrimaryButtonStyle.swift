@@ -1,19 +1,9 @@
-//
-//  PrimaryButtonStyle.swift
-//  Mindsprout
-//
-//  The skeuomorphic green primary button from the scaffold (CONTINUE / Feed
-//  Sprout): bright green face sitting on a darker green edge, white heavy
-//  rounded label, a small press-down travel. Honors Reduce Motion.
-//
-
 import SwiftUI
 
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Depth of the darker "edge" beneath the button face.
     private let edgeDepth: CGFloat = 5
 
     func makeBody(configuration: Configuration) -> some View {
@@ -29,7 +19,6 @@ struct PrimaryButtonStyle: ButtonStyle {
                     .fill(AppColor.primary)
             )
             .background(
-                // Darker edge peeking out below the face for the 3D feel.
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .fill(AppColor.primaryEdge)
                     .offset(y: edgeDepth)
@@ -43,6 +32,5 @@ struct PrimaryButtonStyle: ButtonStyle {
 }
 
 extension ButtonStyle where Self == PrimaryButtonStyle {
-    /// Primary green call-to-action button.
     static var primary: PrimaryButtonStyle { PrimaryButtonStyle() }
 }

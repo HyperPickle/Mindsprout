@@ -1,11 +1,3 @@
-//
-//  GameConfigTests.swift
-//  MindsproutTests
-//
-//  GameConfig is the single source of truth for the economy. These tests pin
-//  the invariants the leveling engine (Phase 3) will rely on.
-//
-
 import Testing
 @testable import Mindsprout
 

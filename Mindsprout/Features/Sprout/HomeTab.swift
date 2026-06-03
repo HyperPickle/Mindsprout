@@ -1,16 +1,5 @@
-//
-//  HomeTab.swift
-//  Mindsprout
-//
-//  Home tab → the Sprout home. Phase 0 ships the NavigationStack + route
-//  plumbing and the Shop entry point (the currency counter). The functional
-//  Sprout home (state-driven art, XP bar, Reflect-to-Feed CTA) is Phase 3 and
-//  is REVISABLE pending a dedicated Home design.
-//
-
 import SwiftUI
 
-/// Push destinations within the Home tab. (Reserved for Phase 3+.)
 enum HomeRoute: Hashable {}
 
 struct HomeTab: View {
@@ -22,7 +11,6 @@ struct HomeTab: View {
             ZStack {
                 GrassBackground()
                 VStack(spacing: Spacing.lg) {
-                    // Currency counter — tapping opens the Shop (Phase 6 placeholder).
                     Button {
                         modalCoordinator.present(.shop)
                     } label: {

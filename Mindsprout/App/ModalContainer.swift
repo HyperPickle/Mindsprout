@@ -1,13 +1,3 @@
-//
-//  ModalContainer.swift
-//  Mindsprout
-//
-//  Renders the content for a presented `AppModal`. Phase 0 routes the three
-//  flow modals to placeholders; the Shop placeholder is real (Phase 6 stub).
-//  Real flows replace these cases in their respective phases with no change to
-//  the presentation plumbing in `RootView`.
-//
-
 import SwiftUI
 
 struct ModalContainer: View {
@@ -28,7 +18,6 @@ struct ModalContainer: View {
                 note: "Reflection capture — Phase 2."
             )
         case .levelUp:
-            // Becomes a full-screen cinematic sequence in Phase 4.
             FlowPlaceholder(
                 title: "Level Up",
                 systemImage: "sparkles",
@@ -40,7 +29,6 @@ struct ModalContainer: View {
     }
 }
 
-/// A dismissable modal placeholder for not-yet-built flows.
 private struct FlowPlaceholder: View {
     let title: LocalizedStringKey
     let systemImage: String

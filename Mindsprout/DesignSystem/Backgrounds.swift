@@ -1,22 +1,11 @@
-//
-//  Backgrounds.swift
-//  Mindsprout
-//
-//  Reusable background treatments: warm sand (modals/reflection), sky gradient
-//  (Trips), and layered grass (Home). Programmer-art gradients now; the artist
-//  can supply illustrated backdrops behind the same API later.
-//
-
 import SwiftUI
 
-/// Flat warm-cream background used by reflection and modal flows.
 struct SandBackground: View {
     var body: some View {
         AppColor.sand.ignoresSafeArea()
     }
 }
 
-/// Top-to-bottom sky gradient used behind the Trips experience.
 struct SkyBackground: View {
     var body: some View {
         LinearGradient(
@@ -28,7 +17,6 @@ struct SkyBackground: View {
     }
 }
 
-/// Layered grass backdrop for the Home / Sprout screen.
 struct GrassBackground: View {
     var body: some View {
         LinearGradient(

@@ -1,11 +1,3 @@
-//
-//  AppTab.swift
-//  Mindsprout
-//
-//  The three root tabs. Order matches the design: Adventures, Home, Profile,
-//  with Home centered as the primary destination.
-//
-
 import SwiftUI
 
 enum AppTab: Hashable, CaseIterable, Identifiable {
@@ -15,7 +7,6 @@ enum AppTab: Hashable, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    /// Localized tab title (routed through the String Catalog).
     var title: LocalizedStringKey {
         switch self {
         case .adventures: return "Adventures"

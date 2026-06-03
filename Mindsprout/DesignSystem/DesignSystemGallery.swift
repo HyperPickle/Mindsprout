@@ -1,12 +1,3 @@
-//
-//  DesignSystemGallery.swift
-//  Mindsprout
-//
-//  A single #Preview that exercises every design-system token and component.
-//  This is the visual smoke test referenced by the Phase 0 Definition of Done;
-//  later phases build against these tokens.
-//
-
 import SwiftUI
 
 struct DesignSystemGallery: View {
