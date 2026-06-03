@@ -8,6 +8,7 @@ final class Reflection {
     var dayIndex: Int = 1
     var date: Date = Date()
     var highlightPrompt: String = ""
+    var locationLabel: String?
     var bodyKind: ReflectionBodyKind = ReflectionBodyKind.text
     var text: String?
     var audioAssetID: UUID?
@@ -23,6 +24,7 @@ final class Reflection {
         dayIndex: Int = 1,
         date: Date = Date(),
         highlightPrompt: String = "",
+        locationLabel: String? = nil,
         bodyKind: ReflectionBodyKind = .text,
         text: String? = nil,
         audioAssetID: UUID? = nil,
@@ -35,6 +37,7 @@ final class Reflection {
         self.dayIndex = dayIndex
         self.date = date
         self.highlightPrompt = highlightPrompt
+        self.locationLabel = locationLabel
         self.bodyKind = bodyKind
         self.text = text
         self.audioAssetID = audioAssetID

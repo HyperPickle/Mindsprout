@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		AA0100000000000000000008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 76597E8F2FCFA23400C4ADE5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 76597E962FCFA23400C4ADE5;
+			remoteInfo = Mindsprout;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		76597E972FCFA23400C4ADE5 /* Mindsprout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mindsprout.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0100000000000000000002 /* MindsproutTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindsproutTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -147,24 +157,6 @@
 		};
 /* End PBXProject section */
 
-/* Begin PBXTargetDependency section */
-		AA0100000000000000000007 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 76597E962FCFA23400C4ADE5 /* Mindsprout */;
-			targetProxy = AA0100000000000000000008 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
-/* Begin PBXContainerItemProxy section */
-		AA0100000000000000000008 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 76597E8F2FCFA23400C4ADE5 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 76597E962FCFA23400C4ADE5;
-			remoteInfo = Mindsprout;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXResourcesBuildPhase section */
 		76597E952FCFA23400C4ADE5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
@@ -198,6 +190,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA0100000000000000000007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 76597E962FCFA23400C4ADE5 /* Mindsprout */;
+			targetProxy = AA0100000000000000000008 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		76597EA02FCFA23600C4ADE5 /* Debug */ = {

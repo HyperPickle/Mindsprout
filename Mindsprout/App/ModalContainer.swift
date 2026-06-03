@@ -6,11 +6,7 @@ struct ModalContainer: View {
     var body: some View {
         switch modal {
         case .newTrip:
-            FlowPlaceholder(
-                title: "New Trip",
-                systemImage: "plus.circle",
-                note: "New Trip flow — Phase 1."
-            )
+            NewTripFlow()
         case .reflection:
             FlowPlaceholder(
                 title: "Reflection",

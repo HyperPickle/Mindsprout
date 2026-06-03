@@ -1,32 +1,36 @@
 {
   "presets": {
     "solo": [
-      "Find some clarity",
-      "Push my comfort zone",
-      "Slow down and recharge",
-      "Meet new people",
-      "Get lost on purpose"
+      "Do exactly what I want, when I want",
+      "Learn something about a new culture",
+      "Step outside my comfort zone",
+      "Meet people I wouldn't normally meet",
+      "Figure out what I actually want",
+      "Clear my head and reset"
     ],
     "friends": [
-      "Make unforgettable memories",
-      "Try something daring together",
-      "Laugh until it hurts",
-      "Reconnect properly",
-      "Go with the flow"
+      "Have a proper good time together",
+      "Collect memories we'll talk about forever",
+      "Try new things together",
+      "Just laugh and not think too hard",
+      "Explore somewhere none of us have been",
+      "Make up for lost time with these people"
     ],
     "family": [
-      "Quality time together",
-      "Create new traditions",
-      "Relax with no agenda",
-      "See somewhere new as a group",
-      "Capture the little moments"
+      "Relax without the usual routine stress",
+      "Spend real quality time together",
+      "Document this stage of our lives",
+      "Bring everyone closer together",
+      "Create memories that everyone will remember",
+      "Make the most of being all together"
     ],
     "business": [
-      "Make the most of downtime",
-      "Explore the city after hours",
-      "Find balance on the road",
-      "Build a genuine connection",
-      "Bring something back for myself"
+      "Get what I came to do done",
+      "Build connections",
+      "Find some balance between work and downtime",
+      "Get inspired by a new environment",
+      "Squeeze in some proper exploring time too",
+      "Discover the city between meetings"
     ]
   }
 }
