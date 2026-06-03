@@ -1,0 +1,17 @@
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/SwiftPM/configuration/control-cache
+*.xcworkspace/xcshareddata/SwiftPM/configuration/remote-cache
+UserInterfaceState.xcuserstate
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Documentation specific
