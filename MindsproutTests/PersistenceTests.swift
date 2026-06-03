@@ -1,11 +1,3 @@
-//
-//  PersistenceTests.swift
-//  MindsproutTests
-//
-//  Phase 0 DoD: the SwiftData container initializes and a Trip can be inserted
-//  and fetched.
-//
-
 import Testing
 import Foundation
 import SwiftData

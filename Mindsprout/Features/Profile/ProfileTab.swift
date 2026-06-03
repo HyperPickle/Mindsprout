@@ -1,11 +1,3 @@
-//
-//  ProfileTab.swift
-//  Mindsprout
-//
-//  Profile tab — navigable placeholder. No design exists yet (Plan §2, Open
-//  Question #5); intentionally empty until one lands.
-//
-
 import SwiftUI
 
 struct ProfileTab: View {

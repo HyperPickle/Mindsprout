@@ -1,11 +1,3 @@
-//
-//  TemplateAIGenerationServiceTests.swift
-//  MindsproutTests
-//
-//  The template AI is the shipped default behind the AIGenerationService seam.
-//  It must be deterministic and fully offline so the core loop is reproducible.
-//
-
 import Testing
 @testable import Mindsprout
 

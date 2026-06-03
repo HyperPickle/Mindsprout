@@ -1,17 +1,6 @@
-//
-//  AdventuresTab.swift
-//  Mindsprout
-//
-//  Adventures tab → Trips. Phase 0 ships the NavigationStack + enum-route
-//  plumbing with placeholder destinations; the real overview/detail and the
-//  New Trip modal flow arrive in Phase 1.
-//
-
 import SwiftUI
 
-/// Push destinations within the Adventures tab.
 enum AdventuresRoute: Hashable {
-    /// Per-day reflection viewer for a trip (Phase 1).
     case tripDetail(tripID: UUID)
 }
 

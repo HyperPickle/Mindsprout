@@ -1,13 +1,3 @@
-//
-//  ContentPackLoader.swift
-//  Mindsprout
-//
-//  Loads the bundled content pack JSON (`prompts.json`, `expectations.json`)
-//  from `Resources/ContentPacks/`. Injectable and test-friendly: pass any
-//  `Bundle`. Decoding failures are surfaced as thrown errors so callers can
-//  fall back to a built-in default.
-//
-
 import Foundation
 
 protocol ContentPackProviding: Sendable {

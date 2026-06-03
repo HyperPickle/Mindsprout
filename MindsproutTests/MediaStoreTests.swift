@@ -1,10 +1,3 @@
-//
-//  MediaStoreTests.swift
-//  MindsproutTests
-//
-//  MediaStore owns on-disk media files; models only hold relative paths.
-//
-
 import Testing
 import Foundation
 @testable import Mindsprout

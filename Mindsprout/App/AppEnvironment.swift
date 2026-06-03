@@ -1,13 +1,3 @@
-//
-//  AppEnvironment.swift
-//  Mindsprout
-//
-//  Composition root. Bundles the app's services/config and injects them through
-//  the SwiftUI environment. Swapping an implementation (e.g. a networked
-//  `AIGenerationService`, a real `AnalyticsService`) happens here only —
-//  feature code reads from the environment and stays agnostic.
-//
-
 import SwiftUI
 
 struct AppEnvironment {
@@ -18,8 +8,6 @@ struct AppEnvironment {
     var analytics: any AnalyticsService
     var auth: any AuthService
 
-    /// The shipped configuration: placeholder economy + deterministic template
-    /// AI + on-device file media store. Fully offline.
     static func live() -> AppEnvironment {
         AppEnvironment(
             gameConfig: .default,
@@ -31,7 +19,6 @@ struct AppEnvironment {
         )
     }
 
-    /// Lightweight environment for previews (temp media root, no Documents I/O).
     static var preview: AppEnvironment {
         AppEnvironment(
             gameConfig: .default,
@@ -46,13 +33,8 @@ struct AppEnvironment {
 }
 
 extension EnvironmentValues {
-    /// The composition-root services/config bundle.
     @Entry var appEnvironment: AppEnvironment = .preview
-}
 
-extension EnvironmentValues {
-    /// Convenience read-only access to the economy config.
     var gameConfig: GameConfig { appEnvironment.gameConfig }
-    /// Convenience read-only access to the AI generation seam.
     var aiGenerationService: any AIGenerationService { appEnvironment.ai }
 }

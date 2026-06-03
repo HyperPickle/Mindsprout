@@ -1,16 +1,6 @@
-//
-//  OnboardingView.swift
-//  Mindsprout
-//
-//  First-launch onboarding — navigable placeholder. Shown once before the tab
-//  bar, flag-controlled and skippable; completion is persisted by the caller
-//  (see `RootView`). No design exists yet (Plan §2, Open Question #5).
-//
-
 import SwiftUI
 
 struct OnboardingView: View {
-    /// Invoked when the user finishes or skips. Caller persists the flag.
     var onFinish: () -> Void
 
     var body: some View {

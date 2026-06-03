@@ -1,11 +1,3 @@
-//
-//  ShopView.swift
-//  Mindsprout
-//
-//  Shop — navigable placeholder, presented modally from the Home currency
-//  counter. No design exists yet (Plan §2, Open Question #5/#7).
-//
-
 import SwiftUI
 
 struct ShopView: View {

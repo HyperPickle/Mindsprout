@@ -1,10 +1,3 @@
-//
-//  CardStyle.swift
-//  Mindsprout
-//
-//  The soft white rounded card used across Trips/Reflection screens.
-//
-
 import SwiftUI
 
 struct CardStyle: ViewModifier {
@@ -22,7 +15,6 @@ struct CardStyle: ViewModifier {
 }
 
 extension View {
-    /// Wraps content in the standard Mindsprout card surface.
     func cardStyle(padding: CGFloat = Spacing.md) -> some View {
         modifier(CardStyle(padding: padding))
     }
