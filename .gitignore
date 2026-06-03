@@ -8,6 +8,8 @@ DerivedData/
 *.xcworkspace/xcshareddata/SwiftPM/configuration/remote-cache
 UserInterfaceState.xcuserstate
 $RECYCLE.BIN/
+.claude/
+Claude.md
 
 # macOS
 .DS_Store
