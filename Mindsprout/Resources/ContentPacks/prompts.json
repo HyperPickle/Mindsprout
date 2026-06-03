@@ -1,0 +1,35 @@
+{
+  "highlightPrompts": {
+    "default": [
+      "What surprised you today?",
+      "When did you feel most alive?",
+      "What will you remember in a year?",
+      "What did you notice that others might miss?"
+    ],
+    "solo": [
+      "What did being on your own teach you today?",
+      "When did you feel most free?",
+      "What did you decide just for yourself?"
+    ],
+    "friends": [
+      "What moment made everyone laugh?",
+      "When did you feel closest to the group?",
+      "What did a friend show you today?"
+    ],
+    "family": [
+      "What small moment felt like home?",
+      "What did you learn about someone you love?",
+      "When did you feel grateful for them?"
+    ],
+    "business": [
+      "What unexpected moment broke the routine?",
+      "What did you learn between the meetings?",
+      "When did the trip stop feeling like work?"
+    ]
+  },
+  "inspirationPrompts": [
+    "Lets go back to that moment. What was it? What made you go for it? Would you do it again?",
+    "Describe the light, the sound, the feeling. Where were you?",
+    "What did you expect, and what actually happened?"
+  ]
+}
