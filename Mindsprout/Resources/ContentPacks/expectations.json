@@ -1,0 +1,32 @@
+{
+  "presets": {
+    "solo": [
+      "Find some clarity",
+      "Push my comfort zone",
+      "Slow down and recharge",
+      "Meet new people",
+      "Get lost on purpose"
+    ],
+    "friends": [
+      "Make unforgettable memories",
+      "Try something daring together",
+      "Laugh until it hurts",
+      "Reconnect properly",
+      "Go with the flow"
+    ],
+    "family": [
+      "Quality time together",
+      "Create new traditions",
+      "Relax with no agenda",
+      "See somewhere new as a group",
+      "Capture the little moments"
+    ],
+    "business": [
+      "Make the most of downtime",
+      "Explore the city after hours",
+      "Find balance on the road",
+      "Build a genuine connection",
+      "Bring something back for myself"
+    ]
+  }
+}
