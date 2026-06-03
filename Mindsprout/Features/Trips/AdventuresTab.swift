@@ -10,32 +10,14 @@ struct AdventuresTab: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            PlaceholderScreen(
-                title: "Adventures",
-                systemImage: "airplane.departure",
-                note: "Trips overview & detail — Phase 1."
-            )
-            .navigationTitle("Adventures")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        modalCoordinator.present(.newTrip)
-                    } label: {
-                        Label("New trip", systemImage: "plus")
+            TripsOverviewView()
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(for: AdventuresRoute.self) { route in
+                    switch route {
+                    case .tripDetail(let tripID):
+                        TripDetailView(tripID: tripID)
                     }
                 }
-            }
-            .navigationDestination(for: AdventuresRoute.self) { route in
-                switch route {
-                case .tripDetail:
-                    PlaceholderScreen(
-                        title: "Trip detail",
-                        systemImage: "map",
-                        note: "Day-by-day reflections — Phase 1."
-                    )
-                }
-            }
         }
     }
 }
