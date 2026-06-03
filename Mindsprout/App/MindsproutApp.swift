@@ -8,15 +8,30 @@ struct MindsproutApp: App {
 
     init() {
         FontRegistration.registerBundledFontsIfNeeded()
-        modelContainer = PersistenceController.makeContainer()
-        appEnvironment = .live()
+        let container = PersistenceController.makeContainer()
+        let environment = AppEnvironment.live()
+        SampleData.seedIfEmpty(context: container.mainContext, mediaStore: environment.mediaStore)
+        modelContainer = container
+        appEnvironment = environment
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            rootContent
                 .environment(\.appEnvironment, appEnvironment)
         }
         .modelContainer(modelContainer)
+    }
+
+    @ViewBuilder private var rootContent: some View {
+        #if DEBUG
+        if let screen = ProcessInfo.processInfo.environment["MS_SCREEN"] {
+            ScreenshotHost(screen: screen, container: modelContainer)
+        } else {
+            RootView()
+        }
+        #else
+        RootView()
+        #endif
     }
 }

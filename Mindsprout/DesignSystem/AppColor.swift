@@ -20,4 +20,8 @@ enum AppColor {
     static let hairline = Color(hex: 0xD9CFBF)
     static let pillSelected = Color(hex: 0x6E5A48)
     static let pillUnselected = Color(hex: 0xE7DECF)
+
+    static let headerBrown = Color(hex: 0x7C6A58)
+    static let calendarSelected = Color(hex: 0x2E2A26)
+    static let calendarInRange = Color(hex: 0xC9BEAE)
 }
