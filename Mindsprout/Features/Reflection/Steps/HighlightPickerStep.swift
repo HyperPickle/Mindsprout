@@ -83,22 +83,18 @@ struct HighlightPickerStep: View {
                         .foregroundStyle(AppColor.inkSecondary)
                 }
                 .padding(Spacing.md)
-                .background(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous).fill(.white))
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                        .stroke(writeOwnExpanded && vm.selectedPrompt == nil && !customText.isEmpty
-                                ? AppColor.primary : Color.clear, lineWidth: 2)
-                )
             }
             .buttonStyle(.plain)
 
             if writeOwnExpanded {
+                Divider()
+                    .background(AppColor.hairline)
+                    .padding(.horizontal, Spacing.md)
                 TextField("Describe your highlight…", text: $customText, axis: .vertical)
                     .font(AppFont.body)
                     .foregroundStyle(AppColor.ink)
                     .focused($writeOwnFocused)
                     .padding(Spacing.md)
-                    .background(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous).fill(.white))
                     .lineLimit(3...6)
                     .onChange(of: customText) { _, new in
                         vm.customPromptText = new
@@ -107,6 +103,10 @@ struct HighlightPickerStep: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+        .unevenCardBackground(
+            lineWidth: (writeOwnExpanded && vm.selectedPrompt == nil && !customText.isEmpty) ? 2 : 0,
+            strokeColor: AppColor.primary
+        )
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: writeOwnExpanded)
     }
 
@@ -118,7 +118,7 @@ struct HighlightPickerStep: View {
                 Image(systemName: "die.face.3.fill")
                     .font(AppFont.body)
                     .foregroundStyle(AppColor.inkSecondary)
-                Text("Pull to refresh options")
+                Text("Refresh options")
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.inkSecondary)
             }

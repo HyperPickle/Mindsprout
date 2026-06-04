@@ -125,7 +125,7 @@ struct TripDetailView: View {
                     if !reflection.moodTags.isEmpty {
                         HStack(spacing: Spacing.xs) {
                             ForEach(Array(reflection.moodTags.enumerated()), id: \.offset) { i, tag in
-                                MoodPill(text: tag, accent: i.isMultiple(of: 2))
+                                ReflectionTagChip(text: tag, accent: i.isMultiple(of: 2))
                             }
                         }
                     }
@@ -342,13 +342,13 @@ private struct DayContentView: View {
                     .foregroundStyle(AppColor.ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            if !reflection.moodTags.isEmpty {
-                HStack(spacing: Spacing.xs) {
-                    Spacer()
-                    ForEach(Array(reflection.moodTags.enumerated()), id: \.offset) { i, tag in
-                        MoodPill(text: tag, accent: i.isMultiple(of: 2))
-                    }
-                }
+            ReflectionTagsSection(
+                tags: reflection.moodTags,
+                title: "Reflection Tags",
+                emptyLabel: "Add tags"
+            ) { updatedTags in
+                reflection.moodTags = updatedTags
+                try? context.save()
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -358,22 +358,6 @@ private struct DayContentView: View {
     private func audioURL(_ id: UUID) -> URL? {
         guard let path = MediaImage.relativePath(for: id, in: context) else { return nil }
         return env.mediaStore.url(for: path)
-    }
-}
-
-private struct MoodPill: View {
-    let text: String
-    let accent: Bool
-
-    var body: some View {
-        Text(text)
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
-            .foregroundStyle(accent ? AppColor.inkSecondary : AppColor.primaryEdge)
-            .padding(.horizontal, Spacing.sm)
-            .padding(.vertical, 6)
-            .background(
-                Capsule().fill((accent ? AppColor.currency : AppColor.primary).opacity(0.18))
-            )
     }
 }
 

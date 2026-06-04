@@ -7,6 +7,7 @@ final class AudioPlayerController {
     var isPlaying = false
     var progress: Double = 0
     var duration: TimeInterval = 0
+    var hasStartedPlayback = false
 
     private var player: AVAudioPlayer?
     private var timer: Timer?
@@ -30,6 +31,7 @@ final class AudioPlayerController {
             if player.currentTime >= player.duration { player.currentTime = 0 }
             player.play()
             isPlaying = true
+            hasStartedPlayback = true
             startTimer()
         }
     }
@@ -56,15 +58,54 @@ final class AudioPlayerController {
     func stop() {
         player?.stop()
         timer?.invalidate()
+        isPlaying = false
+    }
+
+    func reset() {
+        player?.stop()
+        player?.currentTime = 0
+        timer?.invalidate()
+        isPlaying = false
+        progress = 0
+        hasStartedPlayback = false
     }
 }
 
 struct AudioPlayerView: View {
+    struct Configuration {
+        var startsWithLabeledPlayButton = false
+        var playButtonTitle: LocalizedStringKey = "Play Audio"
+        var onReset: (() -> Void)?
+
+        static let `default` = Configuration()
+    }
+
     let url: URL
+    var configuration: Configuration = .default
     @State private var controller = AudioPlayerController()
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
+            if configuration.startsWithLabeledPlayButton && !controller.hasStartedPlayback {
+                labelledPlayButton
+            } else {
+                compactPlayer
+            }
+
+            if let onReset = configuration.onReset {
+                Spacer(minLength: 0)
+                resetButton(action: onReset)
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(Capsule().fill(AppColor.cardSurface.opacity(0.7)))
+        .onAppear { controller.load(url: url) }
+        .onDisappear { controller.stop() }
+    }
+
+    private var compactPlayer: some View {
+        Group {
             Button(action: controller.toggle) {
                 Image(systemName: controller.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 16, weight: .bold))
@@ -79,11 +120,38 @@ struct AudioPlayerView: View {
                 .font(.system(size: 14, weight: .semibold, design: .rounded).monospacedDigit())
                 .foregroundStyle(AppColor.inkSecondary)
         }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.sm)
-        .background(Capsule().fill(AppColor.cardSurface.opacity(0.7)))
-        .onAppear { controller.load(url: url) }
-        .onDisappear { controller.stop() }
+    }
+
+    private var labelledPlayButton: some View {
+        Button(action: controller.toggle) {
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 14, weight: .bold))
+                Text(configuration.playButtonTitle)
+                    .font(AppFont.callout)
+            }
+            .foregroundStyle(AppColor.ink)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.xs)
+            .background(Capsule().fill(AppColor.cardSurface))
+            .overlay(Capsule().stroke(AppColor.hairline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func resetButton(action: @escaping () -> Void) -> some View {
+        Button {
+            controller.reset()
+            action()
+        } label: {
+            Image(systemName: "trash")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(AppColor.inkSecondary)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(AppColor.cardSurface))
+                .overlay(Circle().stroke(AppColor.hairline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     private var timeLabel: String {

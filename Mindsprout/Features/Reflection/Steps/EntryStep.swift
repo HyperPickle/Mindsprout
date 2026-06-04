@@ -163,11 +163,31 @@ private struct RecordEntryCard: View {
                 .font(.system(size: 28, weight: .light, design: .monospaced))
                 .foregroundStyle(AppColor.ink)
 
-            HStack(spacing: Spacing.md) {
-                micButton
-                if recorder.isRecording || recorder.isPaused {
-                    pauseResumeButton
+            if let previewURL {
+                AudioPlayerView(
+                    url: previewURL,
+                    configuration: .init(
+                        startsWithLabeledPlayButton: true,
+                        playButtonTitle: "Play Audio",
+                        onReset: resetRecording
+                    )
+                )
+                stateButton
+            } else {
+                VStack(spacing: Spacing.sm) {
+                    stateButton
+                    if recorder.uiState == .recording || recorder.uiState == .paused {
+                        finishRecordingButton
+                    }
                 }
+            }
+
+            ReflectionTagsSection(
+                tags: vm.moodTags,
+                title: "Reflection Tags",
+                emptyLabel: "Add tags"
+            ) { updatedTags in
+                vm.moodTags = updatedTags
             }
         }
         .padding(Spacing.lg)
@@ -190,27 +210,39 @@ private struct RecordEntryCard: View {
         }
     }
 
-    private var micButton: some View {
-        Button {
-            Task { await handleMicTap() }
-        } label: {
-            Image(systemName: recorder.hasRecording ? "stop.fill" : "mic.fill")
-                .font(.system(size: 28))
-                .foregroundStyle(recorder.isRecording ? .white : AppColor.primary)
-                .frame(width: 64, height: 64)
-                .background(
-                    Circle().fill(recorder.isRecording ? AppColor.primary : .white)
-                        .shadow(color: AppColor.ink.opacity(0.12), radius: 6, y: 3)
-                )
-        }
-        .buttonStyle(.plain)
+    private var previewURL: URL? {
+        guard let assetID = vm.audioAssetID,
+              let path = MediaImage.relativePath(for: assetID, in: vm.context) else { return nil }
+        return vm.mediaStore.url(for: path)
     }
 
-    private var pauseResumeButton: some View {
+    private var stateButton: some View {
         Button {
-            recorder.isPaused ? recorder.resume() : recorder.pause()
+            Task { await handleStateButtonTap() }
         } label: {
-            Text(recorder.isPaused ? "Resume" : "Pause")
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: stateButtonIcon)
+                    .font(.system(size: 16, weight: .semibold))
+                Text(stateButtonTitle)
+                    .font(AppFont.callout)
+            }
+            .foregroundStyle(stateButtonForeground)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Spacing.sm)
+            .background(
+                Capsule().fill(stateButtonBackground)
+                    .shadow(color: AppColor.ink.opacity(0.12), radius: 6, y: 3)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(recorder.uiState == .finished)
+    }
+
+    private var finishRecordingButton: some View {
+        Button {
+            Task { await stopAndSave() }
+        } label: {
+            Text("Finish Recording")
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.ink)
                 .padding(.horizontal, Spacing.md)
@@ -220,22 +252,74 @@ private struct RecordEntryCard: View {
         .buttonStyle(.plain)
     }
 
-    private func handleMicTap() async {
-        if recorder.hasRecording {
-            await stopAndSave()
-        } else {
+    private var stateButtonTitle: LocalizedStringKey {
+        switch recorder.uiState {
+        case .idle:
+            "Start Recording"
+        case .recording:
+            "Pause Recording"
+        case .paused:
+            "Resume Recording"
+        case .finished:
+            "Audio Ready"
+        }
+    }
+
+    private var stateButtonIcon: String {
+        switch recorder.uiState {
+        case .idle:
+            "mic.fill"
+        case .recording:
+            "pause.fill"
+        case .paused:
+            "record.circle"
+        case .finished:
+            "checkmark.circle.fill"
+        }
+    }
+
+    private var stateButtonForeground: Color {
+        switch recorder.uiState {
+        case .recording:
+            .white
+        default:
+            AppColor.ink
+        }
+    }
+
+    private var stateButtonBackground: Color {
+        switch recorder.uiState {
+        case .recording:
+            AppColor.primary
+        case .finished:
+            AppColor.hairline.opacity(0.55)
+        default:
+            .white
+        }
+    }
+
+    private func handleStateButtonTap() async {
+        switch recorder.uiState {
+        case .idle:
             await recorder.startOrRequest()
+        case .recording:
+            recorder.pause()
+        case .paused:
+            recorder.resume()
+        case .finished:
+            break
         }
     }
 
     private func stopAndSave() async {
         if let data = await recorder.stop() {
-            if let path = try? vm.mediaStore.write(data, kind: .audio, fileExtension: "m4a") {
-                let asset = MediaAsset(kind: .audio, relativePath: path)
-                vm.context.insert(asset)
-                vm.audioAssetID = asset.id
-            }
+            vm.replaceAudio(with: data)
         }
+    }
+
+    private func resetRecording() {
+        vm.clearAudioDraft()
+        recorder.reset()
     }
 }
 
@@ -271,12 +355,20 @@ private struct WaveformView: View {
 @Observable
 @MainActor
 private final class AudioRecorderController: NSObject {
+    enum UIState {
+        case idle
+        case recording
+        case paused
+        case finished
+    }
+
     var amplitudes: [Float] = Array(repeating: 0.1, count: 40)
     var isRecording = false
     var isPaused = false
     var hasRecording = false
     var showPermissionAlert = false
     var elapsedString = "00:00:00"
+    var uiState: UIState = .idle
 
     private var recorder: AVAudioRecorder?
     private var tempURL: URL?
@@ -316,6 +408,7 @@ private final class AudioRecorderController: NSObject {
         isRecording = true
         isPaused = false
         hasRecording = false
+        uiState = .recording
         elapsed = 0
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.tick() }
@@ -326,12 +419,14 @@ private final class AudioRecorderController: NSObject {
         recorder?.pause()
         isPaused = true
         isRecording = false
+        uiState = .paused
     }
 
     func resume() {
         recorder?.record()
         isPaused = false
         isRecording = true
+        uiState = .recording
     }
 
     func stop() async -> Data? {
@@ -343,7 +438,27 @@ private final class AudioRecorderController: NSObject {
         try? AVAudioSession.sharedInstance().setActive(false)
         guard let url = tempURL else { return nil }
         hasRecording = true
+        uiState = .finished
         return try? Data(contentsOf: url)
+    }
+
+    func reset() {
+        timer?.invalidate()
+        timer = nil
+        recorder?.stop()
+        recorder = nil
+        if let tempURL {
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+        tempURL = nil
+        elapsed = 0
+        elapsedString = "00:00:00"
+        amplitudes = Array(repeating: 0.1, count: 40)
+        isRecording = false
+        isPaused = false
+        hasRecording = false
+        uiState = .idle
+        try? AVAudioSession.sharedInstance().setActive(false)
     }
 
     private func tick() {

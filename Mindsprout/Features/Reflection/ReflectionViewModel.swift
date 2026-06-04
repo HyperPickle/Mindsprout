@@ -19,6 +19,7 @@ final class ReflectionViewModel {
     var entryText: String = ""
     var audioAssetID: UUID?
     var photoAssetIDs: [UUID] = []
+    var moodTags: [String] = []
     var shuffledPrompts: [HighlightPrompt] = []
 
     var inspirationIndex: Int = 0
@@ -96,6 +97,7 @@ final class ReflectionViewModel {
             bodyKind = existing.bodyKind
             audioAssetID = existing.audioAssetID
             photoAssetIDs = existing.photoAssetIDs
+            moodTags = existing.moodTags
         } else if let trip {
             let idx = dayIndex(for: trip)
             let r = Reflection(tripID: tripID, dayIndex: idx, date: Date(), isDraft: true)
@@ -145,6 +147,20 @@ final class ReflectionViewModel {
         onDismiss()
     }
 
+    func replaceAudio(with data: Data, fileExtension: String = "m4a") {
+        clearAudioDraft()
+        guard let path = try? mediaStore.write(data, kind: .audio, fileExtension: fileExtension) else { return }
+        let asset = MediaAsset(kind: .audio, relativePath: path)
+        context.insert(asset)
+        audioAssetID = asset.id
+    }
+
+    func clearAudioDraft() {
+        guard let audioAssetID else { return }
+        deleteMediaAsset(id: audioAssetID)
+        self.audioAssetID = nil
+    }
+
     private func persistCurrent(commit: Bool) {
         guard let r = draftReflection else { return }
         r.highlightPrompt = selectedPrompt?.id ?? customPromptText
@@ -152,6 +168,7 @@ final class ReflectionViewModel {
         r.text = bodyKind == .text ? entryText : nil
         r.audioAssetID = bodyKind == .audio ? audioAssetID : nil
         r.photoAssetIDs = photoAssetIDs
+        r.moodTags = moodTags
         r.isDraft = !commit
         if commit { r.xpAwarded = 0 } // Phase 3 wires real XP
         try? context.save()
@@ -161,5 +178,14 @@ final class ReflectionViewModel {
         var descriptor = FetchDescriptor<Trip>(predicate: #Predicate { $0.id == tripID })
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first
+    }
+
+    private func deleteMediaAsset(id: UUID) {
+        var descriptor = FetchDescriptor<MediaAsset>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        guard let asset = try? context.fetch(descriptor).first else { return }
+        try? mediaStore.delete(relativePath: asset.relativePath)
+        context.delete(asset)
+        try? context.save()
     }
 }
