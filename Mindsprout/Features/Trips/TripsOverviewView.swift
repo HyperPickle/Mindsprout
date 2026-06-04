@@ -62,6 +62,7 @@ private struct TripsHeader: View {
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xs)
                     .background(Capsule().fill(AppColor.sand))
+                    .contentShape(Capsule())
             }
         }
         .padding(.horizontal, Spacing.md)

@@ -34,6 +34,7 @@ struct ReflectionTagChip: View {
         .background(
             Capsule().fill((accent ? AppColor.currency : AppColor.primary).opacity(0.18))
         )
+        .contentShape(Capsule())
     }
 }
 
@@ -53,12 +54,14 @@ struct ReflectionTagsSection: View {
                     .tracking(0.8)
                     .foregroundStyle(AppColor.inkMuted)
                 Spacer()
-                Button(tags.isEmpty ? emptyLabel : "Edit") {
-                    isEditing = true
+                if !tags.isEmpty {
+                    Button("Edit") {
+                        isEditing = true
+                    }
+                    .buttonStyle(.plain)
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.primaryEdge)
                 }
-                .buttonStyle(.plain)
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.primaryEdge)
             }
 
             if tags.isEmpty {
@@ -79,6 +82,7 @@ struct ReflectionTagsSection: View {
                         RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                             .fill(AppColor.cardSurface.opacity(0.75))
                     )
+                    .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                 }
                 .buttonStyle(.plain)
             } else {

@@ -73,6 +73,7 @@ struct EntryStep: View {
                 .background(
                     Capsule().fill(vm.bodyKind == kind ? AppColor.ink : Color.clear)
                 )
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: vm.bodyKind)
@@ -134,6 +135,7 @@ private struct TypeEntryCard: View {
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xxs)
                     .background(Capsule().fill(AppColor.hairline.opacity(0.4)))
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 Spacer()
@@ -153,31 +155,30 @@ private struct TypeEntryCard: View {
 private struct RecordEntryCard: View {
     @Bindable var vm: ReflectionViewModel
     @State private var recorder: AudioRecorderController = AudioRecorderController()
+    @State private var player = AudioPlayerController()
 
     var body: some View {
         VStack(spacing: Spacing.md) {
-            WaveformView(amplitudes: recorder.amplitudes, isRecording: recorder.isRecording)
-                .frame(height: 80)
+            if previewURL != nil {
+                PlaybackWaveformView(progress: player.progress)
+                    .frame(height: 80)
+            } else {
+                WaveformView(amplitudes: recorder.amplitudes, isRecording: recorder.isRecording)
+                    .frame(height: 80)
+            }
 
             Text(recorder.elapsedString)
                 .font(.system(size: 28, weight: .light, design: .monospaced))
                 .foregroundStyle(AppColor.ink)
 
-            if let previewURL {
-                AudioPlayerView(
-                    url: previewURL,
-                    configuration: .init(
-                        startsWithLabeledPlayButton: true,
-                        playButtonTitle: "Play Audio",
-                        onReset: resetRecording
-                    )
-                )
-                stateButton
+            if previewURL != nil {
+                playbackControls
+                deleteRecordingButton
             } else {
                 VStack(spacing: Spacing.sm) {
                     stateButton
                     if recorder.uiState == .recording || recorder.uiState == .paused {
-                        finishRecordingButton
+                        recordingActionRow
                     }
                 }
             }
@@ -207,6 +208,18 @@ private struct RecordEntryCard: View {
             if recorder.isRecording {
                 Task { await stopAndSave() }
             }
+            player.stop()
+        }
+        .onAppear {
+            if let previewURL {
+                player.load(url: previewURL)
+            }
+        }
+        .onChange(of: vm.audioAssetID) { _, _ in
+            player.reset()
+            if let previewURL {
+                player.load(url: previewURL)
+            }
         }
     }
 
@@ -233,9 +246,17 @@ private struct RecordEntryCard: View {
                 Capsule().fill(stateButtonBackground)
                     .shadow(color: AppColor.ink.opacity(0.12), radius: 6, y: 3)
             )
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .disabled(recorder.uiState == .finished)
+    }
+
+    private var recordingActionRow: some View {
+        HStack(spacing: Spacing.sm) {
+            finishRecordingButton
+            deleteRecordingButton
+        }
     }
 
     private var finishRecordingButton: some View {
@@ -245,11 +266,54 @@ private struct RecordEntryCard: View {
             Text("Finish Recording")
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.ink)
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.xs)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm)
                 .background(Capsule().fill(AppColor.hairline.opacity(0.5)))
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+
+    private var deleteRecordingButton: some View {
+        Button {
+            resetRecording()
+        } label: {
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "trash")
+                    .font(.system(size: 14, weight: .semibold))
+                Text("Delete")
+                    .font(AppFont.callout)
+            }
+            .foregroundStyle(AppColor.ink)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Spacing.sm)
+            .background(Capsule().fill(AppColor.hairline.opacity(0.5)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var playbackControls: some View {
+        HStack(spacing: Spacing.md) {
+            Button {
+                player.toggle()
+            } label: {
+                Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(AppColor.ink)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(.white))
+                    .overlay(Circle().stroke(AppColor.hairline, lineWidth: 1))
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Text(playbackTimeLabel)
+                .font(.system(size: 20, weight: .light, design: .monospaced))
+                .foregroundStyle(AppColor.inkSecondary)
+        }
     }
 
     private var stateButtonTitle: LocalizedStringKey {
@@ -261,7 +325,7 @@ private struct RecordEntryCard: View {
         case .paused:
             "Resume Recording"
         case .finished:
-            "Audio Ready"
+            "Resume Recording"
         }
     }
 
@@ -274,7 +338,7 @@ private struct RecordEntryCard: View {
         case .paused:
             "record.circle"
         case .finished:
-            "checkmark.circle.fill"
+            "record.circle"
         }
     }
 
@@ -318,8 +382,15 @@ private struct RecordEntryCard: View {
     }
 
     private func resetRecording() {
+        player.reset()
         vm.clearAudioDraft()
         recorder.reset()
+    }
+
+    private var playbackTimeLabel: String {
+        let shown = player.isPlaying ? player.progress * player.duration : player.duration
+        let total = Int(shown.rounded())
+        return String(format: "%d:%02d", total / 60, total % 60)
     }
 }
 
@@ -346,6 +417,28 @@ private struct WaveformView: View {
                     ctx.stroke(path, with: .color(AppColor.hairline), style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
                 }
             }
+        }
+    }
+}
+
+private struct PlaybackWaveformView: View {
+    let progress: Double
+    private let heights: [CGFloat] = [0.22, 0.20, 0.24, 0.23, 0.28, 0.55, 0.60, 0.64, 0.61, 0.59, 0.57, 0.55, 0.52, 0.50, 0.53, 0.60, 0.62, 0.67, 0.63, 0.61, 0.58, 0.57, 0.60, 0.62, 0.61, 0.59, 0.60, 0.58]
+
+    var body: some View {
+        GeometryReader { geo in
+            let count = heights.count
+            let filled = max(1, Int((Double(count) * progress).rounded()))
+            let barWidth = max(4, (geo.size.width - CGFloat(count - 1) * 6) / CGFloat(count))
+
+            HStack(alignment: .center, spacing: 6) {
+                ForEach(0..<count, id: \.self) { index in
+                    Capsule()
+                        .fill(index < filled ? AppColor.primary : AppColor.hairline.opacity(0.9))
+                        .frame(width: barWidth, height: max(10, geo.size.height * heights[index]))
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 }
@@ -410,13 +503,13 @@ private final class AudioRecorderController: NSObject {
         hasRecording = false
         uiState = .recording
         elapsed = 0
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.tick() }
-        }
+        startTimer()
     }
 
     func pause() {
         recorder?.pause()
+        timer?.invalidate()
+        timer = nil
         isPaused = true
         isRecording = false
         uiState = .paused
@@ -427,6 +520,7 @@ private final class AudioRecorderController: NSObject {
         isPaused = false
         isRecording = true
         uiState = .recording
+        startTimer()
     }
 
     func stop() async -> Data? {
@@ -473,6 +567,13 @@ private final class AudioRecorderController: NSObject {
         let power = recorder?.averagePower(forChannel: 0) ?? -60
         let normalized = Float(max(0, min(1, (power + 60) / 60)))
         amplitudes = amplitudes.dropFirst() + [normalized]
+    }
+
+    private func startTimer() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.tick() }
+        }
     }
 }
 

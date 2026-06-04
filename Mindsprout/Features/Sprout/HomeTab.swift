@@ -22,6 +22,7 @@ struct HomeTab: View {
                             .padding(.horizontal, Spacing.md)
                             .padding(.vertical, Spacing.xs)
                             .background(Capsule().fill(AppColor.cardSurface))
+                            .contentShape(Capsule())
                     }
                     .accessibilityLabel("Open shop")
 

@@ -216,6 +216,7 @@ private struct ExpectationRow: View {
                     RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
                         .fill(isSelected ? AppColor.primary : .white)
                 )
+                .contentShape(RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -278,6 +279,7 @@ private struct TripTypeCell: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .stroke(isSelected ? AppColor.primary : .clear, lineWidth: 2)
             )
+            .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
         .buttonStyle(.plain)
     }

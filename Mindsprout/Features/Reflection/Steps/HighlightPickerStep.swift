@@ -83,6 +83,7 @@ struct HighlightPickerStep: View {
                         .foregroundStyle(AppColor.inkSecondary)
                 }
                 .padding(Spacing.md)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -123,6 +124,7 @@ struct HighlightPickerStep: View {
                     .foregroundStyle(AppColor.inkSecondary)
             }
             .padding(.vertical, Spacing.sm)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -165,6 +167,7 @@ private struct PromptCard: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .stroke(isSelected ? AppColor.primary : Color.clear, lineWidth: 2)
             )
+            .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
         .buttonStyle(.plain)
     }

@@ -119,6 +119,7 @@ struct PhotoCommitStep: View {
                                     .font(.system(size: 20))
                                     .foregroundStyle(.white)
                                     .shadow(color: .black.opacity(0.3), radius: 2)
+                                    .contentShape(Circle())
                             }
                             .offset(x: 6, y: -6)
                         }
@@ -152,6 +153,7 @@ struct PhotoCommitStep: View {
                         .font(.system(size: 24, weight: .medium))
                         .foregroundStyle(AppColor.inkSecondary)
                 }
+                .contentShape(RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -167,6 +169,7 @@ struct PhotoCommitStep: View {
                 .padding(.vertical, Spacing.sm)
                 .background(Capsule().fill(.white).shadow(color: AppColor.ink.opacity(0.1), radius: 4, y: 2))
                 .overlay(Capsule().stroke(AppColor.hairline, lineWidth: 1))
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -180,6 +183,7 @@ struct PhotoCommitStep: View {
                 .padding(.vertical, Spacing.sm)
                 .background(Capsule().fill(.white).shadow(color: AppColor.ink.opacity(0.1), radius: 4, y: 2))
                 .overlay(Capsule().stroke(AppColor.hairline, lineWidth: 1))
+                .contentShape(Capsule())
         }
     }
 
@@ -191,6 +195,7 @@ struct PhotoCommitStep: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.sm)
                 .background(RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous).fill(AppColor.headerBrown))
+                .contentShape(RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
 
             Button("Feed Sprout") { vm.feedSprout() }
                 .buttonStyle(.primary)
@@ -301,6 +306,7 @@ private struct LightboxView: View {
                     .font(.system(size: 28))
                     .foregroundStyle(.white)
                     .padding(Spacing.md)
+                    .contentShape(Circle())
             }
         }
     }

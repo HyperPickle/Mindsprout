@@ -113,6 +113,7 @@ struct AudioPlayerView: View {
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(AppColor.cardSurface))
                     .overlay(Circle().stroke(AppColor.hairline, lineWidth: 1))
+                    .contentShape(Circle())
             }
             Waveform(progress: controller.progress)
                 .frame(height: 28)
@@ -135,6 +136,7 @@ struct AudioPlayerView: View {
             .padding(.vertical, Spacing.xs)
             .background(Capsule().fill(AppColor.cardSurface))
             .overlay(Capsule().stroke(AppColor.hairline, lineWidth: 1))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -150,6 +152,7 @@ struct AudioPlayerView: View {
                 .frame(width: 38, height: 38)
                 .background(Circle().fill(AppColor.cardSurface))
                 .overlay(Circle().stroke(AppColor.hairline, lineWidth: 1))
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
     }
