@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftData
 
 struct RootView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @Environment(\.modelContext) private var context
 
     @State private var selection: AppTab = .home
     @State private var modalCoordinator = ModalCoordinator()
@@ -23,6 +25,9 @@ struct RootView: View {
             Tab(AppTab.adventures.title, systemImage: AppTab.adventures.systemImage, value: AppTab.adventures) {
                 AdventuresTab()
             }
+            Tab(AppTab.reflect.title, systemImage: AppTab.reflect.systemImage, value: AppTab.reflect) {
+                ReflectTab(selection: $selection)
+            }
             Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
                 HomeTab()
             }
@@ -34,6 +39,7 @@ struct RootView: View {
         .environment(modalCoordinator)
         .sheet(item: $coordinator.presented) { modal in
             ModalContainer(modal: modal)
+                .environment(modalCoordinator)
         }
         .fullScreenCover(isPresented: .constant(shouldShowOnboarding)) {
             OnboardingView {

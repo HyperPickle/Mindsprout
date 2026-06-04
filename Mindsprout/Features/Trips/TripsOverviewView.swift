@@ -10,6 +10,7 @@ struct TripsOverviewView: View {
         ScrollView {
             VStack(spacing: Spacing.md) {
                 TripsHeader { modalCoordinator.present(.newTrip) }
+                    .padding(.top, Spacing.md)
 
                 if viewModel.isEmpty {
                     TripsEmptyState { modalCoordinator.present(.newTrip) }
@@ -46,45 +47,30 @@ private struct TripsHeader: View {
     let onNewTrip: () -> Void
 
     var body: some View {
-        HStack(spacing: Spacing.sm) {
-            HStack(spacing: Spacing.xs) {
-                Text("Trips")
-                    .font(AppFont.title)
-                    .foregroundStyle(AppColor.ink)
-                Image(systemName: "airplane")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(AppColor.ink)
-            }
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm)
-            .background(Capsule().fill(AppColor.cardSurface))
+        HStack {
+            Text("Trips")
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.ink)
 
-            Line()
-                .stroke(style: StrokeStyle(lineWidth: 2, dash: [4, 5]))
-                .frame(height: 1)
-                .foregroundStyle(AppColor.inkMuted.opacity(0.6))
+            Spacer()
 
             Button(action: onNewTrip) {
                 Label("New trip", systemImage: "plus")
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.ink)
-                    .padding(.horizontal, Spacing.md)
-                    .padding(.vertical, Spacing.sm)
-                    .background(Capsule().fill(AppColor.cardSurface))
+                    .lineLimit(1)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xs)
+                    .background(Capsule().fill(AppColor.sand))
             }
         }
-        .padding(.top, Spacing.xs)
-    }
-}
-
-private struct Line: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-        return path
+        .padding(.horizontal, Spacing.md)
+        .frame(height: 56)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
+                .fill(AppColor.cardSurface)
+                .shadow(color: AppColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
+        )
     }
 }
 

@@ -3,7 +3,7 @@ import SwiftData
 
 @MainActor
 @Observable
-final class TripDetailViewModel {
+final class TripViewModel {
     private(set) var trip: Trip?
     private(set) var reflections: [Reflection] = []
 
@@ -17,14 +17,170 @@ final class TripDetailViewModel {
     }
 }
 
+// MARK: - Intermediate Trip Detail
+
 struct TripDetailView: View {
+    let tripID: UUID
+
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @State private var viewModel = TripViewModel()
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Spacing.md) {
+                header
+                if let trip = viewModel.trip {
+                    TripHeroCard(
+                        trip: trip,
+                        coverAssetID: trip.coverAssetID,
+                        memoryCount: viewModel.reflections.count,
+                        showHeadline: false
+                    )
+                }
+                if let featured = featuredReflectionData {
+                    SectionDivider(title: "FEATURED REFLECTION")
+                    featuredReflectionCard(reflection: featured.reflection, index: featured.index)
+                }
+                if !viewModel.reflections.isEmpty {
+                    SectionDivider(title: "MOMENTS")
+                    ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
+                        NavigationLink(value: AdventuresRoute.tripDayDetail(tripID: tripID, initialDayIndex: offset)) {
+                            DayCard(reflection: reflection)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, Spacing.screenEdge)
+            .padding(.bottom, Spacing.xl)
+        }
+        .background(SkyBackground())
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
+        .task { viewModel.load(tripID: tripID, context: context) }
+    }
+
+    private var header: some View {
+        HStack {
+            Button { dismiss() } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Trips")
+                        .font(AppFont.callout)
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+                .foregroundStyle(AppColor.ink)
+            }
+            Spacer()
+            Text(viewModel.trip?.destination ?? "")
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.ink)
+                .lineLimit(1)
+            Spacer()
+            Image(systemName: "mappin.circle.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(AppColor.primary)
+        }
+        .padding(.horizontal, Spacing.md)
+        .frame(height: 56)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
+                .fill(AppColor.cardSurface)
+                .shadow(color: AppColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
+        )
+        .padding(.top, Spacing.md)
+        .padding(.bottom, Spacing.sm)
+    }
+
+    private var featuredReflectionData: (index: Int, reflection: Reflection)? {
+        guard !viewModel.reflections.isEmpty else { return nil }
+        
+        if let headline = viewModel.trip?.headlineMemory, !headline.isEmpty {
+            if let idx = viewModel.reflections.firstIndex(where: { $0.text?.contains(headline) == true || headline.contains($0.text ?? "---") }) {
+                return (idx, viewModel.reflections[idx])
+            }
+        }
+        
+        if let idx = viewModel.reflections.enumerated().max(by: { ($0.element.text?.count ?? 0) < ($1.element.text?.count ?? 0) })?.offset {
+            return (idx, viewModel.reflections[idx])
+        }
+        
+        return (0, viewModel.reflections[0])
+    }
+
+    private func featuredReflectionCard(reflection: Reflection, index: Int) -> some View {
+        NavigationLink(value: AdventuresRoute.tripDayDetail(tripID: tripID, initialDayIndex: index)) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                if let text = reflection.text, !text.isEmpty {
+                    Text(text)
+                        .font(AppFont.body)
+                        .foregroundStyle(AppColor.ink)
+                        .lineLimit(1)
+                }
+                
+                HStack(alignment: .bottom) {
+                    if !reflection.moodTags.isEmpty {
+                        HStack(spacing: Spacing.xs) {
+                            ForEach(Array(reflection.moodTags.enumerated()), id: \.offset) { i, tag in
+                                MoodPill(text: tag, accent: i.isMultiple(of: 2))
+                            }
+                        }
+                    }
+                    Spacer()
+                    Text("Open Memory →")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColor.primary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .cardStyle()
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct DayCard: View {
+    let reflection: Reflection
+    private var strip: [UUID?] {
+        var ids: [UUID?] = reflection.photoAssetIDs.map { Optional($0) }
+        while ids.count < 3 { ids.append(nil) }
+        return Array(ids.prefix(3))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Text("Day \(reflection.dayIndex)")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.ink)
+                Spacer()
+                Text("Open memory →")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.primary)
+            }
+            TripPhotoLayout(
+                strip: strip,
+                trailing: reflection.text.flatMap { $0.isEmpty ? nil : $0 }
+                    .map { AnyView(LabelBox(header: "MOMENT", text: String($0.prefix(80)))) }
+            )
+        }
+        .cardStyle()
+    }
+}
+
+// MARK: - Day Detail
+
+struct TripDayDetailView: View {
     let tripID: UUID
     var initialDayIndex = 0
 
     @Environment(\.modelContext) private var context
     @Environment(\.appEnvironment) private var env
     @Environment(\.dismiss) private var dismiss
-    @State private var viewModel = TripDetailViewModel()
+    @State private var viewModel = TripViewModel()
     @State private var index = 0
     @State private var lightboxAsset: UUID?
     @State private var didSetInitial = false
@@ -34,23 +190,21 @@ struct TripDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            SkyBackground()
-            VStack(spacing: 0) {
-                header
-                if viewModel.reflections.isEmpty {
-                    emptyState
-                } else {
-                    TabView(selection: $index) {
-                        ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
-                            DayContentView(reflection: reflection, lightboxAsset: $lightboxAsset)
-                                .tag(offset)
-                        }
+        VStack(spacing: 0) {
+            header
+            if viewModel.reflections.isEmpty {
+                emptyState
+            } else {
+                TabView(selection: $index) {
+                    ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
+                        DayContentView(reflection: reflection, lightboxAsset: $lightboxAsset)
+                            .tag(offset)
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
                 }
+                .tabViewStyle(.page(indexDisplayMode: .never))
             }
         }
+        .background(SkyBackground())
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .task {
@@ -64,29 +218,40 @@ struct TripDetailView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: Spacing.sm) {
+        HStack {
             Button { dismiss() } label: {
-                Image(systemName: "arrow.left")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(AppColor.ink)
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(AppColor.cardSurface))
-            }
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Day \(current?.dayIndex ?? 1)")
-                    .font(AppFont.title)
-                    .foregroundStyle(AppColor.ink)
-                if let place = current?.locationLabel {
-                    Text(place)
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(viewModel.trip?.destination ?? "")
                         .font(AppFont.callout)
-                        .foregroundStyle(AppColor.inkSecondary)
+                        .lineLimit(1)
                 }
+                .foregroundStyle(AppColor.ink)
             }
             Spacer()
-            DayTrail()
-                .frame(width: 90, height: 36)
+            Text(viewModel.trip?.destination ?? "")
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.ink)
+                .lineLimit(1)
+            Spacer()
+            Text("Day \(current?.dayIndex ?? 1)")
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.ink)
+                .lineLimit(1)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.xs)
+                .background(Capsule().fill(AppColor.sand))
         }
+        .padding(.horizontal, Spacing.md)
+        .frame(height: 56)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
+                .fill(AppColor.cardSurface)
+                .shadow(color: AppColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
+        )
         .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)
     }
 
@@ -142,13 +307,10 @@ private struct DayContentView: View {
                         .shadow(color: AppColor.ink.opacity(0.12), radius: 12, y: 6)
                         .onTapGesture { lightboxAsset = featured }
                 }
-
                 reflectionCard
-
                 if let audioID = reflection.audioAssetID, let url = audioURL(audioID) {
                     AudioPlayerView(url: url)
                 }
-
                 if !reflection.photoAssetIDs.isEmpty {
                     SectionDivider(title: "ALBUM")
                     LazyVGrid(columns: columns, spacing: Spacing.xs) {
@@ -232,31 +394,5 @@ struct SectionDivider: View {
 
     private var line: some View {
         Rectangle().fill(AppColor.inkMuted.opacity(0.3)).frame(height: 1)
-    }
-}
-
-private struct DayTrail: View {
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            TrailLine()
-                .stroke(style: StrokeStyle(lineWidth: 2, dash: [2, 5]))
-                .foregroundStyle(AppColor.inkMuted)
-            Image(systemName: "mappin.circle.fill")
-                .font(.system(size: 22))
-                .foregroundStyle(AppColor.primary)
-        }
-    }
-}
-
-private struct TrailLine: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.addCurve(
-            to: CGPoint(x: rect.maxX - 14, y: rect.midY),
-            control1: CGPoint(x: rect.midX - 10, y: rect.maxY),
-            control2: CGPoint(x: rect.midX, y: rect.midY)
-        )
-        return path
     }
 }

@@ -49,7 +49,7 @@ private struct DetailHost: View {
     var body: some View {
         NavigationStack {
             if let id = activeTripID {
-                TripDetailView(tripID: id, initialDayIndex: 2)
+                TripDayDetailView(tripID: id, initialDayIndex: 2)
             } else {
                 Text("No trips seeded")
             }

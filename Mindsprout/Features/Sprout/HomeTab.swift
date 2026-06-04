@@ -1,6 +1,8 @@
 import SwiftUI
 
-enum HomeRoute: Hashable {}
+enum HomeRoute: Hashable {
+    case dummy
+}
 
 struct HomeTab: View {
     @Environment(ModalCoordinator.self) private var modalCoordinator

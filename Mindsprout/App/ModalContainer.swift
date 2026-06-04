@@ -7,12 +7,6 @@ struct ModalContainer: View {
         switch modal {
         case .newTrip:
             NewTripFlow()
-        case .reflection:
-            FlowPlaceholder(
-                title: "Reflection",
-                systemImage: "square.and.pencil",
-                note: "Reflection capture — Phase 2."
-            )
         case .levelUp:
             FlowPlaceholder(
                 title: "Level Up",

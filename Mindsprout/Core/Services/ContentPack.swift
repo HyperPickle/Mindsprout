@@ -1,10 +1,16 @@
 import Foundation
 
+struct HighlightPrompt: Codable, Sendable, Equatable, Identifiable {
+    var id: String
+    var title: String
+    var subtitle: String
+}
+
 struct PromptPack: Codable, Sendable, Equatable {
-    var highlightPrompts: [String: [String]]
+    var highlightPrompts: [String: [HighlightPrompt]]
     var inspirationPrompts: [String]
 
-    func highlights(for type: TripType) -> [String] {
+    func highlights(for type: TripType) -> [HighlightPrompt] {
         highlightPrompts[type.rawValue] ?? highlightPrompts["default"] ?? []
     }
 }

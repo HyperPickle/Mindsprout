@@ -2,6 +2,7 @@ import SwiftUI
 
 enum AdventuresRoute: Hashable {
     case tripDetail(tripID: UUID)
+    case tripDayDetail(tripID: UUID, initialDayIndex: Int)
 }
 
 struct AdventuresTab: View {
@@ -16,6 +17,8 @@ struct AdventuresTab: View {
                     switch route {
                     case .tripDetail(let tripID):
                         TripDetailView(tripID: tripID)
+                    case .tripDayDetail(let tripID, let initialDayIndex):
+                        TripDayDetailView(tripID: tripID, initialDayIndex: initialDayIndex)
                     }
                 }
         }

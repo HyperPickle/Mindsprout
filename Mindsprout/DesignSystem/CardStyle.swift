@@ -6,10 +6,8 @@ struct CardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(padding)
-            .background(
-                RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
-                    .fill(AppColor.cardSurface)
-            )
+            .background(AppColor.cardSurface)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
             .shadow(color: AppColor.ink.opacity(0.10), radius: 12, x: 0, y: 6)
     }
 }

@@ -37,7 +37,8 @@ final class AudioPlayerController {
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            guard let controller = self else { return }
+            Task { @MainActor in controller.tick() }
         }
     }
 

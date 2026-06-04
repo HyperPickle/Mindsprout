@@ -1,0 +1,57 @@
+import SwiftUI
+
+struct ReflectionProgressBar: View {
+    let step: Int
+
+    private let icons = ["mappin", "mappin", "airplane.departure"]
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(0..<3) { index in
+                stepIcon(index: index)
+                if index < 2 {
+                    connector(afterIndex: index)
+                }
+            }
+        }
+        .frame(height: 32)
+    }
+
+    private func stepIcon(index: Int) -> some View {
+        let active = index + 1 <= step
+        return Image(systemName: icons[index])
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(active ? AppColor.primary : AppColor.hairline)
+            .frame(width: 32, height: 32)
+            .background(
+                Circle()
+                    .fill(active ? AppColor.primary.opacity(0.12) : Color.clear)
+            )
+    }
+
+    private func connector(afterIndex index: Int) -> some View {
+        let filled = index + 2 <= step
+        return GeometryReader { geo in
+            Path { path in
+                let y = geo.size.height / 2
+                path.move(to: CGPoint(x: 0, y: y))
+                path.addLine(to: CGPoint(x: geo.size.width, y: y))
+            }
+            .stroke(
+                filled ? AppColor.primary : AppColor.hairline,
+                style: StrokeStyle(lineWidth: 2, dash: [4, 3])
+            )
+        }
+        .frame(height: 2)
+    }
+}
+
+#Preview {
+    VStack(spacing: Spacing.lg) {
+        ReflectionProgressBar(step: 1)
+        ReflectionProgressBar(step: 2)
+        ReflectionProgressBar(step: 3)
+    }
+    .padding()
+    .background(AppColor.sand)
+}

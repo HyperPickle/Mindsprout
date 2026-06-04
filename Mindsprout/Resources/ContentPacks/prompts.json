@@ -1,35 +1,33 @@
 {
   "highlightPrompts": {
     "default": [
-      "What surprised you today?",
-      "When did you feel most alive?",
-      "What will you remember in a year?",
-      "What did you notice that others might miss?"
+      { "id": "chat-local",     "title": "Chatted with someone who works or lives here", "subtitle": "a cafe owner / shopkeeper / or neighbour..." },
+      { "id": "stumbled-place", "title": "Stumbled into a place",                        "subtitle": "a street / a market / a viewpoint that stopped me..." },
+      { "id": "first-time",     "title": "Tried something for the first time",            "subtitle": "a food / an activity / a local ritual..." },
+      { "id": "quiet-spot",     "title": "Found a quiet spot",                            "subtitle": "a bench / a cafe corner / a rooftop..." },
+      { "id": "got-lost",       "title": "Got genuinely lost",                            "subtitle": "and found something better..." },
+      { "id": "people-watch",   "title": "Just sat and watched the world go by",          "subtitle": "a square / a station / a window seat..." }
     ],
     "solo": [
-      "What did being on your own teach you today?",
-      "When did you feel most free?",
-      "What did you decide just for yourself?"
+      { "id": "solo-decided",   "title": "Made a decision just for myself",               "subtitle": "no group vote, no compromise..." },
+      { "id": "solo-free",      "title": "Felt completely free",                          "subtitle": "no plans, no schedule, just me..." }
     ],
     "friends": [
-      "What moment made everyone laugh?",
-      "When did you feel closest to the group?",
-      "What did a friend show you today?"
+      { "id": "group-laugh",    "title": "Moment that made everyone laugh",               "subtitle": "the kind you'll still talk about..." },
+      { "id": "group-close",    "title": "Felt closest to the group today",               "subtitle": "a shared meal / a sunset / a detour..." }
     ],
     "family": [
-      "What small moment felt like home?",
-      "What did you learn about someone you love?",
-      "When did you feel grateful for them?"
+      { "id": "family-home",    "title": "A small moment that felt like home",            "subtitle": "a habit / a phrase / a look..." },
+      { "id": "family-learn",   "title": "Learned something about someone I love",        "subtitle": "a story / a preference / a side I hadn't seen..." }
     ],
     "business": [
-      "What unexpected moment broke the routine?",
-      "What did you learn between the meetings?",
-      "When did the trip stop feeling like work?"
+      { "id": "biz-routine",    "title": "Something that broke the routine",              "subtitle": "between the meetings, a moment that counted..." },
+      { "id": "biz-notwork",    "title": "When the trip stopped feeling like work",       "subtitle": "a walk / a meal / a conversation..." }
     ]
   },
   "inspirationPrompts": [
-    "Lets go back to that moment. What was it? What made you go for it? Would you do it again?",
-    "Describe the light, the sound, the feeling. Where were you?",
+    "Let's go back to that moment.\nWhat was it?\nWhat made you go for it?\nWould you do it again?",
+    "Describe the light, the sound, the feeling.\nWhere were you?",
     "What did you expect, and what actually happened?"
   ]
 }
