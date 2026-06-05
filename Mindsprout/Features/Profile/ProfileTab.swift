@@ -103,19 +103,19 @@ private struct StatCard: View {
     let label: String
     
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             Spacer(minLength: 0)
-            HStack(spacing: 8) {
-                Text(value)
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .minimumScaleFactor(0.8)
-                
-                Text(label)
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+
+            Text(value)
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .minimumScaleFactor(0.8)
+
+            Text(label)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
