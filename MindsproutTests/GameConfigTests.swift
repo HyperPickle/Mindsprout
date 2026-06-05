@@ -15,11 +15,19 @@ struct GameConfigTests {
 
     @Test func xpAwardsArePositive() {
         #expect(config.baseXP > 0)
-        #expect(config.photoBonusXP > 0)
-        #expect(config.audioBonusXP > 0)
-        #expect(config.streakBonusXP > 0)
         #expect(config.currencyPerReflection > 0)
         #expect(config.levelStepBeyondTable > 0)
+        #expect(config.maxLevel == 50)
+        #expect(config.milestoneLevelInterval == 5)
+    }
+
+    @Test func phaseThreeFlatCurveUsesTwentyXPPerLevel() {
+        #expect(config.levelThresholds.count == config.maxLevel)
+        #expect(config.levelThresholds.first == 0)
+        #expect(config.levelThresholds.last == 980)
+        for (levelIndex, threshold) in config.levelThresholds.enumerated() {
+            #expect(threshold == levelIndex * 20)
+        }
     }
 
     @Test func evolutionStagesAreOrderedAndStartAtLevelOne() {

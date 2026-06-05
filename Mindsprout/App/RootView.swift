@@ -29,7 +29,7 @@ struct RootView: View {
                 ReflectTab(selection: $selection)
             }
             Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
-                HomeTab()
+                HomeTab(selection: $selection)
             }
             Tab(AppTab.profile.title, systemImage: AppTab.profile.systemImage, value: AppTab.profile) {
                 ProfileTab()
