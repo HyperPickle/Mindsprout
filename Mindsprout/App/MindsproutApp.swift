@@ -13,6 +13,10 @@ struct MindsproutApp: App {
         SampleData.seedIfEmpty(context: container.mainContext, mediaStore: environment.mediaStore)
         modelContainer = container
         appEnvironment = environment
+        
+        // TEMPORARY - DELETE AFTER TESTING ⚠️
+            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+            UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
     }
 
     var body: some Scene {

@@ -12,7 +12,7 @@ import Combine
 
 // MAP NEEDS TO INTEGRATE AUTORISATION FOR LOCATION GPS
 
-// ✅ Completer delegate
+
 class LocationSearchDelegate: NSObject, MKLocalSearchCompleterDelegate, ObservableObject {
     @Published var results: [MKLocalSearchCompletion] = []
     let completer = MKLocalSearchCompleter()
@@ -20,7 +20,7 @@ class LocationSearchDelegate: NSObject, MKLocalSearchCompleterDelegate, Observab
     override init() {
         super.init()
         completer.delegate = self
-        completer.resultTypes = .address  // villes + lieux
+        completer.resultTypes = .address  // COUNTRY + CITY
     }
     
     func search(_ query: String) {
@@ -29,9 +29,7 @@ class LocationSearchDelegate: NSObject, MKLocalSearchCompleterDelegate, Observab
     
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         results = completer.results.filter{result in
-            // Exclut les adresses avec numéro de rue
             let hasStreetNumber = result.title.first?.isNumber ?? false
-            // Garde seulement si le subtitle contient un pays
             let hasCountry = !result.subtitle.isEmpty
             return !hasStreetNumber && hasCountry
             
@@ -51,7 +49,7 @@ struct LocationPickerView: View {
                 // Liste des résultats
                 List(searchDelegate.results, id: \.title) { result in
                     Button {
-                        // ✅ Combine titre + pays seulement
+
                         let country = result.subtitle.components(separatedBy: ",").last?.trimmingCharacters(in: .whitespaces) ?? ""
                         selectedCity = "\(result.title), \(country)"
                         dismiss()
@@ -66,7 +64,7 @@ struct LocationPickerView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                    // ✅ Checkmark si sélectionné
+  
                     .overlay(alignment: .trailing) {
                         if selectedCity == result.title {
                             Image(systemName: "checkmark")
@@ -87,9 +85,9 @@ struct LocationPickerView: View {
     }
 }
 
-struct YourView: View {
+struct DestinationPickerView: View {
     @State private var showLocationPicker = false
-    @State private var selectedCity = ""
+    @Binding var selectedCity: String
     
     var body: some View {
         Button {
@@ -97,13 +95,15 @@ struct YourView: View {
         } label: {
             HStack {
                 Image(systemName: "mappin.circle.fill")
+                    .foregroundStyle(Color(hex: 0x5C6A6E))
                 Text(selectedCity.isEmpty ? "Select Location" : selectedCity)
+                    .foregroundStyle(Color(hex: 0x5C6A6E))
                 Spacer()
                 Image(systemName: "chevron.down")
             }
             .foregroundStyle(.black)
             .padding()
-            .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
+            .background(Color.white.opacity(0.8), in: .rect(cornerRadius: 14))
         }
         .sheet(isPresented: $showLocationPicker) {
             LocationPickerView(selectedCity: $selectedCity)
@@ -112,5 +112,8 @@ struct YourView: View {
 }
 
 #Preview{
-    YourView()
+    ZStack {
+        BackgroundSky()
+        DestinationPickerView(selectedCity: .constant(""))
+    }
 }
