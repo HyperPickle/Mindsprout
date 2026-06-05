@@ -85,10 +85,10 @@ struct ProfileTab: View {
                     .padding(.horizontal, Spacing.screenEdge)
                     
                     // Action Buttons
-                    VStack(spacing: Spacing.md) {
-                        ProfileActionButton(title: "Shop", icon: "bag")
-                        ProfileActionButton(title: "Settings", icon: "gearshape")
-                        ProfileActionButton(title: "Sign Out", icon: "arrow.right.square")
+                    VStack(spacing: Spacing.sm) {
+                        ProfileActionButton(title: "Shop", icon: "bag", color: Color(red: 0.27, green: 0.61, blue: 0.87))
+                        ProfileActionButton(title: "Settings", icon: "gearshape", color: Color(red: 0.44, green: 0.70, blue: 0.90))
+                        ProfileActionButton(title: "Sign Out", icon: "arrow.right.square", color: Color(red: 0.57, green: 0.78, blue: 0.93))
                     }
                     .padding(.horizontal, Spacing.screenEdge)
                     .padding(.bottom, 48)
@@ -144,7 +144,8 @@ private struct XPBar: View {
 private struct ProfileActionButton: View {
     let title: String
     let icon: String
-    
+    var color: Color = Color(red: 0.27, green: 0.61, blue: 0.87)
+
     var body: some View {
         Button(action: {}) {
             ZStack {
@@ -154,7 +155,7 @@ private struct ProfileActionButton: View {
                         .frame(width: 30)
                     Spacer()
                 }
-                
+
                 Text(title)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
             }
