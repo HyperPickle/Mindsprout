@@ -16,9 +16,9 @@ struct AdventuresTab: View {
                 .navigationDestination(for: AdventuresRoute.self) { route in
                     switch route {
                     case .tripDetail(let tripID):
-                        TripDetailView(tripID: tripID)
+                        TripDetailView(tripID: tripID, onBack: { path.removeLast() })
                     case .tripDayDetail(let tripID, let initialDayIndex):
-                        TripDayDetailView(tripID: tripID, initialDayIndex: initialDayIndex)
+                        TripDayDetailView(tripID: tripID, initialDayIndex: initialDayIndex, onBack: { path.removeLast() })
                     }
                 }
         }
