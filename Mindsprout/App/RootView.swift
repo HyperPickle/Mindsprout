@@ -23,6 +23,24 @@ struct RootView: View {
     var body: some View {
         @Bindable var coordinator = modalCoordinator
 
+        TabView(selection: $selection) {
+            Tab(AppTab.adventures.title, systemImage: AppTab.adventures.systemImage, value: AppTab.adventures) {
+                AdventuresTab()
+            }
+            Tab(AppTab.reflect.title, systemImage: AppTab.reflect.systemImage, value: AppTab.reflect) {
+                ReflectTab(selection: $selection)
+            }
+            Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
+                HomeTab(selection: $selection)
+            }
+            Tab(AppTab.profile.title, systemImage: AppTab.profile.systemImage, value: AppTab.profile) {
+                ProfileTab()
+            }
+        }
+        .tint(AppColor.primary)
+        .environment(modalCoordinator)
+        .sheet(item: $coordinator.presented) { modal in
+            ModalContainer(modal: modal)
         ZStack {
             if !isLoggedIn {
 
