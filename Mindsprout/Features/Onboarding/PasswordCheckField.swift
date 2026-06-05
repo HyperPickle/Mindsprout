@@ -7,7 +7,7 @@
 
 import SwiftUI
 struct PasswordCheckField: View {
-    @State var text = ""
+    @Binding var text: String
     @FocusState var isActive
     @State var checkMinChars = false
     @State var checkLetter = false
@@ -94,7 +94,7 @@ struct PasswordCheckField: View {
 }
         
 #Preview {
-    PasswordCheckField()
+    PasswordCheckField(text: .constant(""))
 }
 
 struct CheckText: View {
