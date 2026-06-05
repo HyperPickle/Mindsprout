@@ -34,11 +34,11 @@ struct DepthButtonStyle: ButtonStyle {
 //    }
 //    
     var shadowColor: Color {
-        colorScheme == .dark ? Color(hex: "9488A2"): Color(hex:"4CA9D0")
+        colorScheme == .dark ? Color(hex: 0x9488A2): Color(hex:0x4CA9D0)
     }
     
     var textColor: Color {
-        colorScheme == .dark ? Color(hex: "7E54B8"): Color(hex:"4ECBFA")
+        colorScheme == .dark ? Color(hex: 0x7E54B8): Color(hex:0x4ECBFA)
     }
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -69,11 +69,11 @@ struct signOtherAccountButton: ButtonStyle {
     @Environment(\.colorScheme) var colorScheme: ColorScheme
 
     var iconColor: Color {
-        colorScheme == .dark ? Color(hex:"#451D76"): Color(hex:"#00C0FD")
+        colorScheme == .dark ? Color(hex:0x451D76): Color(hex:0x00C0FD)
     }
     
     var shadowColor: Color{
-        colorScheme == .dark ? Color(hex:"#411D63"): Color(hex:"#019BC2")
+        colorScheme == .dark ? Color(hex: 0x411D63): Color(hex: 0x019BC2)
     }
     
     func makeBody(configuration: Configuration) -> some View {
