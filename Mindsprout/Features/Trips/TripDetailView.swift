@@ -59,7 +59,7 @@ struct TripDetailView: View {
                 .padding(.bottom, Spacing.xl)
             }
         }
-        .background(SkyBackground())
+        .background(BackgroundSky())
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .task { viewModel.load(tripID: tripID, context: context) }
@@ -210,7 +210,7 @@ struct TripDayDetailView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
         }
-        .background(SkyBackground())
+        .background(BackgroundSky())
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .task {

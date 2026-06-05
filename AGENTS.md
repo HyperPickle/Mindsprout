@@ -77,7 +77,7 @@ Folder = feature; file = screen, lowercase-hyphenated. Build screens to match th
 - **Simple imperative commit messages** (e.g. `Add Trip model and repository`).
 - **One PR per plan phase**; PR description references the phase/milestone in `IMPLEMENTATION_PLAN.md`.
 - **Squash-merge to `main`.** Branch per phase.
-- Agent commits include the co-author trailer.
+- Do not add co-author trailers to agent-authored commits unless explicitly requested.
 
 ## Golden rules
 
@@ -85,4 +85,3 @@ Folder = feature; file = screen, lowercase-hyphenated. Build screens to match th
 2. Screenshots in `UI-Scaffold/` are the design source of truth; Profile/Shop/Onboarding stay placeholders until designs land.
 3. Keep the core loop offline; AI behind the service seam.
 4. Stop at each phase's Definition of Done and report status + open questions.
-

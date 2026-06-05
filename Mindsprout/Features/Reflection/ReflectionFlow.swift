@@ -17,7 +17,7 @@ struct ReflectionFlow: View {
             if let vm = viewModel {
                 stepContent(vm: vm)
             } else {
-                SandBackground().ignoresSafeArea()
+                BackgroundSky()
             }
         }
         .task {

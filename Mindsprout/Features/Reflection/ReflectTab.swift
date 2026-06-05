@@ -20,7 +20,7 @@ struct ReflectTab: View {
                         modalCoordinator.present(.levelUp(presentation))
                     }
                 } else {
-                    SandBackground().ignoresSafeArea()
+                    BackgroundSky()
                     emptyState
                 }
             }
