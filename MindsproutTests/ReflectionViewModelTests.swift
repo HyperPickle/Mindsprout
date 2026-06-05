@@ -28,6 +28,8 @@ struct ReflectionViewModelTests {
             context: context,
             contentPack: makeContentPack(),
             mediaStore: mediaStore,
+            gameConfig: .default,
+            ai: TemplateAIGenerationService(),
             tripType: .solo,
             onDismiss: {}
         )
@@ -87,6 +89,36 @@ struct ReflectionViewModelTests {
         let fetched = try context.fetch(FetchDescriptor<Reflection>()).first
         #expect(fetched?.moodTags == ["Joyful"])
         #expect(fetched?.isDraft == false)
+        #expect(fetched?.xpAwarded == 10)
+
+        let sprout = try #require(context.fetch(FetchDescriptor<Sprout>()).first)
+        #expect(sprout.xp == 10)
+        #expect(sprout.currency == 10)
+    }
+
+    @Test func feedSproutDoesNotAwardTwiceForSameReflection() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let trip = Trip(destination: "Lisbon", country: "Portugal", startDate: .now, endDate: .now, type: .solo)
+        context.insert(trip)
+        try context.save()
+
+        let vm = makeViewModel(
+            context: context,
+            mediaStore: MediaStore(root: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)),
+            tripID: trip.id
+        )
+
+        vm.onAppear()
+        vm.entryText = "A quiet tram ride."
+        vm.feedSprout()
+        vm.feedSprout()
+
+        let reflection = try #require(context.fetch(FetchDescriptor<Reflection>()).first)
+        let sprout = try #require(context.fetch(FetchDescriptor<Sprout>()).first)
+        #expect(reflection.xpAwarded == 10)
+        #expect(sprout.xp == 10)
+        #expect(sprout.currency == 10)
     }
 
     @Test func clearAudioDraftRemovesStoredAssetAndKeepsOtherDraftState() throws {

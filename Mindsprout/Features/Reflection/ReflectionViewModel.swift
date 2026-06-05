@@ -10,6 +10,8 @@ final class ReflectionViewModel {
     let context: ModelContext
     let contentPack: ContentPack
     let mediaStore: any MediaStoring
+    let gameConfig: GameConfig
+    let ai: any AIGenerationService
     let tripType: TripType
 
     var step: Int = 1
@@ -63,21 +65,35 @@ final class ReflectionViewModel {
 
     private var draftReflection: Reflection?
     private(set) var onDismiss: () -> Void = {}
+    private(set) var onMilestoneReward: (LevelUpPresentation) -> Void = { _ in }
+
+    private struct PendingLevelUpReward {
+        var destination: String
+        var previousLevel: Int
+        var newLevel: Int
+        var context: ReflectionContext
+    }
 
     init(
         tripID: UUID,
         context: ModelContext,
         contentPack: ContentPack,
         mediaStore: any MediaStoring,
+        gameConfig: GameConfig,
+        ai: any AIGenerationService,
         tripType: TripType,
-        onDismiss: @escaping () -> Void
+        onDismiss: @escaping () -> Void,
+        onMilestoneReward: @escaping (LevelUpPresentation) -> Void = { _ in }
     ) {
         self.tripID = tripID
         self.context = context
         self.contentPack = contentPack
         self.mediaStore = mediaStore
+        self.gameConfig = gameConfig
+        self.ai = ai
         self.tripType = tripType
         self.onDismiss = onDismiss
+        self.onMilestoneReward = onMilestoneReward
     }
 
     func onAppear() {
@@ -143,8 +159,22 @@ final class ReflectionViewModel {
     }
 
     func feedSprout() {
-        persistCurrent(commit: true)
+        let reward = persistCurrent(commit: true)
         onDismiss()
+        guard let reward else { return }
+        Task { @MainActor in
+            let insight = await ai.generateGrowthInsight(reward.context)
+            let postcard = await ai.generatePostcard(reward.context)
+            onMilestoneReward(
+                LevelUpPresentation(
+                    destination: reward.destination,
+                    previousLevel: reward.previousLevel,
+                    newLevel: reward.newLevel,
+                    insight: insight,
+                    postcard: postcard
+                )
+            )
+        }
     }
 
     func replaceAudio(with data: Data, fileExtension: String = "m4a") {
@@ -161,8 +191,9 @@ final class ReflectionViewModel {
         self.audioAssetID = nil
     }
 
-    private func persistCurrent(commit: Bool) {
-        guard let r = draftReflection else { return }
+    @discardableResult
+    private func persistCurrent(commit: Bool) -> PendingLevelUpReward? {
+        guard let r = draftReflection else { return nil }
         r.highlightPrompt = selectedPrompt?.id ?? customPromptText
         r.bodyKind = bodyKind
         r.text = bodyKind == .text ? entryText : nil
@@ -170,14 +201,48 @@ final class ReflectionViewModel {
         r.photoAssetIDs = photoAssetIDs
         r.moodTags = moodTags
         r.isDraft = !commit
-        if commit { r.xpAwarded = 0 } // Phase 3 wires real XP
+
+        var pendingReward: PendingLevelUpReward?
+        if commit, r.xpAwarded == 0 {
+            let sprout = fetchOrCreateSprout()
+            let result = SproutProgressionEngine(config: gameConfig).applyFeed(to: sprout)
+            r.xpAwarded = result.xpAwarded
+            if result.shouldPresentMilestoneReward, let trip = fetchTrip() {
+                let context = ReflectionContext(
+                    tripType: trip.type,
+                    destination: trip.destination,
+                    highlightPrompt: r.highlightPrompt,
+                    text: r.text,
+                    hasPhoto: !r.photoAssetIDs.isEmpty,
+                    hasAudio: r.audioAssetID != nil
+                )
+                pendingReward = PendingLevelUpReward(
+                    destination: trip.destination,
+                    previousLevel: result.previousLevel,
+                    newLevel: result.newLevel,
+                    context: context
+                )
+            }
+        }
         try? context.save()
+        return pendingReward
     }
 
     private func fetchTrip() -> Trip? {
         var descriptor = FetchDescriptor<Trip>(predicate: #Predicate { $0.id == tripID })
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first
+    }
+
+    private func fetchOrCreateSprout() -> Sprout {
+        var descriptor = FetchDescriptor<Sprout>(sortBy: [SortDescriptor(\.createdAt)])
+        descriptor.fetchLimit = 1
+        if let sprout = try? context.fetch(descriptor).first {
+            return sprout
+        }
+        let sprout = Sprout()
+        context.insert(sprout)
+        return sprout
     }
 
     private func deleteMediaAsset(id: UUID) {

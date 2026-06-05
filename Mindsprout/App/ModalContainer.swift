@@ -7,34 +7,10 @@ struct ModalContainer: View {
         switch modal {
         case .newTrip:
             NewTripFlow()
-        case .levelUp:
-            FlowPlaceholder(
-                title: "Level Up",
-                systemImage: "sparkles",
-                note: "Level-up & evolution — Phase 4."
-            )
+        case .levelUp(let presentation):
+            LevelUpFlow(presentation: presentation)
         case .shop:
             ShopView()
-        }
-    }
-}
-
-private struct FlowPlaceholder: View {
-    let title: LocalizedStringKey
-    let systemImage: String
-    let note: LocalizedStringKey
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            PlaceholderScreen(title: title, systemImage: systemImage, note: note)
-                .navigationTitle(title)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Close") { dismiss() }
-                    }
-                }
         }
     }
 }

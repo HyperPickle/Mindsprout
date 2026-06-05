@@ -4,6 +4,7 @@ import SwiftData
 struct ReflectionFlow: View {
     let tripID: UUID
     var onComplete: (() -> Void)? = nil
+    var onMilestoneReward: ((LevelUpPresentation) -> Void)? = nil
 
     @Environment(\.modelContext) private var context
     @Environment(\.appEnvironment) private var env
@@ -29,13 +30,19 @@ struct ReflectionFlow: View {
                 context: context,
                 contentPack: pack,
                 mediaStore: env.mediaStore,
+                gameConfig: env.gameConfig,
+                ai: env.ai,
                 tripType: tripType,
                 onDismiss: {
                     if let onComplete {
+                        viewModel = nil
                         onComplete()
                     } else {
                         dismiss()
                     }
+                },
+                onMilestoneReward: { presentation in
+                    onMilestoneReward?(presentation)
                 }
             )
             viewModel?.onAppear()

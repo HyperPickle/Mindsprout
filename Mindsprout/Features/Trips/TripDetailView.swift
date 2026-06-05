@@ -21,39 +21,43 @@ final class TripViewModel {
 
 struct TripDetailView: View {
     let tripID: UUID
+    var onBack: (() -> Void)?
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = TripViewModel()
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.md) {
-                header
-                if let trip = viewModel.trip {
-                    TripHeroCard(
-                        trip: trip,
-                        coverAssetID: trip.coverAssetID,
-                        memoryCount: viewModel.reflections.count,
-                        showHeadline: false
-                    )
-                }
-                if let featured = featuredReflectionData {
-                    SectionDivider(title: "FEATURED REFLECTION")
-                    featuredReflectionCard(reflection: featured.reflection, index: featured.index)
-                }
-                if !viewModel.reflections.isEmpty {
-                    SectionDivider(title: "MOMENTS")
-                    ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
-                        NavigationLink(value: AdventuresRoute.tripDayDetail(tripID: tripID, initialDayIndex: offset)) {
-                            DayCard(reflection: reflection)
+        VStack(spacing: 0) {
+            header
+            ScrollView {
+                VStack(spacing: Spacing.md) {
+                    if let trip = viewModel.trip {
+                        TripHeroCard(
+                            trip: trip,
+                            coverAssetID: trip.coverAssetID,
+                            memoryCount: viewModel.reflections.count,
+                            showHeadline: false
+                        )
+                    }
+                    if let featured = featuredReflectionData {
+                        SectionDivider(title: "FEATURED REFLECTION")
+                        featuredReflectionCard(reflection: featured.reflection, index: featured.index)
+                    }
+                    if !viewModel.reflections.isEmpty {
+                        SectionDivider(title: "MOMENTS")
+                        ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
+                            NavigationLink(value: AdventuresRoute.tripDayDetail(tripID: tripID, initialDayIndex: offset)) {
+                                DayCard(reflection: reflection)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
+                .padding(.horizontal, Spacing.screenEdge)
+                .padding(.top, Spacing.md)
+                .padding(.bottom, Spacing.xl)
             }
-            .padding(.horizontal, Spacing.screenEdge)
-            .padding(.bottom, Spacing.xl)
         }
         .background(SkyBackground())
         .navigationBarBackButtonHidden(true)
@@ -63,7 +67,7 @@ struct TripDetailView: View {
 
     private var header: some View {
         HStack {
-            Button { dismiss() } label: {
+            Button { if let onBack { onBack() } else { dismiss() } } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 14, weight: .semibold))
@@ -91,6 +95,7 @@ struct TripDetailView: View {
                 .fill(AppColor.cardSurface)
                 .shadow(color: AppColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
         )
+        .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)
     }
@@ -176,6 +181,7 @@ private struct DayCard: View {
 struct TripDayDetailView: View {
     let tripID: UUID
     var initialDayIndex = 0
+    var onBack: (() -> Void)?
 
     @Environment(\.modelContext) private var context
     @Environment(\.appEnvironment) private var env
@@ -219,7 +225,7 @@ struct TripDayDetailView: View {
 
     private var header: some View {
         HStack {
-            Button { dismiss() } label: {
+            Button { if let onBack { onBack() } else { dismiss() } } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 14, weight: .semibold))

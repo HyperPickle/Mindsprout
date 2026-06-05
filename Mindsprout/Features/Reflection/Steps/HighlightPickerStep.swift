@@ -188,6 +188,8 @@ private struct PromptCard: View {
             expectations: ExpectationPack(presets: [:])
         ),
         mediaStore: MediaStore(root: FileManager.default.temporaryDirectory),
+        gameConfig: .default,
+        ai: TemplateAIGenerationService(),
         tripType: .solo,
         onDismiss: {}
     )
