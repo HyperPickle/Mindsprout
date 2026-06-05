@@ -272,7 +272,7 @@ struct TripDayDetailView: View {
                 .foregroundStyle(AppColor.ink)
             Text("Memories from this trip will appear here.")
                 .font(AppFont.callout)
-                .foregroundStyle(AppColor.inkSecondary)
+                .foregroundStyle(AppColor.ink)
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -341,7 +341,7 @@ private struct DayContentView: View {
             Text("REFLECTION")
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .tracking(0.8)
-                .foregroundStyle(AppColor.inkMuted)
+                .foregroundStyle(AppColor.ink)
             if let text = reflection.text, !text.isEmpty {
                 Text(text)
                     .font(AppFont.body)
@@ -369,6 +369,7 @@ private struct DayContentView: View {
 
 struct SectionDivider: View {
     let title: LocalizedStringKey
+    var color: Color = AppColor.ink
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
@@ -376,13 +377,12 @@ struct SectionDivider: View {
             Text(title)
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .tracking(1)
-                .foregroundStyle(AppColor.inkMuted)
+                .foregroundStyle(color)
             line
         }
-        .padding(.vertical, Spacing.xs)
     }
 
     private var line: some View {
-        Rectangle().fill(AppColor.inkMuted.opacity(0.3)).frame(height: 1)
+        Rectangle().fill(color.opacity(0.25)).frame(height: 1)
     }
 }

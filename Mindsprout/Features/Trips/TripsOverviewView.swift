@@ -22,7 +22,7 @@ struct TripsOverviewView: View {
                         .buttonStyle(.plain)
                     }
                     if !viewModel.revisit.isEmpty {
-                        SectionDivider(title: "REVISIT")
+                        SectionDivider(title: "REVISIT", color: .white)
                         ForEach(viewModel.revisit) { summary in
                             NavigationLink(value: AdventuresRoute.tripDetail(tripID: summary.id)) {
                                 RevisitTripCard(summary: summary)

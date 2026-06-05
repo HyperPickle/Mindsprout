@@ -15,9 +15,9 @@ struct ProfileTab: View {
             BackgroundSky()
             
             ScrollView(showsIndicators: false) {
-                VStack(spacing: Spacing.md) {
+                VStack(spacing: Spacing.lg) {
                     // Header Section
-                    VStack(spacing: Spacing.md) {
+                    VStack(spacing: Spacing.lg) {
                         // Avatar (Solid white circle with camera icon)
                         Circle()
                             .fill(.white)
@@ -29,7 +29,7 @@ struct ProfileTab: View {
                             )
                             .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
                         
-                        VStack(spacing: 12) {
+                        VStack(spacing: 16) {
                             HStack(spacing: 8) {
                                 Text("Remi Rata")
                                     .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -85,14 +85,13 @@ struct ProfileTab: View {
                     .padding(.horizontal, Spacing.screenEdge)
                     
                     // Action Buttons
-                    VStack(spacing: Spacing.sm) {
-                        ProfileActionButton(title: "Shop", icon: "bag", color: Color(red: 0.27, green: 0.61, blue: 0.87))
-                        ProfileActionButton(title: "Friends", icon: "person.2", color: Color(red: 0.30, green: 0.63, blue: 0.87))
-                        ProfileActionButton(title: "Settings", icon: "gearshape", color: Color(red: 0.44, green: 0.70, blue: 0.90))
-                        ProfileActionButton(title: "Sign Out", icon: "arrow.right.square", color: Color(red: 0.57, green: 0.78, blue: 0.93))
+                    VStack(spacing: Spacing.md) {
+                        ProfileActionButton(title: "Shop", icon: "bag")
+                        ProfileActionButton(title: "Settings", icon: "gearshape")
+                        ProfileActionButton(title: "Sign Out", icon: "arrow.right.square")
                     }
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 48)
                 }
             }
         }
@@ -104,19 +103,21 @@ private struct StatCard: View {
     let label: String
     
     var body: some View {
-        HStack(spacing: 8) {
-            Text(value)
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-                .minimumScaleFactor(0.8)
-            
-            Text(label)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        HStack {
+            Spacer(minLength: 0)
+            HStack(spacing: 8) {
+                Text(value)
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .minimumScaleFactor(0.8)
+                
+                Text(label)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
         .frame(height: 80)
         .liquidGlass(cornerRadius: 15)
@@ -143,7 +144,6 @@ private struct XPBar: View {
 private struct ProfileActionButton: View {
     let title: String
     let icon: String
-    let color: Color
     
     var body: some View {
         Button(action: {}) {

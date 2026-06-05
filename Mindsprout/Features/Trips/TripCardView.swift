@@ -83,10 +83,10 @@ struct TripHeroCard: View {
                     Text("HEADLINE MEMORY")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .tracking(0.5)
-                        .foregroundStyle(AppColor.inkMuted)
+                        .foregroundStyle(AppColor.ink)
                     Text(headline)
                         .font(AppFont.callout)
-                        .foregroundStyle(AppColor.inkSecondary)
+                        .foregroundStyle(AppColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -147,12 +147,12 @@ struct RevisitTripCard: View {
                         .foregroundStyle(AppColor.ink)
                     Text(TripDateFormat.range(trip.startDate, trip.endDate, includeYear: true))
                         .font(AppFont.caption)
-                        .foregroundStyle(AppColor.inkMuted)
+                        .foregroundStyle(AppColor.ink)
                 }
                 Spacer()
                 Text("\(summary.memoryCount) memories")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.currency)
+                    .foregroundStyle(AppColor.ink)
             }
             TripPhotoLayout(strip: strip, trailing: trip.theme.map { AnyView(themeBox($0)) })
         }
@@ -174,7 +174,7 @@ struct LabelBox: View {
             Text(header)
                 .font(.system(size: 11, weight: .bold, design: .rounded))
                 .tracking(0.5)
-                .foregroundStyle(AppColor.inkMuted)
+                .foregroundStyle(AppColor.ink)
             Text(text)
                 .font(AppFont.bodyEmphasized)
                 .foregroundStyle(AppColor.ink)
