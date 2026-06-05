@@ -17,7 +17,7 @@ struct PasswordCheckField: View {
     var progressColor:Color {
         let containsLetters = text.rangeOfCharacter(from: .letters) != nil
         let containsNumbers = text.rangeOfCharacter(from: .decimalDigits) != nil
-        let containsPunctuation = text.rangeOfCharacter(from: CharacterSet(charactersIn: "!@#%$^&*")) != nil
+        let containsPunctuation = text.rangeOfCharacter(from: CharacterSet(charactersIn: "!@#$%^&*/")) != nil
         if containsLetters && containsNumbers && containsPunctuation && text.count >= 8{
             return Color.green
         } else if containsLetters && !containsNumbers && !containsPunctuation{
@@ -36,7 +36,7 @@ struct PasswordCheckField: View {
         VStack(alignment: .leading, spacing: 24){
             ZStack(alignment: .leading) {
                 SecureField("", text: $text)
-                    .foregroundStyle(Color(hex:"705B4D")) // color typography in the text field
+                    .foregroundStyle(Color(hex:0x705B4D)) // color typography in the text field
                     .padding(.leading, 10)
                     .frame(width: 350)
                     .frame(height: 55).focused($isActive)
@@ -44,7 +44,7 @@ struct PasswordCheckField: View {
                     .opacity(showPassword ? 0 : 1)
                 
                 TextField("", text: $text)
-                    .foregroundStyle(Color(hex:"705B4D")) // color typography in the text field
+                    .foregroundStyle(Color(hex:0x705B4D)) // color typography in the text field
                     .padding(.leading, 10)
                     .frame(width: 350)
                     .frame(height: 55).focused($isActive)
@@ -52,7 +52,7 @@ struct PasswordCheckField: View {
                     .opacity(showPassword ? 1 : 0)
                 Text("Password").padding(.leading)
                     .font(.system(size:15, design: .rounded))
-                    .foregroundStyle(Color(hex:"705B4D"))
+                    .foregroundStyle(Color(hex:0x705B4D))
                     .opacity(text.isEmpty ? 1 : 0)
                     .onTapGesture {
                         isActive = true
@@ -62,7 +62,7 @@ struct PasswordCheckField: View {
                             checkMinChars = newValue .count >= 8
                             checkLetter = newValue.rangeOfCharacter(from:.letters) != nil
                             checkNumber = newValue.rangeOfCharacter(from:.decimalDigits) != nil
-                            checkPunctuation = newValue.rangeOfCharacter(from: CharacterSet(charactersIn: "!@#%$^&*")) != nil
+                            checkPunctuation = newValue.rangeOfCharacter(from: CharacterSet(charactersIn: "!@#$%^&*/")) != nil
                         }
                     })
             }
@@ -73,7 +73,7 @@ struct PasswordCheckField: View {
                     .frame(width: 24, height: 24)
                     .padding(16)
                     .contentShape(Rectangle())
-                    .foregroundStyle(showPassword ? Color(hex:"705B4D") : Color(hex:"705B4D"))
+                    .foregroundStyle(showPassword ? Color(hex:0x705B4D) : Color(hex:0x705B4D))
                     .onTapGesture {
                         showPassword.toggle()
                     }
@@ -84,7 +84,7 @@ struct PasswordCheckField: View {
                     .font(.system(size:15, design: .rounded))
                 CheckText(text: "At least one letter", check: $checkLetter)
                     .font(.system(size:15, design: .rounded))
-                CheckText (text:"!@#%$*^&",check: $checkPunctuation)
+                CheckText (text:"!@#$%^&*/",check: $checkPunctuation)
                     .font(.system(size:15, design: .rounded))
                 CheckText(text:"Number", check: $checkNumber)
                     .font(.system(size:15, design: .rounded))

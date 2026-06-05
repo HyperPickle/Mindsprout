@@ -43,16 +43,16 @@ struct AnimatedMeshGradient: View {
                 [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
             ], colors: [
                 //DARKER BLUE COLOR
-                Color(hex: "0D47A1"), Color(hex: "1565C0"), Color(hex: "0D47A1"),
+                Color(hex: 0x0D47A1), Color(hex: 0x1565C0), Color(hex: 0x0D47A1),
 
                 // BLUE COLOR
-                Color(hex: "1976D2"), Color(hex: "1E88E5"), Color(hex: "1976D2"),
+                Color(hex: 0x1976D2), Color(hex: 0x1E88E5), Color(hex: 0x1976D2),
 
                 // SKY BLUE COLOR
-                Color(hex: "29B6F6"), animate ? Color(hex: "4FC3F7") : Color(hex: "29B6F6"), Color(hex: "29B6F6"),
+                Color(hex: 0x29B6F6), animate ? Color(hex: 0x4FC3F7) : Color(hex: 0x29B6F6), Color(hex: 0x29B6F6),
 
                 // WHITE CYAN COLOR - Cloud
-                animate ? Color(hex: "E1F5FE") : Color(hex: "B3E5FC"), Color(hex: "FFFFFF"),animate ? Color(hex: "B3E5FC") : Color(hex: "E1F5FE")
+                animate ? Color(hex: 0xE1F5FE) : Color(hex: 0xB3E5FC), Color(hex: 0xFFFFFF),animate ? Color(hex: 0xB3E5FC) : Color(hex: 0xE1F5FE)
                    ])
             .ignoresSafeArea()
             .onAppear {
@@ -86,16 +86,16 @@ struct DarkAnimatedMeshGradient: View{
             ], colors: [
                 
                 // UP — DARK INDIGO
-                Color(hex: "1A1040"), Color(hex: "1E1350"), Color(hex: "1A1040"),
+                Color(hex: 0x1A1040), Color(hex: 0x1E1350), Color(hex: 0x1A1040),
 
                 // MIDDLE UP — BLUE VIOLET
-                Color(hex: "2D1B69"), animate ? Color(hex: "3D2580") : Color(hex: "2D1B69"), Color(hex: "2D1B69"),
+                Color(hex: 0x2D1B69), animate ? Color(hex: 0x3D2580) : Color(hex: 0x2D1B69), Color(hex: 0x2D1B69),
 
                 // MIDDLE DOWN — VIOLET MORE WARM WITH HIT OF PINK/RED ON THE BOTTOM
-                animate ? Color(hex: "4A2080") : Color(hex: "3D1870"),animate ? Color(hex: "5C2D8A") : Color(hex: "4A2080"), animate ? Color(hex: "3D1870") : Color(hex: "4A2080"),
+                animate ? Color(hex: 0x4A2080) : Color(hex: 0x3D1870),animate ? Color(hex: 0x5C2D8A) : Color(hex: 0x4A2080), animate ? Color(hex: 0x3D1870) : Color(hex: 0x4A2080),
 
                 // BOTTOM — WARM VIOLET
-                Color(hex: "5B1F6A"), Color(hex: "7B2D5E"), Color(hex: "5B1F6A")
+                Color(hex: 0x5B1F6A), Color(hex: 0x7B2D5E), Color(hex: 0x5B1F6A)
             ])
             .ignoresSafeArea()
             .onAppear {

@@ -29,9 +29,7 @@ class LocationSearchDelegate: NSObject, MKLocalSearchCompleterDelegate, Observab
     
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         results = completer.results.filter{result in
-            // Exclut les adresses avec numéro de rue
             let hasStreetNumber = result.title.first?.isNumber ?? false
-            // Garde seulement si le subtitle contient un pays
             let hasCountry = !result.subtitle.isEmpty
             return !hasStreetNumber && hasCountry
             
