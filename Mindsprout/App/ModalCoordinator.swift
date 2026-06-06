@@ -1,14 +1,14 @@
 import SwiftUI
 
-enum AppModal: Identifiable, Hashable {
+enum AppModal: Identifiable, Equatable {
     case newTrip
-    case levelUp
+    case levelUp(LevelUpPresentation)
     case shop
 
     var id: String {
         switch self {
         case .newTrip: return "newTrip"
-        case .levelUp: return "levelUp"
+        case .levelUp(let presentation): return "levelUp-\(presentation.id.uuidString)"
         case .shop: return "shop"
         }
     }

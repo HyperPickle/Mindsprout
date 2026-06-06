@@ -22,7 +22,7 @@ struct TripsOverviewView: View {
                         .buttonStyle(.plain)
                     }
                     if !viewModel.revisit.isEmpty {
-                        SectionDivider(title: "REVISIT")
+                        SectionDivider(title: "REVISIT", color: .white)
                         ForEach(viewModel.revisit) { summary in
                             NavigationLink(value: AdventuresRoute.tripDetail(tripID: summary.id)) {
                                 RevisitTripCard(summary: summary)
@@ -35,7 +35,7 @@ struct TripsOverviewView: View {
             .padding(.horizontal, Spacing.screenEdge)
             .padding(.bottom, Spacing.xl)
         }
-        .background(SkyBackground())
+        .background(BackgroundSky())
         .task { viewModel.load(context: context) }
         .onChange(of: modalCoordinator.presented) { _, new in
             if new == nil { viewModel.load(context: context) }

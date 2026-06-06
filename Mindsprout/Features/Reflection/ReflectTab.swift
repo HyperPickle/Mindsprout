@@ -4,6 +4,7 @@ import SwiftData
 struct ReflectTab: View {
     @Binding var selection: AppTab
     @Environment(\.modelContext) private var context
+    @Environment(ModalCoordinator.self) private var modalCoordinator
 
     private var activeTrip: Trip? {
         try? TripRepository(context: context).activeTrip()
@@ -15,9 +16,11 @@ struct ReflectTab: View {
                 if let trip = activeTrip {
                     ReflectionFlow(tripID: trip.id) {
                         selection = .home
+                    } onMilestoneReward: { presentation in
+                        modalCoordinator.present(.levelUp(presentation))
                     }
                 } else {
-                    SandBackground().ignoresSafeArea()
+                    BackgroundSky()
                     emptyState
                 }
             }
