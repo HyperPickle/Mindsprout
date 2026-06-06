@@ -2,26 +2,6 @@
 import SwiftUI
 import WebKit
 
-struct GIFView: UIViewRepresentable {
-    let gifName: String
-    
-    func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        webView.scrollView.isScrollEnabled = false
-        
-        if let url = Bundle.main.url(forResource: gifName, withExtension: "gif"),
-           let data = try? Data(contentsOf: url) {
-            webView.load(data, mimeType: "image/gif",
-                        characterEncodingName: "UTF-8",
-                        baseURL: url)
-        }
-        return webView
-    }
-
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
-}
 
 struct WelcomeView: View {
     @EnvironmentObject var navVM: NavigationViewModel
@@ -30,9 +10,8 @@ struct WelcomeView: View {
         ZStack {
             ZStack {
                 BackgroundSky()
-                GIFView(gifName: "Earth2")
-                    .frame(width: 800, height: 600)
-                    .offset(x: -100, y: 400)
+                GlobeView()
+                    .offset(x: 0, y: 450)
             }
             
             VStack {

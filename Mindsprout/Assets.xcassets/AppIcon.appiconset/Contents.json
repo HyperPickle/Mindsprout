@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Logo 1.png",
+      "filename" : "Logo 7.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "Logo 2.png",
+      "filename" : "Logo 8.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
