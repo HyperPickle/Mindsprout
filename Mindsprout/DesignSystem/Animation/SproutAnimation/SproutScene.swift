@@ -347,9 +347,9 @@ class SproutScene: SKScene {
         sprout.run(levelUp) { [weak self] in
             guard let self = self else { return }
             if willEvolve {
-                self?.playEvolution()
+                self.playEvolution()
             } else {
-                self?.startIdle()
+                self.startIdle()
             }
         }
     }
