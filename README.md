@@ -57,3 +57,4 @@ The groundwork is done. The app builds and runs, the data and design layers are 
 - Changrila Souksamlane
 - Hiu Ying Lee (Ruby) 
 - Nam Ng. ( Louis )
+- Arshiya Banu Varada
