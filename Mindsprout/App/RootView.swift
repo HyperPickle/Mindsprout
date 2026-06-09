@@ -5,9 +5,9 @@ struct RootView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
 
+    @Environment(\.appEnvironment) private var env
     @State private var selection: AppTab = .home
     @State private var modalCoordinator = ModalCoordinator()
-    @StateObject private var navVM = NavigationViewModel()
 
     let featureFlags: FeatureFlags
 
@@ -30,22 +30,17 @@ struct RootView: View {
             }
         }
         .animation(.spring(duration: 0.5), value: isLoggedIn)
-        .animation(.spring(duration: 0.5), value: navVM.showSignView)
         .animation(.spring(duration: 0.5), value: hasCompletedOnboarding)
+        .task {
+            if isLoggedIn {
+                await env.auth.revalidate()
+            }
+        }
     }
 
     private var authFlow: some View {
-        ZStack {
-            if navVM.showSignView {
-                SignView()
-                    .environmentObject(navVM)
-                    .transition(.move(edge: .bottom))
-            } else {
-                WelcomeView()
-                    .environmentObject(navVM)
-                    .transition(.opacity)
-            }
-        }
+        WelcomeView()
+            .transition(.opacity)
     }
 
     private var onboardingFlow: some View {

@@ -22,7 +22,7 @@ struct EntryStep: View {
             continueButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(AppColor.sand.ignoresSafeArea())
+        .background(BackgroundSky())
     }
 
     private var sproutHeader: some View {
@@ -33,7 +33,7 @@ struct EntryStep: View {
                     Text("Back")
                 }
                 .font(AppFont.callout)
-                .foregroundStyle(AppColor.inkSecondary)
+                .foregroundStyle(AppColor.onBackground)
             }
             .buttonStyle(.plain)
 
@@ -45,7 +45,7 @@ struct EntryStep: View {
                     .background(Circle().fill(AppColor.primary.opacity(0.12)))
                 Text(vm.affirmationHeadline)
                     .font(AppFont.headline)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(AppColor.onBackground)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
             }

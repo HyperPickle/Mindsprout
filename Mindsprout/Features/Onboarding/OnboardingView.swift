@@ -47,7 +47,7 @@ struct OnboardingView: View {
                                 startDate: $startDate,
                                 endDate: $endDate
                             )
-                            .background(Color.white, in: .rect(cornerRadius: 16))
+                            .background(Color.white, in: .rect(cornerRadius: CornerRadius.medium))
                             .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
                             .offset(y: 60)
                             .zIndex(999)

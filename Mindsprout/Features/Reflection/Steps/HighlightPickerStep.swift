@@ -24,7 +24,7 @@ struct HighlightPickerStep: View {
             continueButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(AppColor.sand.ignoresSafeArea())
+        .background(BackgroundSky())
     }
 
     private var sproutHeader: some View {
@@ -37,7 +37,7 @@ struct HighlightPickerStep: View {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text("What was the highlight of your day?")
                     .font(AppFont.title)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(AppColor.onBackground)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
@@ -118,10 +118,10 @@ struct HighlightPickerStep: View {
             HStack(spacing: Spacing.xs) {
                 Image(systemName: "die.face.3.fill")
                     .font(AppFont.body)
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.onBackground)
                 Text("Refresh options")
                     .font(AppFont.callout)
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.onBackground)
             }
             .padding(.vertical, Spacing.sm)
             .contentShape(Rectangle())

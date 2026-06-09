@@ -41,7 +41,7 @@ struct DateRangePickerView: View {
                     Spacer()
                 }
                 .padding()
-                .background(Color.white.opacity(0.8), in: .rect(cornerRadius: 14))
+                .background(Color.white.opacity(0.8), in: .rect(cornerRadius: CornerRadius.medium))
             }
         }
     }

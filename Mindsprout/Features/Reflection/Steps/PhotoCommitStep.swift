@@ -25,7 +25,7 @@ struct PhotoCommitStep: View {
             ctaStack
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(AppColor.sand.ignoresSafeArea())
+        .background(BackgroundSky())
         .sheet(item: $lightboxID) { id in
             LightboxView(assetID: id)
         }
@@ -57,7 +57,7 @@ struct PhotoCommitStep: View {
                     Text("Back")
                 }
                 .font(AppFont.callout)
-                .foregroundStyle(AppColor.inkSecondary)
+                .foregroundStyle(AppColor.onBackground)
             }
             .buttonStyle(.plain)
 
@@ -69,7 +69,7 @@ struct PhotoCommitStep: View {
                     .background(Circle().fill(AppColor.primary.opacity(0.12)))
                 Text("A picture worth a thousand words they say ;)")
                     .font(AppFont.headline)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(AppColor.onBackground)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
             }

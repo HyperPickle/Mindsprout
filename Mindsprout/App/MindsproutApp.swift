@@ -5,6 +5,8 @@ import SwiftData
 struct MindsproutApp: App {
     private let modelContainer: ModelContainer
     private let appEnvironment: AppEnvironment
+    
+    @AppStorage("appThemePreference") private var themePreference: AppThemePreference = .system
 
     init() {
         FontRegistration.registerBundledFontsIfNeeded()
@@ -13,16 +15,17 @@ struct MindsproutApp: App {
         SampleData.seedIfEmpty(context: container.mainContext, mediaStore: environment.mediaStore)
         modelContainer = container
         appEnvironment = environment
-        
-        // TEMPORARY - DELETE AFTER TESTING ⚠️
-            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
-            UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
     }
 
     var body: some Scene {
         WindowGroup {
             rootContent
                 .environment(\.appEnvironment, appEnvironment)
+                .preferredColorScheme(themePreference.colorScheme)
+                .task { AppIconManager.apply(themePreference) }
+                .onChange(of: themePreference) { _, newValue in
+                    AppIconManager.apply(newValue)
+                }
         }
         .modelContainer(modelContainer)
     }

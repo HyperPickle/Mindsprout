@@ -16,6 +16,7 @@ enum AppColor {
     static let inkSecondary = Color(hex: 0x8B7B68)
     static let inkMuted = Color(hex: 0xA89A86)
     static let onPrimary = Color.white
+    static let onBackground = Color.white
 
     static let hairline = Color(hex: 0xD9CFBF)
     static let pillSelected = Color(hex: 0x6E5A48)
