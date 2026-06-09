@@ -8,6 +8,7 @@
 import SpriteKit
 import SwiftUI
 import Combine
+import Foundation
 
 class SproutScene: SKScene {
     var sprout: SKSpriteNode?
@@ -179,16 +180,16 @@ class SproutScene: SKScene {
         playHappy()  // ← au lieu du pop !
     }
     
-    
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first,
-              let sprout = sprout else { return }
-        
-        if sprout.contains(touch.location(in: self)) {
-            //tapReaction()
-            playHungry()
-        }
-    }
+//    
+//    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+//        guard let touch = touches.first,
+//              let sprout = sprout else { return }
+//        
+//        if sprout.contains(touch.location(in: self)) {
+//            //tapReaction()
+//            playHungry()
+//        }
+//    }
     
 //    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
 //            guard let touch = touches.first,
@@ -205,6 +206,19 @@ class SproutScene: SKScene {
 //            }
 //        }
 
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first,
+              let sprout = sprout else { return }
+        
+        if sprout.contains(touch.location(in: self)) {
+            // Test sans évolution
+            playLevelUp(willEvolve: false)
+            
+            // Test avec évolution
+            // playLevelUp(willEvolve: true)
+        }
+    }
+    
     func playHungry() {
         guard let sprout = sprout else { return }
         sprout.removeAction(forKey: "idle")
@@ -312,24 +326,85 @@ class SproutScene: SKScene {
     func playLevelUp(willEvolve: Bool = false) {
         guard let sprout = sprout else { return }
         sprout.removeAction(forKey: "idle")
+        sprout.removeAction(forKey: "blink")
         
-        let levelUpFrames = (1...8).map {
+        let levelUpFrames = (1...16).map {
             SKTexture(imageNamed: "Sprout_levelup_\($0)")
         }
         
         let levelUp = SKAction.animate(
             with: levelUpFrames,
-            timePerFrame: 0.12,
+            timePerFrame: 0.1,
             resize: false,
             restore: false
         )
         
+        // ✅ Lance confettis quand Sprout est en l'air
+        // (environ frame 6-8 = peak du saut)
+        let waitForJump = SKAction.wait(forDuration: 0.6)
+        let launchConfetti = SKAction.run { [weak self] in
+            self?.playConfetti()
+        }
+        run(SKAction.sequence([waitForJump, launchConfetti]))
+        
+        // ✅ Joue levelup puis décide selon willEvolve
         sprout.run(levelUp) { [weak self] in
+            guard let self = self else { return }
             if willEvolve {
-                self?.playEvolution()  // ← va évoluer
+//                self.playEvolution()   // ← va évoluer
             } else {
-                self?.startIdleAnimation()  // ← retour idle
+                self.startIdleAnimation()  // ← retour idle
+                self.startBlinkLoop()      // ← reprend le blink
             }
+        }
+    }
+    
+    func playConfetti() {
+        let colors: [UIColor] = [
+            .systemYellow, .systemPink, .systemBlue,
+            .systemGreen, .systemOrange, .systemPurple
+        ]
+        
+        // ✅ 20 confettis
+        for _ in 0..<20 {
+            let confetti = SKShapeNode(
+                rectOf: CGSize(width: 8, height: 8),
+                cornerRadius: 2
+            )
+            confetti.fillColor = colors.randomElement()!
+            confetti.strokeColor = .clear
+            confetti.position = CGPoint(
+                x: sprout?.position.x ?? size.width/2 + CGFloat.random(in: -50...50),
+                y: sprout?.position.y ?? size.height/2 + (sprout?.size.height ?? 0) / 2
+            )
+            confetti.zPosition = 10
+            addChild(confetti)
+            
+            // ✅ Animation — monte et tombe
+            let moveUp = SKAction.moveBy(
+                x: CGFloat.random(in: -80...80),
+                y: CGFloat.random(in: 100...200),
+                duration: 0.4
+            )
+            let fall = SKAction.moveBy(
+                x: CGFloat.random(in: -40...40),
+                y: -300,
+                duration: 0.8
+            )
+            let fade = SKAction.fadeOut(withDuration: 0.3)
+            let rotate = SKAction.rotate(
+                byAngle: CGFloat.random(in: -CGFloat.pi...CGFloat.pi),                duration: 1.2
+            )
+            
+            let sequence = SKAction.sequence([
+                moveUp,
+                fall,
+                fade,
+                SKAction.removeFromParent()
+            ])
+            let group = SKAction.group([sequence, rotate])
+            
+            confetti.run(group)
         }
     }
 
