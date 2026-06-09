@@ -55,5 +55,5 @@ The groundwork is done. The app builds and runs, the data and design layers are 
 ## Developed by:
 - Rishi Singhal
 - Changrila Souksamlane
--  
+- Hiu Ying Lee (Ruby) 
 
