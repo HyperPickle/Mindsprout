@@ -103,7 +103,7 @@ struct DestinationPickerView: View {
             }
             .foregroundStyle(.black)
             .padding()
-            .background(Color.white.opacity(0.8), in: .rect(cornerRadius: 14))
+            .background(Color.white.opacity(0.8), in: .rect(cornerRadius: CornerRadius.medium))
         }
         .sheet(isPresented: $showLocationPicker) {
             LocationPickerView(selectedCity: $selectedCity)

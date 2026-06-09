@@ -25,4 +25,10 @@ enum SproutState: String, Codable, CaseIterable, Sendable {
     case hungry
     case readyToEvolve
     case evolving
+
+    /// State used to drive the Home dashboard sprite. Home always feels lively,
+    /// so the resting `.sleeping` pose (used only inside the level-up flow) maps to `.idle`.
+    var homeDisplayState: SproutState {
+        self == .sleeping ? .idle : self
+    }
 }

@@ -1,11 +1,13 @@
-
 import SwiftUI
-import WebKit
-
+import SwiftData
+import AuthenticationServices
 
 struct WelcomeView: View {
-    @EnvironmentObject var navVM: NavigationViewModel
-    
+    @Environment(\.appEnvironment) private var env
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var authError: String?
+
     var body: some View {
         ZStack {
             ZStack {
@@ -13,39 +15,85 @@ struct WelcomeView: View {
                 GlobeView()
                     .offset(x: 0, y: 450)
             }
-            
+
             VStack {
                 Spacer()
                 TitleView()
+                    .offset(y: -75)
                 Spacer()
-                
-                Button {
-                    withAnimation {
-                        navVM.showSignUp = true
-                        navVM.showSignView = true
-                    }
-                } label: {
-                    Text("GET STARTED")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+
+                SignInWithAppleButton(.signIn, onRequest: { request in
+                    request.requestedScopes = [.fullName, .email]
+                }, onCompletion: { result in
+                    handleResult(result)
+                })
+                .signInWithAppleButtonStyle(.white)
+                .frame(width: 260, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .shadow(color: .black.opacity(0.3), radius: 16, y: 8)
+
+                if let authError {
+                    Text(authError)
+                        .font(.system(size: 13, weight: .regular, design: .rounded))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                        .padding(.top, 10)
                 }
-                .buttonStyle(DepthButtonStyle())
-                .padding(.horizontal, 24)
-                
-                Spacer().frame(height: 18)
-                
-                Button {
-                    withAnimation {
-                        navVM.showSignUp = false
-                        navVM.showSignView = true
-                    }
-                } label: {
-                    Text("I already have an account")
-                        .foregroundColor(Color.white)
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
+
+                #if DEBUG
+                Button("Continue without signing in (Dev)") {
+                    UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+                    User.upsert(appleUserID: "dev-user", displayName: "Dev", email: nil, in: modelContext)
+                    withAnimation { env.auth.handleAuthorization(userID: "dev-user") }
                 }
-                
-                Spacer().frame(height: 40)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.7))
+                .padding(.top, 8)
+                #endif
+
+                Text("Grow your Sprout, save your reflections.")
+                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .foregroundColor(.white.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+                    .padding(.top, 10)
+                    .offset(y: -10)
             }
+        }
+    }
+
+    private func handleResult(_ result: Result<ASAuthorization, Error>) {
+        let authorization: ASAuthorization
+        switch result {
+        case .success(let value):
+            authorization = value
+        case .failure(let error):
+            if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+                return
+            }
+            authError = "Sign in failed. Please try again."
+            return
+        }
+
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+            authError = "Sign in failed. Please try again."
+            return
+        }
+
+        let displayName = credential.fullName.flatMap { components -> String? in
+            let formatted = PersonNameComponentsFormatter.localizedString(from: components, style: .default)
+            return formatted.isEmpty ? nil : formatted
+        }
+        User.upsert(
+            appleUserID: credential.user,
+            displayName: displayName,
+            email: credential.email,
+            in: modelContext
+        )
+        authError = nil
+        withAnimation {
+            env.auth.handleAuthorization(userID: credential.user)
         }
     }
 }
@@ -53,15 +101,14 @@ struct WelcomeView: View {
 struct TitleView: View {
     var body: some View {
         VStack(spacing: 8) {
-            Image("Sprout_sit_home")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 70, height: 70)
-            
+            BlinkingSproutView()
+                .frame(width: 228, height: 228)
+
             Text("mindsprout")
                 .font(.system(size: 40, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
-            
+                .padding(.top, -28)
+
             Text("see the world, to see yourself").italic()
                 .font(.system(size: 15, weight: .light))
                 .foregroundColor(.white)
@@ -70,7 +117,37 @@ struct TitleView: View {
     }
 }
 
+struct BlinkingSproutView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var frame = 1
+
+    // Mirrors SproutScene.playBlink: frames Sprout_blink_[1,2,3,2,1] at 0.08s/frame.
+    private let blinkFrames = [1, 2, 3, 2, 1]
+    private let frameDuration = 0.08
+
+    var body: some View {
+        Image("Sprout_blink_\(frame)")
+            .resizable()
+            .scaledToFit()
+            .task {
+                guard !reduceMotion else { return }
+                await blinkLoop()
+            }
+    }
+
+    private func blinkLoop() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(5))
+            for next in blinkFrames {
+                frame = next
+                try? await Task.sleep(for: .seconds(frameDuration))
+            }
+            frame = 1
+        }
+    }
+}
+
 #Preview {
     WelcomeView()
-        .environmentObject(NavigationViewModel())
+        .environment(\.appEnvironment, .preview)
 }

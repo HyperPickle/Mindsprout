@@ -1,15 +1,20 @@
 import Foundation
 
-// Seam for Sign in with Apple / accounts. MVP is single-user, local-only.
 enum AuthState: Sendable, Equatable {
     case localOnly
     case signedIn(userID: String)
 }
 
-protocol AuthService: Sendable {
+protocol AuthService: AnyObject {
     var state: AuthState { get }
+    func handleAuthorization(userID: String)
+    func signOut()
+    func revalidate() async
 }
 
-struct LocalAuthService: AuthService {
-    let state: AuthState = .localOnly
+final class LocalAuthService: AuthService {
+    var state: AuthState = .localOnly
+    func handleAuthorization(userID: String) {}
+    func signOut() {}
+    func revalidate() async {}
 }

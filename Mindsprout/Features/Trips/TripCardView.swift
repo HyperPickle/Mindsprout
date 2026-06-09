@@ -94,7 +94,7 @@ struct TripHeroCard: View {
             }
         }
         .background(AppColor.cardSurface)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         .shadow(color: AppColor.ink.opacity(0.12), radius: 14, x: 0, y: 8)
     }
 
