@@ -188,8 +188,11 @@ class SproutScene: SKScene {
         if sprout.contains(touch.location(in: self)) {
             //tapReaction()
             //playHungry()
-            playSleepDaily()
-            playWakeUpDaily()
+//            playSleepDaily()
+//            playWakeUpDaily()
+//            playEvolutionFlash()
+            playSitDown()
+            
 
         }
     }
@@ -570,6 +573,244 @@ class SproutScene: SKScene {
             self.playConfetti()
             self.startIdleAnimation()
             self.startBlinkLoop()
+        }
+    }
+    
+    func startEvolvedIdleAnimation() {
+        guard let sprout = sprout else { return }
+        
+        let evolvedIdleFrames = (1...8).map {  // ✅ 8 frames
+            SKTexture(imageNamed: "Sprout_evolved_1_idle_\($0)")
+        }
+        
+        let animate = SKAction.animate(
+            with: evolvedIdleFrames,
+            timePerFrame: 0.2,
+            resize: false,
+            restore: false
+        )
+        
+        let breatheIn = SKAction.scaleY(to: 1.03, duration: 0.8)
+        breatheIn.timingMode = .easeInEaseOut
+        let breatheOut = SKAction.scaleY(to: 1.0, duration: 0.8)
+        breatheOut.timingMode = .easeInEaseOut
+        
+        let breathe = SKAction.repeatForever(
+            SKAction.sequence([breatheIn, breatheOut])
+        )
+        
+        sprout.run(SKAction.group([
+            SKAction.repeatForever(animate),
+            breathe
+        ]), withKey: "idle")
+    }
+
+    func startEvolvedBlinkLoop() {
+        guard let sprout = sprout else { return }
+        
+        let blinkFrames = [
+            SKTexture(imageNamed: "Sprout_evolved_1_blink_1"),
+            SKTexture(imageNamed: "Sprout_evolved_1_blink_2"),
+            SKTexture(imageNamed: "Sprout_evolved_1_blink_3"),
+            SKTexture(imageNamed: "Sprout_evolved_1_blink_2"),
+            SKTexture(imageNamed: "Sprout_evolved_1_blink_1"),
+        ]
+        
+        let wait = SKAction.wait(forDuration: 3.0)
+        let stopIdle = SKAction.run { [weak self] in
+            sprout.removeAction(forKey: "idle")
+        }
+        let blink = SKAction.animate(
+            with: blinkFrames,
+            timePerFrame: 0.08,
+            resize: false,
+            restore: true
+        )
+        let resumeIdle = SKAction.run { [weak self] in
+            self?.startEvolvedIdleAnimation()
+        }
+        
+        sprout.run(SKAction.repeatForever(
+            SKAction.sequence([wait, stopIdle, blink, resumeIdle])
+        ), withKey: "blink")
+    }
+    
+    func playEvolutionFlash() {
+        guard let sprout = sprout else { return }
+        
+        let center = CGPoint(x: size.width/2, y: size.height/2)
+        
+        // ✅ 8 rayons autour de Sprout
+        for i in 0..<8 {
+            let angle = CGFloat(i) * CGFloat.pi / 4  // ← 45° entre chaque rayon
+            
+            let ray = SKShapeNode(rectOf: CGSize(width: 8, height: 200))
+            ray.fillColor = UIColor.white.withAlphaComponent(0.8)
+            ray.strokeColor = .clear
+            ray.position = center
+            ray.zRotation = angle
+            ray.zPosition = 99
+            ray.alpha = 0
+            ray.setScale(0)
+            addChild(ray)
+            
+            // ✅ Apparaît et grandit
+            let fadeIn = SKAction.fadeIn(withDuration: 0.2)
+            let expand = SKAction.scale(to: 1.5, duration: 0.6)
+            expand.timingMode = .easeOut
+            let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+            let remove = SKAction.removeFromParent()
+            
+            ray.run(SKAction.sequence([
+                fadeIn,
+                SKAction.group([expand, fadeOut]),
+                remove
+            ]))
+        }
+        
+        // ✅ Cercle central
+        let glow = SKShapeNode(circleOfRadius: 5)
+        glow.fillColor = .white
+        glow.strokeColor = .clear
+        glow.position = center
+        glow.zPosition = 99
+        addChild(glow)
+        
+        let expand = SKAction.scale(to: 15, duration: 0.6)
+        expand.timingMode = .easeOut
+        let hold = SKAction.wait(forDuration: 0.5)
+        let fade = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        
+        glow.run(SKAction.sequence([
+            SKAction.group([expand, fade]),
+            remove
+        ]))
+        
+        // ✅ Après l'effet → Sprout évolué
+        let wait = SKAction.wait(forDuration: 0.8)
+        run(SKAction.sequence([wait, SKAction.run { [weak self] in
+            self?.startEvolvedIdleAnimation()
+            self?.startEvolvedBlinkLoop()
+            self?.playConfetti()
+        }]))
+    }
+    
+    func playSitDown() {
+        guard let sprout = sprout else { return }
+        sprout.removeAction(forKey: "idle")
+        sprout.removeAction(forKey: "blink")
+        
+        // ✅ Sit down transition — 5 frames
+        let sitDownFrames = (1...5).map {
+            SKTexture(imageNamed: "Sprout_sitdown_\($0)")
+        }
+        let sitDown = SKAction.animate(
+            with: sitDownFrames,
+            timePerFrame: 0.15,
+            resize: false,
+            restore: false
+        )
+        
+        // ✅ Sit idle loop — 4 frames
+        let sitIdleFrames = (1...4).map {
+            SKTexture(imageNamed: "Sprout_sit_idle_\($0)")
+        }
+        let sitIdle = SKAction.animate(
+            with: sitIdleFrames,
+            timePerFrame: 0.2,
+            resize: false,
+            restore: false
+        )
+        
+        sprout.run(sitDown) { [weak self] in
+            guard let self = self else { return }
+            
+            // ✅ Loop sit idle
+            self.sprout?.run(
+                SKAction.repeatForever(sitIdle),
+                withKey: "sitIdle"
+            )
+            
+            // ✅ Reste assis 5-10 secondes puis se relève
+            let sitDuration = Double.random(in: 5...10)
+            DispatchQueue.main.asyncAfter(deadline: .now() + sitDuration) {
+                self.playStandUp()
+            }
+        }
+    }
+
+    func playStandUp() {
+        guard let sprout = sprout else { return }
+        sprout.removeAction(forKey: "sitIdle")
+        
+        // ✅ Stand up transition — 5 frames
+        let standUpFrames = (1...5).map {
+            SKTexture(imageNamed: "Sprout_standup_\($0)")
+        }
+        let standUp = SKAction.animate(
+            with: standUpFrames,
+            timePerFrame: 0.15,
+            resize: false,
+            restore: false
+        )
+        
+        sprout.run(standUp) { [weak self] in
+            self?.startIdleAnimation()
+            self?.startBlinkLoop()
+            self?.startRandomBehavior()  // ✅ reset le cycle
+        }
+    }
+    
+    var behaviorTimer: Timer?
+
+    func startRandomBehavior() {
+        // ✅ Toutes les 30-60 secondes — fait quelque chose
+        let randomDelay = Double.random(in: 30...60)
+        
+        behaviorTimer = Timer.scheduledTimer(
+            withTimeInterval: randomDelay,
+            repeats: false
+        ) { [weak self] _ in
+            self?.chooseRandomBehavior()
+        }
+    }
+
+    func chooseRandomBehavior() {
+        let random = Int.random(in: 0...2)
+        
+        switch random {
+        case 0:
+            // ✅ Se balade puis revient
+            playRandomWalk()
+        case 1:
+            // ✅ S'assoit
+            playSitDown()
+        case 2:
+            // ✅ Reste en idle — reset le timer
+            startRandomBehavior()
+        default:
+            startRandomBehavior()
+        }
+    }
+
+    func playRandomWalk() {
+        isWalking = true
+        playWalk()
+        
+        // ✅ Marche pendant 3-6 secondes puis s'arrête
+        let walkDuration = Double.random(in: 3...6)
+        DispatchQueue.main.asyncAfter(deadline: .now() + walkDuration) { [weak self] in
+            self?.isWalking = false
+            self?.stopWalk()
+            
+            // ✅ Après la marche → peut s'asseoir ou idle
+            let random = Int.random(in: 0...1)
+            if random == 0 {
+                self?.playSitDown()
+            } else {
+                self?.startRandomBehavior()  // ← retour idle + reset timer
+            }
         }
     }
 
