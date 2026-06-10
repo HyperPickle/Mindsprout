@@ -4,646 +4,345 @@
 //
 //  Created by Changrila Souksamlane on 6/6/2026.
 //
-
 import SpriteKit
 import SwiftUI
 import Combine
 import Foundation
 
+// ✅ SproutState EN DEHORS de SproutScene
+
 class SproutScene: SKScene {
     var sprout: SKSpriteNode?
-    var eyesNode: SKSpriteNode?
+    var shadow: SKShapeNode?
     var isWalking = false
-    var isHungry = false    // ✅ ajoute ces états
+    var isHungry = false
     var isHappy = false
-    
+    var behaviorTimer: Timer?
+    private var pendingState: SproutState = .idle  // ✅ une seule fois
+    private var isPlayingFaceGesture = false
+
     var isIdle: Bool {
-          !isWalking && !isHungry && !isHappy
-      }
-    
+        !isWalking && !isHungry && !isHappy
+    }
+
     override func didMove(to view: SKView) {
         backgroundColor = .clear
-        scaleMode = .resizeFill
-        
+
         guard UIImage(named: "Sprout_idle_1") != nil else {
-            print("❌ Sprout_idle_1 non trouvée")
+            print("❌ Sprout_idle_1 not found")
             return
         }
-        
+
         let texture = SKTexture(imageNamed: "Sprout_idle_1")
-        let ratio = texture.size().height / texture.size().width
-        let desiredWidth: CGFloat = size.width * 0.5
-        let sproutSize = CGSize(width: desiredWidth, height: desiredWidth * 1.8)
-        
-        // ✅ Ombre
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: desiredWidth * 0.5, height: 12))
-        shadow.fillColor = UIColor.black.withAlphaComponent(0.2)
-        shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: size.width/2, y: size.height/2 - sproutSize.height/2 + 65)
-        shadow.zPosition = 0
-        addChild(shadow)
-        animateShadow(shadow: shadow)
-        
-        // ✅ Corps de Sprout
+        let aspect = texture.size().height / texture.size().width
+        let sproutHeight = size.height * 0.9
+        let sproutWidth = sproutHeight / aspect
+        let sproutSize = CGSize(width: sproutWidth, height: sproutHeight)
+
+        let shadowNode = SKShapeNode(ellipseOf: CGSize(width: sproutWidth * 0.55, height: 12))
+        shadowNode.fillColor = UIColor.black.withAlphaComponent(0.2)
+        shadowNode.strokeColor = .clear
+        shadowNode.position = CGPoint(x: size.width / 2, y: size.height / 2 - sproutHeight / 2 + sproutHeight * 0.28)
+        shadowNode.zPosition = 0
+        addChild(shadowNode)
+        shadow = shadowNode
+
         let sproutNode = SKSpriteNode(texture: texture)
         sproutNode.size = sproutSize
-        sproutNode.position = CGPoint(x: size.width/2, y: size.height/2)
+        sproutNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
         sproutNode.zPosition = 1
         addChild(sproutNode)
         sprout = sproutNode
-        
 
-        
-        startIdleAnimation()
-        startBlinkLoop()
+        updateState(pendingState)
     }
 
-   
-    func animateShadow(shadow: SKShapeNode) {
-        // ✅ Même timing que la respiration
-        let breatheIn = SKAction.scale(to: 1.05, duration: 0.8)   // ← grandit avec Sprout
-        breatheIn.timingMode = .easeInEaseOut
-        let breatheOut = SKAction.scale(to: 1.0, duration: 0.8)   // ← rétrécit avec Sprout
-        breatheOut.timingMode = .easeInEaseOut
-        
-        shadow.run(SKAction.repeatForever(
-            SKAction.sequence([breatheIn, breatheOut])
-        ))
-    }
-
-    func startIdleAnimation() {
-        guard let sprout = sprout else { return }
-        
-        let idleFrames = (1...9).map {
-            SKTexture(imageNamed: "Sprout_idle_\($0)")
+    func updateState(_ state: SproutState) {
+        guard let sprout = sprout else {
+            pendingState = state
+            return
         }
-        
-        // ✅ Corps respire avec les frames
-        let animate = SKAction.animate(
-            with: idleFrames,
-            timePerFrame: 0.2,
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Légère respiration verticale — pas de flottement !
-        let breatheIn = SKAction.scaleY(to: 1.03, duration: 0.8)   // ← grandit légèrement
-        breatheIn.timingMode = .easeInEaseOut
-        let breatheOut = SKAction.scaleY(to: 1.0, duration: 0.8)   // ← rétrécit
-        breatheOut.timingMode = .easeInEaseOut
-        
-        let breathe = SKAction.repeatForever(
-            SKAction.sequence([breatheIn, breatheOut])
-        )
-        
-        // ✅ Les deux ensemble
-        sprout.run(SKAction.group([
-            SKAction.repeatForever(animate),
-            breathe
-        ]), withKey: "idle")
+        pendingState = state
+        sprout.removeAllActions()
+        isWalking = false
+        isHungry = false
+        isHappy = false
+
+        switch state {
+        case .idle, .readyToEvolve:
+            startIdle()
+        case .hungry:
+            isHungry = true
+            playHungry()
+        case .evolving:
+            playEvolution()
+        case .sleeping:
+            break
+        }
     }
-    
+
+    func startIdle() {
+        guard let sprout = sprout else { return }
+        stopIdleLoops()
+        sprout.texture = SKTexture(imageNamed: "Sprout_idle_1")
+        startBreatheLoop()
+        startBlinkLoop()
+        scheduleRandomWalk()
+    }
+
+    private func stopIdleLoops() {
+        sprout?.removeAction(forKey: "breathe")
+        sprout?.removeAction(forKey: "blink")
+        sprout?.removeAction(forKey: "randomWalk")
+        sprout?.removeAction(forKey: "faceGesture")
+        isPlayingFaceGesture = false
+    }
+
+    func startBreatheLoop() {
+        guard let sprout = sprout else { return }
+        let wait = SKAction.wait(forDuration: 12.5, withRange: 5)
+        let fire = SKAction.run { [weak self] in self?.playBreath() }
+        sprout.run(SKAction.repeatForever(SKAction.sequence([wait, fire])), withKey: "breathe")
+    }
+
+    private func playBreath() {
+        guard let sprout = sprout, isIdle, !isPlayingFaceGesture else { return }
+        isPlayingFaceGesture = true
+
+        let idleFrames = (1...9).map { SKTexture(imageNamed: "Sprout_idle_\($0)") }
+        let timePerFrame = 0.15
+        let breath = SKAction.animate(with: idleFrames, timePerFrame: timePerFrame, resize: false, restore: true)
+
+        if let shadow = shadow {
+            let dur = timePerFrame * Double(idleFrames.count) / 2
+            let up = SKAction.scale(to: 1.05, duration: dur); up.timingMode = .easeInEaseOut
+            let down = SKAction.scale(to: 1.0, duration: dur); down.timingMode = .easeInEaseOut
+            shadow.run(SKAction.sequence([up, down]), withKey: "shadowBreath")
+        }
+
+        let done = SKAction.run { [weak self] in self?.isPlayingFaceGesture = false }
+        sprout.run(SKAction.sequence([breath, done]), withKey: "faceGesture")
+    }
+
     func startBlinkLoop() {
         guard let sprout = sprout else { return }
-        
-        let blinkFrames = [
-            SKTexture(imageNamed: "Sprout_blink_1"),
-            SKTexture(imageNamed: "Sprout_blink_2"),
-            SKTexture(imageNamed: "Sprout_blink_3"),
-            SKTexture(imageNamed: "Sprout_blink_2"),
-            SKTexture(imageNamed: "Sprout_blink_1"),
-        ]
-        
-        let wait = SKAction.wait(forDuration: 3.0)
-        
-        // ✅ Stoppe idle → blink → reprend idle
-        let stopIdle = SKAction.run { [weak self] in
-            guard let self = self else { return }
-            // ✅ Ne stoppe pas si Sprout marche ou autre animation
-            if !self.isWalking {
-                sprout.removeAction(forKey: "idle")
-            }
-        }
-        
-        let blink = SKAction.animate(
-            with: blinkFrames,
-            timePerFrame: 0.08,
-            resize: false,
-            restore: true  // ✅ restore: true → retourne à la texture avant le blink
-        )
-        
-        let resumeIdle = SKAction.run { [weak self] in
-            guard let self = self else { return }
-            // ✅ Ne reprend l'idle que si Sprout ne marche pas
-            if !self.isWalking {
-                self.startIdleAnimation()
-            }
-        }
-       
-        
-        let blinkSequence = SKAction.sequence([
-            wait,
-            stopIdle,   // ← stoppe idle
-            blink,      // ← cligne
-            resumeIdle  // ← reprend idle depuis le début
-        ])
-        
-        sprout.run(SKAction.repeatForever(blinkSequence), withKey: "blink")
+        let wait = SKAction.wait(forDuration: 5, withRange: 2)
+        let fire = SKAction.run { [weak self] in self?.playBlink() }
+        sprout.run(SKAction.repeatForever(SKAction.sequence([wait, fire])), withKey: "blink")
     }
-    
+
+    private func playBlink() {
+        guard let sprout = sprout, isIdle, !isPlayingFaceGesture else { return }
+        isPlayingFaceGesture = true
+
+        let blinkFrames = [1, 2, 3, 2, 1].map { SKTexture(imageNamed: "Sprout_blink_\($0)") }
+        let blink = SKAction.animate(with: blinkFrames, timePerFrame: 0.08, resize: false, restore: true)
+
+        let done = SKAction.run { [weak self] in self?.isPlayingFaceGesture = false }
+        sprout.run(SKAction.sequence([blink, done]), withKey: "faceGesture")
+    }
+
+    func scheduleRandomWalk() {
+        guard let sprout = sprout else { return }
+        let wait = SKAction.wait(forDuration: 90, withRange: 60)
+        let walk = SKAction.run { [weak self] in
+            guard let self = self, self.isIdle else {
+                self?.scheduleRandomWalk()
+                return
+            }
+            self.isWalking = true
+            self.playWalk()
+        }
+        sprout.run(SKAction.sequence([wait, walk]), withKey: "randomWalk")
+    }
+
     func playHappy() {
         guard let sprout = sprout else { return }
-        
-        // Stoppe l'idle
-        sprout.removeAction(forKey: "idle")
-        
-        let happyFrames = (1...11).map {
-            SKTexture(imageNamed: "Sprout_happy_\($0)")
-        }
-        
-        let happy = SKAction.animate(
-            with: happyFrames,
-            timePerFrame: 0.1,   // ← ajuste la vitesse
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Joue happy UNE fois puis reprend idle
-        sprout.run(happy) { [weak self] in
-            self?.startIdleAnimation()
-        }
+        stopIdleLoops()
+        let happyFrames = (1...11).map { SKTexture(imageNamed: "Sprout_happy_\($0)") }
+        let happy = SKAction.animate(with: happyFrames, timePerFrame: 0.1, resize: false, restore: false)
+        sprout.run(happy) { [weak self] in self?.startIdle() }
     }
-    
+
     func tapReaction() {
-        guard let sprout = sprout else { return }
-        sprout.removeAction(forKey: "idle")
-        playHappy()  // ← au lieu du pop !
+        guard isIdle, let sprout = sprout else { return }
+        sprout.removeAction(forKey: "randomWalk")
+        isWalking = true
+        playWalk()
     }
-    
-    
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first,
-              let sprout = sprout else { return }
-        
-        if sprout.contains(touch.location(in: self)) {
-            //tapReaction()
-            //playHungry()
-//            playSleepDaily()
-//            playWakeUpDaily()
-//            playEvolutionFlash()
-            playSitDown()
-            
 
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first, let sprout = sprout else { return }
+        if sprout.contains(touch.location(in: self)) {
+            playSitDown()
         }
     }
-    
-//    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-//            guard let touch = touches.first,
-//                  let sprout = sprout else { return }
-//            
-//            if sprout.contains(touch.location(in: self)) {
-//                if isWalking {
-//                    isWalking = false
-//                    stopWalk()   // ✅ 2ème tap → stoppe
-//                } else {
-//                    isWalking = true
-//                    playWalk()   // ✅ 1er tap → démarre
-//                }
-//            }
-//        }
 
-//    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-//        guard let touch = touches.first,
-//              let sprout = sprout else { return }
-//        
-//        if sprout.contains(touch.location(in: self)) {
-//            // Test sans évolution
-//            playLevelUp(willEvolve: false)
-//            
-//            // Test avec évolution
-//            // playLevelUp(willEvolve: true)
-//        }
-//    }
-    
     func playHungry() {
         guard let sprout = sprout else { return }
-        sprout.removeAction(forKey: "idle")
-        
-        let hungryFrames = (1...10).map {
-            SKTexture(imageNamed: "Sprout_hungry_\($0)")
-        }
-        
-        let hungry = SKAction.animate(
-            with: hungryFrames,
-            timePerFrame: 0.15,
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Pause avec yeux suppliants (frame 5 ou 6)
-        let pityEyes = SKAction.animate(
-            with: [SKTexture(imageNamed: "Sprout_hungry_5")],
-            timePerFrame: 1.5,  // ← reste 1.5 secondes avec yeux suppliants
-            resize: false,
-            restore: false
-        )
-        
+        stopIdleLoops()
+        let hungryFrames = (1...10).map { SKTexture(imageNamed: "Sprout_hungry_\($0)") }
+        let hungry = SKAction.animate(with: hungryFrames, timePerFrame: 0.15, resize: false, restore: false)
+        let pityEyes = SKAction.animate(with: [SKTexture(imageNamed: "Sprout_hungry_5")], timePerFrame: 1.5, resize: false, restore: false)
         let cycle = SKAction.sequence([hungry, pityEyes])
         sprout.run(SKAction.repeatForever(cycle), withKey: "hungry")
     }
 
-    // ✅ Pour stopper
     func stopHungry() {
         sprout?.removeAction(forKey: "hungry")
-        startIdleAnimation()
+        startIdle()
     }
-    
+
     func onReflectionCompleted() {
-        guard let sprout = sprout else { return }
-        
-        // Stoppe hungry
-        sprout.removeAction(forKey: "hungry")
-        
-        // Joue Happy d'abord !
+        sprout?.removeAction(forKey: "hungry")
         playHappy()
     }
-    
-    // WALK
+
     func playWalk() {
         guard let sprout = sprout else { return }
-        sprout.removeAction(forKey: "idle")
-        
-        // ✅ Transition face → 3/4
-        let startFrames = (1...4).map {
-            SKTexture(imageNamed: "Sprout_walk_start_\($0)")
-        }
-        let startTransition = SKAction.animate(
-            with: startFrames,
-            timePerFrame: 0.12,
-            resize: false,
-            restore: false
-        )
-        
+        stopIdleLoops()
+        let startFrames = (1...4).map { SKTexture(imageNamed: "Sprout_walk_start_\($0)") }
+        let startTransition = SKAction.animate(with: startFrames, timePerFrame: 0.12, resize: false, restore: false)
+        let walkDuration = Double.random(in: 3...6)
+        let waitThenStop = SKAction.sequence([
+            SKAction.wait(forDuration: walkDuration),
+            SKAction.run { [weak self] in self?.stopWalk() }
+        ])
         sprout.run(startTransition) { [weak self] in
-            self?.walkLoop()
+            guard let self = self else { return }
+            self.walkLoop()
+            self.sprout?.run(waitThenStop, withKey: "walkTimer")
         }
     }
 
     func walkLoop() {
         guard let sprout = sprout, isWalking else { return }
-        
-        let walkFrames = (1...11).map {
-            SKTexture(imageNamed: "Sprout_walk_\($0)")
-        }
-        
-        let walk = SKAction.animate(
-            with: walkFrames,
-            timePerFrame: 0.1,
-            resize: false,
-            restore: false
-        )
-        
-        sprout.run(walk) { [weak self] in
-            self?.walkLoop()
-        }
+        let walkFrames = (1...11).map { SKTexture(imageNamed: "Sprout_walk_\($0)") }
+        let walk = SKAction.animate(with: walkFrames, timePerFrame: 0.1, resize: false, restore: false)
+        let loopAction = SKAction.sequence([walk, SKAction.run { [weak self] in self?.walkLoop() }])
+        sprout.run(loopAction, withKey: "walkLoop")
     }
 
     func stopWalk() {
         guard let sprout = sprout else { return }
-        
         sprout.removeAction(forKey: "walkLoop")
-        
-        let endFrames = (1...4).map {
-            SKTexture(imageNamed: "Sprout_walk_end_\($0)")
-        }
-        let endTransition = SKAction.animate(
-            with: endFrames,
-            timePerFrame: 0.12,
-            resize: false,
-            restore: false
-        )
-        
+        let endFrames = (1...4).map { SKTexture(imageNamed: "Sprout_walk_end_\($0)") }
+        let endTransition = SKAction.animate(with: endFrames, timePerFrame: 0.12, resize: false, restore: false)
         sprout.run(endTransition) { [weak self] in
-            self?.startIdleAnimation()
+            guard let self = self else { return }
+            self.isWalking = false
+            self.startIdle()
         }
     }
-    
-    //LEVEL UP
+
     func playLevelUp(willEvolve: Bool = false) {
         guard let sprout = sprout else { return }
-        sprout.removeAction(forKey: "idle")
-        sprout.removeAction(forKey: "blink")
-        
-        let levelUpFrames = (1...16).map {
-            SKTexture(imageNamed: "Sprout_levelup_\($0)")
-        }
-        
-        let levelUp = SKAction.animate(
-            with: levelUpFrames,
-            timePerFrame: 0.1,
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Lance confettis quand Sprout est en l'air
-        // (environ frame 6-8 = peak du saut)
+        stopIdleLoops()
+        let levelUpFrames = (1...16).map { SKTexture(imageNamed: "Sprout_levelup_\($0)") }
+        let levelUp = SKAction.animate(with: levelUpFrames, timePerFrame: 0.1, resize: false, restore: false)
         let waitForJump = SKAction.wait(forDuration: 0.6)
-        let launchConfetti = SKAction.run { [weak self] in
-            self?.playConfetti()
-        }
+        let launchConfetti = SKAction.run { [weak self] in self?.playConfetti() }
         run(SKAction.sequence([waitForJump, launchConfetti]))
-        
-        // ✅ Joue levelup puis décide selon willEvolve
         sprout.run(levelUp) { [weak self] in
             guard let self = self else { return }
-            if willEvolve {
-//                self.playEvolution()   // ← va évoluer
-            } else {
-                self.startIdleAnimation()  // ← retour idle
-                self.startBlinkLoop()      // ← reprend le blink
-            }
+            if willEvolve { self.playSleepEvolution() } else { self.startIdle() }
         }
     }
-    
+
     func playConfetti() {
-        let colors: [UIColor] = [
-            .systemYellow, .systemPink, .systemBlue,
-            .systemGreen, .systemOrange, .systemPurple
-        ]
-        
-        // ✅ 20 confettis
+        let colors: [UIColor] = [.systemYellow, .systemPink, .systemBlue, .systemGreen, .systemOrange, .systemPurple]
         for _ in 0..<20 {
-            let confetti = SKShapeNode(
-                rectOf: CGSize(width: 8, height: 8),
-                cornerRadius: 2
-            )
+            let confetti = SKShapeNode(rectOf: CGSize(width: 8, height: 8), cornerRadius: 2)
             confetti.fillColor = colors.randomElement()!
             confetti.strokeColor = .clear
             confetti.position = CGPoint(
-                x: sprout?.position.x ?? size.width/2 + CGFloat.random(in: -50...50),
-                y: sprout?.position.y ?? size.height/2 + (sprout?.size.height ?? 0) / 2
+                x: (sprout?.position.x ?? size.width/2) + CGFloat.random(in: -50...50),
+                y: (sprout?.position.y ?? size.height/2) + (sprout?.size.height ?? 0) / 2
             )
             confetti.zPosition = 10
             addChild(confetti)
-            
-            // ✅ Animation — monte et tombe
-            let moveUp = SKAction.moveBy(
-                x: CGFloat.random(in: -80...80),
-                y: CGFloat.random(in: 100...200),
-                duration: 0.4
-            )
-            let fall = SKAction.moveBy(
-                x: CGFloat.random(in: -40...40),
-                y: -300,
-                duration: 0.8
-            )
+            let moveUp = SKAction.moveBy(x: CGFloat.random(in: -80...80), y: CGFloat.random(in: 100...200), duration: 0.4)
+            let fall = SKAction.moveBy(x: CGFloat.random(in: -40...40), y: -300, duration: 0.8)
             let fade = SKAction.fadeOut(withDuration: 0.3)
-            let rotate = SKAction.rotate(
-                byAngle: CGFloat.random(in: -CGFloat.pi...CGFloat.pi),                duration: 1.2
-            )
-            
-            let sequence = SKAction.sequence([
-                moveUp,
-                fall,
-                fade,
-                SKAction.removeFromParent()
-            ])
-            let group = SKAction.group([sequence, rotate])
-            
-            confetti.run(group)
+            let rotate = SKAction.rotate(byAngle: CGFloat.random(in: -CGFloat.pi...CGFloat.pi), duration: 1.2)
+            let sequence = SKAction.sequence([moveUp, fall, fade, SKAction.removeFromParent()])
+            confetti.run(SKAction.group([sequence, rotate]))
         }
     }
-    
-    
-    //SLEEP
+
     func playSleepDaily() {
         guard let sprout = sprout else { return }
-        sprout.removeAction(forKey: "idle")
-        sprout.removeAction(forKey: "blink")
-        
-        // ✅ Yawn — 7 frames
-        let yawnFrames = (1...7).map {
-            SKTexture(imageNamed: "Sprout_yawn_\($0)")
-        }
-        let yawn = SKAction.animate(
-            with: yawnFrames,
-            timePerFrame: 0.18,
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Fall — 4 frames
-        let fallFrames = (1...4).map {
-            SKTexture(imageNamed: "Sprout_fall_\($0)")
-        }
-        let fall = SKAction.animate(
-            with: fallFrames,
-            timePerFrame: 0.15,
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Sleep loop — 7 frames
-        let sleepFrames = (1...7).map {
-            SKTexture(imageNamed: "Sprout_sleep_\($0)")
-        }
-        let sleepLoop = SKAction.animate(
-            with: sleepFrames,
-            timePerFrame: 0.3,  // ← plus lent = plus endormi
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Séquence : Yawn → Fall → Sleep loop
+        stopIdleLoops()
+        let yawnFrames = (1...7).map { SKTexture(imageNamed: "Sprout_yawn_\($0)") }
+        let yawn = SKAction.animate(with: yawnFrames, timePerFrame: 0.18, resize: false, restore: false)
+        let fallFrames = (1...4).map { SKTexture(imageNamed: "Sprout_fall_\($0)") }
+        let fall = SKAction.animate(with: fallFrames, timePerFrame: 0.15, resize: false, restore: false)
+        let sleepFrames = (1...7).map { SKTexture(imageNamed: "Sprout_sleep_\($0)") }
+        let sleepLoop = SKAction.animate(with: sleepFrames, timePerFrame: 0.3, resize: false, restore: false)
         sprout.run(SKAction.sequence([yawn, fall])) { [weak self] in
-            self?.sprout?.run(
-                SKAction.repeatForever(sleepLoop),
-                withKey: "sleepLoop"
-            )
+            self?.sprout?.run(SKAction.repeatForever(sleepLoop), withKey: "sleepLoop")
         }
     }
 
     func playWakeUpDaily() {
         guard let sprout = sprout else { return }
         sprout.removeAction(forKey: "sleepLoop")
-        
-        // ✅ Wake Up — 15 frames
-        let wakeUpFrames = (1...15).map {
-            SKTexture(imageNamed: "Sprout_wakeup_\($0)")
-        }
-        let wakeUp = SKAction.animate(
-            with: wakeUpFrames,
-            timePerFrame: 0.12,
-            resize: false,
-            restore: false
-        )
-        
-        sprout.run(wakeUp) { [weak self] in
-            self?.startIdleAnimation()
-            self?.startBlinkLoop()
-        }
+        let wakeUpFrames = (1...15).map { SKTexture(imageNamed: "Sprout_wakeup_\($0)") }
+        let wakeUp = SKAction.animate(with: wakeUpFrames, timePerFrame: 0.12, resize: false, restore: false)
+        sprout.run(wakeUp) { [weak self] in self?.startIdle() }
     }
 
-    // ✅ Evolution — même base que daily mais avec évolution après
     func playSleepEvolution() {
         guard let sprout = sprout else { return }
-        sprout.removeAction(forKey: "idle")
-        sprout.removeAction(forKey: "blink")
-        
-        let yawnFrames = (1...7).map {
-            SKTexture(imageNamed: "Sprout_yawn_\($0)")
-        }
-        let yawn = SKAction.animate(
-            with: yawnFrames,
-            timePerFrame: 0.18,
-            resize: false,
-            restore: false
-        )
-        
-        let fallFrames = (1...4).map {
-            SKTexture(imageNamed: "Sprout_fall_\($0)")
-        }
-        let fall = SKAction.animate(
-            with: fallFrames,
-            timePerFrame: 0.15,
-            resize: false,
-            restore: false
-        )
-        
-        let sleepFrames = (1...7).map {
-            SKTexture(imageNamed: "Sprout_sleep_\($0)")
-        }
-        let sleepLoop = SKAction.animate(
-            with: sleepFrames,
-            timePerFrame: 0.3,
-            resize: false,
-            restore: false
-        )
-        
+        stopIdleLoops()
+        let yawnFrames = (1...7).map { SKTexture(imageNamed: "Sprout_yawn_\($0)") }
+        let yawn = SKAction.animate(with: yawnFrames, timePerFrame: 0.18, resize: false, restore: false)
+        let fallFrames = (1...4).map { SKTexture(imageNamed: "Sprout_fall_\($0)") }
+        let fall = SKAction.animate(with: fallFrames, timePerFrame: 0.15, resize: false, restore: false)
+        let sleepFrames = (1...7).map { SKTexture(imageNamed: "Sprout_sleep_\($0)") }
+        let sleepLoop = SKAction.animate(with: sleepFrames, timePerFrame: 0.3, resize: false, restore: false)
         sprout.run(SKAction.sequence([yawn, fall])) { [weak self] in
             guard let self = self else { return }
-            
-            // ✅ Enregistre l'heure
-            UserDefaults.standard.set(
-                Date().timeIntervalSince1970,
-                forKey: "sproutSleepTime"
-            )
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "sproutSleepTime")
             UserDefaults.standard.set(true, forKey: "sproutIsEvolving")
-            
-            self.sprout?.run(
-                SKAction.repeatForever(sleepLoop),
-                withKey: "sleepLoop"
-            )
+            self.sprout?.run(SKAction.repeatForever(sleepLoop), withKey: "sleepLoop")
         }
     }
 
     func playWakeUpAndEvolve() {
         guard let sprout = sprout else { return }
         sprout.removeAction(forKey: "sleepLoop")
-        
-        // ✅ Wake Up — 15 frames
-        let wakeUpFrames = (1...15).map {
-            SKTexture(imageNamed: "Sprout_wakeup_\($0)")
-        }
-        let wakeUp = SKAction.animate(
-            with: wakeUpFrames,
-            timePerFrame: 0.12,
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Evolution — 8 frames
-        let evolveFrames = (1...8).map {
-            SKTexture(imageNamed: "Sprout_evolve_\($0)")
-        }
-        let evolve = SKAction.animate(
-            with: evolveFrames,
-            timePerFrame: 0.12,
-            resize: false,
-            restore: false
-        )
-        
-        sprout.run(SKAction.sequence([wakeUp, evolve])) { [weak self] in
-            guard let self = self else { return }
-            UserDefaults.standard.set(false, forKey: "sproutIsEvolving")
-            UserDefaults.standard.set(
-                UserDefaults.standard.integer(forKey: "sproutLevel") + 1,
-                forKey: "sproutLevel"
-            )
-            self.playConfetti()
-            self.startIdleAnimation()
-            self.startBlinkLoop()
+        let wakeUpFrames = (1...15).map { SKTexture(imageNamed: "Sprout_wakeup_\($0)") }
+        let wakeUp = SKAction.animate(with: wakeUpFrames, timePerFrame: 0.12, resize: false, restore: false)
+        sprout.run(wakeUp) { [weak self] in
+            self?.playEvolutionFlash()
         }
     }
-    
+
     func startEvolvedIdleAnimation() {
         guard let sprout = sprout else { return }
-        
-        let evolvedIdleFrames = (1...8).map {  // ✅ 8 frames
-            SKTexture(imageNamed: "Sprout_evolved_1_idle_\($0)")
-        }
-        
-        let animate = SKAction.animate(
-            with: evolvedIdleFrames,
-            timePerFrame: 0.2,
-            resize: false,
-            restore: false
-        )
-        
-        let breatheIn = SKAction.scaleY(to: 1.03, duration: 0.8)
-        breatheIn.timingMode = .easeInEaseOut
-        let breatheOut = SKAction.scaleY(to: 1.0, duration: 0.8)
-        breatheOut.timingMode = .easeInEaseOut
-        
-        let breathe = SKAction.repeatForever(
-            SKAction.sequence([breatheIn, breatheOut])
-        )
-        
-        sprout.run(SKAction.group([
-            SKAction.repeatForever(animate),
-            breathe
-        ]), withKey: "idle")
+        let evolvedIdleFrames = (1...8).map { SKTexture(imageNamed: "Sprout_evolved_1_idle_\($0)") }
+        let animate = SKAction.animate(with: evolvedIdleFrames, timePerFrame: 0.2, resize: false, restore: false)
+        let breatheIn = SKAction.scaleY(to: 1.03, duration: 0.8); breatheIn.timingMode = .easeInEaseOut
+        let breatheOut = SKAction.scaleY(to: 1.0, duration: 0.8); breatheOut.timingMode = .easeInEaseOut
+        let breathe = SKAction.repeatForever(SKAction.sequence([breatheIn, breatheOut]))
+        sprout.run(SKAction.group([SKAction.repeatForever(animate), breathe]), withKey: "idle")
     }
 
     func startEvolvedBlinkLoop() {
         guard let sprout = sprout else { return }
-        
-        let blinkFrames = [
-            SKTexture(imageNamed: "Sprout_evolved_1_blink_1"),
-            SKTexture(imageNamed: "Sprout_evolved_1_blink_2"),
-            SKTexture(imageNamed: "Sprout_evolved_1_blink_3"),
-            SKTexture(imageNamed: "Sprout_evolved_1_blink_2"),
-            SKTexture(imageNamed: "Sprout_evolved_1_blink_1"),
-        ]
-        
+        let blinkFrames = [1, 2, 3, 2, 1].map { SKTexture(imageNamed: "Sprout_evolved_1_blink_\($0)") }
         let wait = SKAction.wait(forDuration: 3.0)
-        let stopIdle = SKAction.run { [weak self] in
-            sprout.removeAction(forKey: "idle")
-        }
-        let blink = SKAction.animate(
-            with: blinkFrames,
-            timePerFrame: 0.08,
-            resize: false,
-            restore: true
-        )
-        let resumeIdle = SKAction.run { [weak self] in
-            self?.startEvolvedIdleAnimation()
-        }
-        
-        sprout.run(SKAction.repeatForever(
-            SKAction.sequence([wait, stopIdle, blink, resumeIdle])
-        ), withKey: "blink")
+        let stopIdle = SKAction.run { sprout.removeAction(forKey: "idle") }
+        let blink = SKAction.animate(with: blinkFrames, timePerFrame: 0.08, resize: false, restore: true)
+        let resumeIdle = SKAction.run { [weak self] in self?.startEvolvedIdleAnimation() }
+        sprout.run(SKAction.repeatForever(SKAction.sequence([wait, stopIdle, blink, resumeIdle])), withKey: "blink")
     }
-    
+
     func playEvolutionFlash() {
-        guard let sprout = sprout else { return }
-        
         let center = CGPoint(x: size.width/2, y: size.height/2)
-        
-        // ✅ 8 rayons autour de Sprout
         for i in 0..<8 {
-            let angle = CGFloat(i) * CGFloat.pi / 4  // ← 45° entre chaque rayon
-            
+            let angle = CGFloat(i) * CGFloat.pi / 4
             let ray = SKShapeNode(rectOf: CGSize(width: 8, height: 200))
             ray.fillColor = UIColor.white.withAlphaComponent(0.8)
             ray.strokeColor = .clear
@@ -653,186 +352,116 @@ class SproutScene: SKScene {
             ray.alpha = 0
             ray.setScale(0)
             addChild(ray)
-            
-            // ✅ Apparaît et grandit
             let fadeIn = SKAction.fadeIn(withDuration: 0.2)
-            let expand = SKAction.scale(to: 1.5, duration: 0.6)
-            expand.timingMode = .easeOut
+            let expand = SKAction.scale(to: 1.5, duration: 0.6); expand.timingMode = .easeOut
+            let hold = SKAction.wait(forDuration: 0.5)
             let fadeOut = SKAction.fadeOut(withDuration: 0.5)
             let remove = SKAction.removeFromParent()
-            
-            ray.run(SKAction.sequence([
-                fadeIn,
-                SKAction.group([expand, fadeOut]),
-                remove
-            ]))
+            ray.run(SKAction.sequence([fadeIn, SKAction.group([expand, SKAction.wait(forDuration: 0.6)]), hold, fadeOut, remove]))
         }
-        
-        // ✅ Cercle central
         let glow = SKShapeNode(circleOfRadius: 5)
         glow.fillColor = .white
         glow.strokeColor = .clear
         glow.position = center
         glow.zPosition = 99
         addChild(glow)
-        
-        let expand = SKAction.scale(to: 15, duration: 0.6)
-        expand.timingMode = .easeOut
+        let expand = SKAction.scale(to: 15, duration: 0.6); expand.timingMode = .easeOut
         let hold = SKAction.wait(forDuration: 0.5)
         let fade = SKAction.fadeOut(withDuration: 0.5)
-        let remove = SKAction.removeFromParent()
-        
-        glow.run(SKAction.sequence([
-            SKAction.group([expand, fade]),
-            remove
-        ]))
-        
-        // ✅ Après l'effet → Sprout évolué
-        let wait = SKAction.wait(forDuration: 0.8)
+        glow.run(SKAction.sequence([SKAction.group([expand, SKAction.wait(forDuration: 0.6)]), hold, fade, SKAction.removeFromParent()]))
+        let wait = SKAction.wait(forDuration: 1.8)
         run(SKAction.sequence([wait, SKAction.run { [weak self] in
             self?.startEvolvedIdleAnimation()
             self?.startEvolvedBlinkLoop()
             self?.playConfetti()
+            UserDefaults.standard.set(false, forKey: "sproutIsEvolving")
+            UserDefaults.standard.set(UserDefaults.standard.integer(forKey: "sproutLevel") + 1, forKey: "sproutLevel")
         }]))
     }
-    
+
     func playSitDown() {
         guard let sprout = sprout else { return }
-        sprout.removeAction(forKey: "idle")
-        sprout.removeAction(forKey: "blink")
-        
-        // ✅ Sit down transition — 5 frames
-        let sitDownFrames = (1...5).map {
-            SKTexture(imageNamed: "Sprout_sitdown_\($0)")
-        }
-        let sitDown = SKAction.animate(
-            with: sitDownFrames,
-            timePerFrame: 0.15,
-            resize: false,
-            restore: false
-        )
-        
-        // ✅ Sit idle loop — 4 frames
-        let sitIdleFrames = (1...4).map {
-            SKTexture(imageNamed: "Sprout_sit_idle_\($0)")
-        }
-        let sitIdle = SKAction.animate(
-            with: sitIdleFrames,
-            timePerFrame: 0.2,
-            resize: false,
-            restore: false
-        )
-        
+        stopIdleLoops()
+        let sitDownFrames = (1...5).map { SKTexture(imageNamed: "Sprout_sitdown_\($0)") }
+        let sitDown = SKAction.animate(with: sitDownFrames, timePerFrame: 0.15, resize: false, restore: false)
+        let sitIdleFrames = (1...4).map { SKTexture(imageNamed: "Sprout_sit_idle_\($0)") }
+        let sitIdle = SKAction.animate(with: sitIdleFrames, timePerFrame: 0.2, resize: false, restore: false)
         sprout.run(sitDown) { [weak self] in
             guard let self = self else { return }
-            
-            // ✅ Loop sit idle
-            self.sprout?.run(
-                SKAction.repeatForever(sitIdle),
-                withKey: "sitIdle"
-            )
-            
-            // ✅ Reste assis 5-10 secondes puis se relève
+            self.sprout?.run(SKAction.repeatForever(sitIdle), withKey: "sitIdle")
             let sitDuration = Double.random(in: 5...10)
-            DispatchQueue.main.asyncAfter(deadline: .now() + sitDuration) {
-                self.playStandUp()
-            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + sitDuration) { self.playStandUp() }
         }
     }
 
     func playStandUp() {
         guard let sprout = sprout else { return }
         sprout.removeAction(forKey: "sitIdle")
-        
-        // ✅ Stand up transition — 5 frames
-        let standUpFrames = (1...5).map {
-            SKTexture(imageNamed: "Sprout_standup_\($0)")
-        }
-        let standUp = SKAction.animate(
-            with: standUpFrames,
-            timePerFrame: 0.15,
-            resize: false,
-            restore: false
-        )
-        
+        let standUpFrames = (1...5).map { SKTexture(imageNamed: "Sprout_standup_\($0)") }
+        let standUp = SKAction.animate(with: standUpFrames, timePerFrame: 0.15, resize: false, restore: false)
         sprout.run(standUp) { [weak self] in
-            self?.startIdleAnimation()
-            self?.startBlinkLoop()
-            self?.startRandomBehavior()  // ✅ reset le cycle
+            self?.startIdle()
+            self?.startRandomBehavior()
         }
     }
-    
-    var behaviorTimer: Timer?
 
     func startRandomBehavior() {
-        // ✅ Toutes les 30-60 secondes — fait quelque chose
         let randomDelay = Double.random(in: 30...60)
-        
-        behaviorTimer = Timer.scheduledTimer(
-            withTimeInterval: randomDelay,
-            repeats: false
-        ) { [weak self] _ in
+        behaviorTimer = Timer.scheduledTimer(withTimeInterval: randomDelay, repeats: false) { [weak self] _ in
             self?.chooseRandomBehavior()
         }
     }
 
     func chooseRandomBehavior() {
         let random = Int.random(in: 0...2)
-        
         switch random {
-        case 0:
-            // ✅ Se balade puis revient
-            playRandomWalk()
-        case 1:
-            // ✅ S'assoit
-            playSitDown()
-        case 2:
-            // ✅ Reste en idle — reset le timer
-            startRandomBehavior()
-        default:
-            startRandomBehavior()
+        case 0: playRandomWalk()
+        case 1: playSitDown()
+        default: startRandomBehavior()
         }
     }
 
     func playRandomWalk() {
         isWalking = true
         playWalk()
-        
-        // ✅ Marche pendant 3-6 secondes puis s'arrête
         let walkDuration = Double.random(in: 3...6)
         DispatchQueue.main.asyncAfter(deadline: .now() + walkDuration) { [weak self] in
             self?.isWalking = false
             self?.stopWalk()
-            
-            // ✅ Après la marche → peut s'asseoir ou idle
-            let random = Int.random(in: 0...1)
-            if random == 0 {
-                self?.playSitDown()
-            } else {
-                self?.startRandomBehavior()  // ← retour idle + reset timer
-            }
+            if Int.random(in: 0...1) == 0 { self?.playSitDown() }
+            else { self?.startRandomBehavior() }
         }
     }
 
+    func playEvolution() {
+        startIdle()
+    }
 }
 
+// ✅ SproutSceneHolder
 class SproutSceneHolder: ObservableObject {
     let scene: SproutScene
-    
     init() {
         scene = SproutScene()
-        scene.size = CGSize(width: 400, height: 600)
-        scene.scaleMode = .aspectFit
+        scene.size = CGSize(width: 300, height: 400)
+        scene.scaleMode = .resizeFill
         scene.backgroundColor = .clear
     }
 }
 
+// ✅ SproutView
 struct SproutView: View {
+    let state: SproutState
     @StateObject private var holder = SproutSceneHolder()
-    
+
     var body: some View {
         SpriteView(scene: holder.scene, options: [.allowsTransparency])
-            .frame(width: 400, height: 500)
+            .onChange(of: state, initial: true) { _, newState in
+                holder.scene.updateState(newState)
+            }
+            .onTapGesture {
+                holder.scene.tapReaction()
+            }
     }
 }
 
@@ -840,8 +469,8 @@ struct SproutView: View {
     ZStack {
         Image("GrassBackgroundImage")
             .resizable()
-            .frame(width: 900, height:900)
+            .frame(width: 900, height: 900)
             .ignoresSafeArea()
-        SproutView()
+        SproutView(state: .idle)
     }
 }

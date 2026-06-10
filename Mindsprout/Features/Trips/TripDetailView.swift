@@ -41,11 +41,11 @@ struct TripDetailView: View {
                         )
                     }
                     if let featured = featuredReflectionData {
-                        SectionDivider(title: "FEATURED REFLECTION")
+                        SectionDivider(title: "FEATURED REFLECTION", color: AppColor.onBackground)
                         featuredReflectionCard(reflection: featured.reflection, index: featured.index)
                     }
                     if !viewModel.reflections.isEmpty {
-                        SectionDivider(title: "MOMENTS")
+                        SectionDivider(title: "MOMENTS", color: AppColor.onBackground)
                         ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
                             NavigationLink(value: AdventuresRoute.tripDayDetail(tripID: tripID, initialDayIndex: offset)) {
                                 DayCard(reflection: reflection)
@@ -68,25 +68,26 @@ struct TripDetailView: View {
     private var header: some View {
         HStack {
             Button { if let onBack { onBack() } else { dismiss() } } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: Spacing.xxs) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 14, weight: .semibold))
                     Text("Trips")
                         .font(AppFont.callout)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, Spacing.xs)
                 .contentShape(Rectangle())
                 .foregroundStyle(AppColor.ink)
             }
             Spacer()
+            Image(systemName: "square.and.pencil")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(AppColor.ink)
+        }
+        .overlay {
             Text(viewModel.trip?.destination ?? "")
                 .font(.system(size: 22, weight: .heavy, design: .rounded))
                 .foregroundStyle(AppColor.ink)
                 .lineLimit(1)
-            Spacer()
-            Image(systemName: "mappin.circle.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(AppColor.primary)
         }
         .padding(.horizontal, Spacing.md)
         .frame(height: 56)
@@ -226,7 +227,7 @@ struct TripDayDetailView: View {
     private var header: some View {
         HStack {
             Button { if let onBack { onBack() } else { dismiss() } } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: Spacing.xxs) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 14, weight: .semibold))
                     Text(viewModel.trip?.destination ?? "")
@@ -283,7 +284,7 @@ struct TripDayDetailView: View {
             ZStack {
                 Color.black.opacity(0.7).ignoresSafeArea()
                 MediaImage(assetID: lightboxAsset, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                     .padding(Spacing.lg)
                     .shadow(color: .black.opacity(0.4), radius: 20, y: 10)
             }
@@ -309,7 +310,7 @@ private struct DayContentView: View {
                         .frame(height: 230)
                         .frame(maxWidth: .infinity)
                         .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                         .shadow(color: AppColor.ink.opacity(0.12), radius: 12, y: 6)
                         .onTapGesture { lightboxAsset = featured }
                 }
@@ -378,6 +379,8 @@ struct SectionDivider: View {
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .tracking(1)
                 .foregroundStyle(color)
+                .lineLimit(1)
+                .fixedSize()
             line
         }
     }

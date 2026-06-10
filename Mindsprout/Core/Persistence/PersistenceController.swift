@@ -6,7 +6,8 @@ enum PersistenceController {
         Trip.self,
         Reflection.self,
         MediaAsset.self,
-        Sprout.self
+        Sprout.self,
+        User.self
     ])
 
     static func makeContainer() -> ModelContainer {

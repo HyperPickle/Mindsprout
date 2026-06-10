@@ -30,20 +30,6 @@ struct HomeTab: View {
         HomeDashboardState(hasActiveTrip: activeTrip != nil).ctaAction
     }
 
-    private var engine: SproutProgressionEngine {
-        SproutProgressionEngine(config: env.gameConfig)
-    }
-
-    private var xpProgress: Double {
-        engine.progressWithinLevel(totalXP: displaySprout.xp, level: displaySprout.level)
-    }
-
-    private var sproutImageName: String {
-        let stateKey = displaySprout.state == .sleeping ? "sleeping" : "idle"
-        let name = "sprout_stage\(displaySprout.currentStageIndex)_\(stateKey)"
-        return UIImage(named: name) != nil ? name : "sprout_stage0_idle"
-    }
-
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -165,51 +151,15 @@ struct HomeTab: View {
     }
 
     private func sproutStage(layout: HomeDashboardLayout) -> some View {
-        Image(sproutImageName)
-            .resizable()
-            .scaledToFit()
+        SproutView(state: displaySprout.state.homeDisplayState)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .opacity(0.98)
             .accessibilityHidden(true)
     }
 
     private var bottomPanel: some View {
         VStack(spacing: Spacing.sm) {
-            xpProgressBar
             ctaButton
         }
-    }
-
-    private var xpProgressBar: some View {
-        VStack(spacing: Spacing.xxs) {
-            HStack {
-                Text("Level \(displaySprout.level)")
-                    .font(.system(size: 13, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColor.ink)
-                Spacer()
-                Text("\(displaySprout.xp) XP")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundStyle(AppColor.inkSecondary)
-                    .monospacedDigit()
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(AppColor.hairline.opacity(0.6))
-                    Capsule()
-                        .fill(AppColor.primary)
-                        .frame(width: max(geo.size.width * xpProgress, xpProgress > 0 ? 8 : 0))
-                }
-                .frame(height: 8)
-            }
-            .frame(height: 8)
-        }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                .fill(.white.opacity(0.72))
-        )
     }
 
     private var ctaButton: some View {
@@ -287,9 +237,9 @@ private struct HomeDashboardLayout {
         currencyPillHeight = 42 * scaleY
 
         sproutCenterX = 201 * scaleX
-        sproutCenterY = 505 * scaleY
-        sproutWidth = 195 * scaleX
-        sproutHeight = 260 * scaleY
+        sproutCenterY = 455 * scaleY
+        sproutWidth = 260 * scaleX
+        sproutHeight = 360 * scaleY
     }
 }
 

@@ -11,6 +11,14 @@ struct ModalContainer: View {
             LevelUpFlow(presentation: presentation)
         case .shop:
             ShopView()
+        case .themeSettings:
+            ThemeSettingsModal()
+        case .notificationsSettings:
+            NotificationsSettingsModal()
+        case .helpSupport:
+            HelpSupportModal()
+        case .aboutSettings:
+            AboutSettingsModal()
         }
     }
 }

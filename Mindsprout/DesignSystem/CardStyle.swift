@@ -7,7 +7,7 @@ struct CardStyle: ViewModifier {
         content
             .padding(padding)
             .background(AppColor.cardSurface)
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             .shadow(color: AppColor.ink.opacity(0.10), radius: 12, x: 0, y: 6)
     }
 }

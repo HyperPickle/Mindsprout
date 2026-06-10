@@ -53,7 +53,7 @@ struct NewTripHeader: View {
         .padding(.horizontal, Spacing.md)
         .frame(height: 52)
         .background(AppColor.headerBrown)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         .padding(.horizontal, Spacing.sm)
         .padding(.top, Spacing.xs)
     }

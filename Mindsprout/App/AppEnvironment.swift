@@ -15,7 +15,7 @@ struct AppEnvironment {
             mediaStore: MediaStore(),
             contentPackLoader: ContentPackLoader(),
             analytics: NoOpAnalyticsService(),
-            auth: LocalAuthService()
+            auth: AppleAuthService()
         )
     }
 
@@ -37,4 +37,5 @@ extension EnvironmentValues {
 
     var gameConfig: GameConfig { appEnvironment.gameConfig }
     var aiGenerationService: any AIGenerationService { appEnvironment.ai }
+    var authService: any AuthService { appEnvironment.auth }
 }

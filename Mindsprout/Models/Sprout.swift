@@ -8,7 +8,7 @@ final class Sprout {
     var level: Int = 1
     var currentStageIndex: Int = 0
     var currency: Int = 0
-    var state: SproutState = SproutState.sleeping
+    var state: SproutState = SproutState.idle
     var createdAt: Date = Date()
 
     init(
@@ -17,7 +17,7 @@ final class Sprout {
         level: Int = 1,
         currentStageIndex: Int = 0,
         currency: Int = 0,
-        state: SproutState = .sleeping,
+        state: SproutState = .idle,
         createdAt: Date = Date()
     ) {
         self.id = id
