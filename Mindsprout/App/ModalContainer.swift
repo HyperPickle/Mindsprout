@@ -7,6 +7,8 @@ struct ModalContainer: View {
         switch modal {
         case .newTrip:
             NewTripFlow()
+        case .editTrip(let tripID):
+            EditTripFlow(tripID: tripID)
         case .levelUp(let presentation):
             LevelUpFlow(presentation: presentation)
         case .shop:

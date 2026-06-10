@@ -77,12 +77,12 @@ struct HomeTab: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(activeTrip?.destination ?? "No trip yet")
                     .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
                 Text(activeTrip?.country ?? "Start an adventure")
                     .font(.system(size: 9, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
             }
@@ -135,10 +135,10 @@ struct HomeTab: View {
             HStack(spacing: 6) {
                 Image(systemName: "leaf.fill")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(AppColor.currency)
+                    .foregroundStyle(.white)
                 Text("\(displaySprout.currency)")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(.white)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)

@@ -50,28 +50,24 @@ private struct TripsHeader: View {
         HStack {
             Text("Trips")
                 .font(.system(size: 26, weight: .heavy, design: .rounded))
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
 
             Spacer()
 
             Button(action: onNewTrip) {
                 Label("New trip", systemImage: "plus")
                     .font(AppFont.callout)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(.white)
                     .lineLimit(1)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xs)
-                    .background(Capsule().fill(AppColor.sand))
+                    .background(Capsule().fill(.white.opacity(0.2)))
                     .contentShape(Capsule())
             }
         }
         .padding(.horizontal, Spacing.md)
         .frame(height: 56)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
-                .fill(AppColor.cardSurface)
-                .shadow(color: AppColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
-        )
+        .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
     }
 }
 

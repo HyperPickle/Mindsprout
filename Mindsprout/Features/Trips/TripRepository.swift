@@ -62,6 +62,10 @@ struct TripRepository {
 
 enum TripResolver {
     static func active(in trips: [Trip], on date: Date = Date(), calendar: Calendar = .current) -> Trip? {
+        let pinned = trips.filter(\.isManuallyActive)
+        if !pinned.isEmpty {
+            return pinned.max { $0.createdAt < $1.createdAt }
+        }
         let containing = trips.filter { $0.isActive(on: date, calendar: calendar) }
         let pool = containing.isEmpty ? trips : containing
         return pool.max { $0.createdAt < $1.createdAt }

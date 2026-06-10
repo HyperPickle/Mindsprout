@@ -4,6 +4,7 @@ import SwiftData
 struct ProfileTab: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appEnvironment) private var env
+    @Environment(ModalCoordinator.self) private var modalCoordinator
     @Query private var sprouts: [Sprout]
     @Query private var users: [User]
     @Query private var trips: [Trip]
@@ -47,15 +48,9 @@ struct ProfileTab: View {
                                 .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
                             
                             VStack(spacing: 20) {
-                                HStack(spacing: Spacing.xs) {
-                                    Text(displayName)
-                                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
-
-                                    Image(systemName: "pencil")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(.white)
-                                }
+                                Text(displayName)
+                                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
 
                                 // Location Badge (Full width) — reflects the active trip
                                 HStack(spacing: Spacing.xs) {
@@ -112,6 +107,9 @@ struct ProfileTab: View {
                             }
                             ProfileActionButton(title: "Settings", icon: "gearshape") {
                                 showSettings = true
+                            }
+                            ProfileActionButton(title: "About", icon: "questionmark.circle") {
+                                modalCoordinator.present(.aboutSettings)
                             }
                         }
                         .padding(.horizontal, Spacing.screenEdge)

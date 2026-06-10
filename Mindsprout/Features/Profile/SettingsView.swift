@@ -1,10 +1,12 @@
 import SwiftUI
+import SafariServices
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ModalCoordinator.self) private var modalCoordinator
     @Environment(\.appEnvironment) private var env
     @State private var showSignOutConfirm = false
+    @State private var showPrivacyPolicy = false
 
     var body: some View {
         ZStack {
@@ -50,8 +52,8 @@ struct SettingsView: View {
                         SettingsActionButton(title: "Help and Support", icon: "headphones") {
                             modalCoordinator.present(.helpSupport)
                         }
-                        SettingsActionButton(title: "About", icon: "questionmark.circle") {
-                            modalCoordinator.present(.aboutSettings)
+                        SettingsActionButton(title: "Privacy Policy", icon: "lock.shield") {
+                            showPrivacyPolicy = true
                         }
                         
                         SettingsActionButton(title: "Sign Out", icon: "arrow.right.square") {
@@ -61,7 +63,7 @@ struct SettingsView: View {
                         Text("Version 1.0.0")
                             .font(.system(size: 14, design: .rounded))
                             .foregroundColor(AppColor.onBackground)
-                            .padding(.top, 20)
+                            .padding(.top, 10)
                     }
                     .padding(.horizontal, Spacing.screenEdge)
                     .padding(.top, Spacing.xl)
@@ -70,6 +72,12 @@ struct SettingsView: View {
             }
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showPrivacyPolicy) {
+            if let url = URL(string: "https://mindsprout-website.vercel.app/privacy.html") {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
         .alert("Sign Out", isPresented: $showSignOutConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Sign Out", role: .destructive) {
@@ -104,6 +112,17 @@ private struct SettingsActionButton: View {
             .frame(height: 64)
             .liquidGlass(cornerRadius: CornerRadius.medium)
         }
+    }
+}
+
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        return SFSafariViewController(url: url)
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {
     }
 }
 
