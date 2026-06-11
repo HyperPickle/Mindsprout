@@ -111,39 +111,45 @@ struct TripDetailView: View {
 
 private struct DayCard: View {
     let reflection: Reflection
+    private let photoWidth: CGFloat = 104
+    private var photoHeight: CGFloat { photoWidth * 16 / 9 }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                Text("Day \(reflection.dayIndex)")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.ink)
-                Spacer()
-                Text("Open memory →")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.primary)
-            }
+        HStack(alignment: .top, spacing: Spacing.md) {
             if let featured = reflection.photoAssetIDs.first {
                 TripPhotoThumb(assetID: featured)
-                    .frame(height: 180)
-                    .frame(maxWidth: .infinity)
-                    .overlay(alignment: .topTrailing) {
-                        if reflection.photoAssetIDs.count > 1 {
-                            Label("\(reflection.photoAssetIDs.count)", systemImage: "photo.on.rectangle")
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, Spacing.sm)
-                                .padding(.vertical, 5)
-                                .background(Capsule().fill(.black.opacity(0.4)))
-                                .padding(Spacing.sm)
-                        }
-                    }
+                    .frame(width: photoWidth, height: photoHeight)
+                    .overlay(alignment: .topTrailing) { photoBadge }
             }
-            if let text = reflection.text, !text.isEmpty {
-                LabelBox(header: "MOMENT", text: String(text.prefix(80)))
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                HStack {
+                    Text("Day \(reflection.dayIndex)")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.ink)
+                    Spacer()
+                    Text("Open memory →")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColor.primary)
+                }
+                if let text = reflection.text, !text.isEmpty {
+                    LabelBox(header: "MOMENT", text: String(text.prefix(200)), lineLimit: 6)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .cardStyle()
+    }
+
+    @ViewBuilder private var photoBadge: some View {
+        if reflection.photoAssetIDs.count > 1 {
+            Label("\(reflection.photoAssetIDs.count)", systemImage: "photo.on.rectangle")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, Spacing.xs)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(.black.opacity(0.45)))
+                .padding(Spacing.xs)
+        }
     }
 }
 
