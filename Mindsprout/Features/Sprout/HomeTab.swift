@@ -179,15 +179,10 @@ struct HomeTab: View {
             Text(ctaLabel)
                 .font(AppFont.button)
                 .textCase(.uppercase)
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.md)
                 .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                        .fill(.white.opacity(0.35))
-                        .allowsHitTesting(false)
-                }
         }
         .buttonStyle(.plain)
         .containerRelativeFrame(.horizontal) { w, _ in w * 0.75 }

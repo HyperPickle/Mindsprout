@@ -39,7 +39,7 @@ struct EntryStep: View {
 
             HStack(alignment: .center, spacing: Spacing.sm) {
                 BlinkingSproutView()
-                    .frame(width: 79, height: 79)
+                    .frame(width: 95, height: 95)
                 Text(vm.affirmationHeadline)
                     .font(AppFont.headline)
                     .foregroundStyle(AppColor.onBackground)

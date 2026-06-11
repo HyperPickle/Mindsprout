@@ -178,6 +178,7 @@ struct RevisitTripCard: View {
 struct LabelBox: View {
     let header: String
     let text: String
+    var lineLimit: Int = 2
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -188,7 +189,7 @@ struct LabelBox: View {
             Text(text)
                 .font(AppFont.bodyEmphasized)
                 .foregroundStyle(AppColor.ink)
-                .lineLimit(2)
+                .lineLimit(lineLimit)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(Spacing.sm)

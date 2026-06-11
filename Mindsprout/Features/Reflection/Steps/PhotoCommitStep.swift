@@ -63,7 +63,7 @@ struct PhotoCommitStep: View {
 
             HStack(alignment: .center, spacing: Spacing.sm) {
                 BlinkingSproutView()
-                    .frame(width: 79, height: 79)
+                    .frame(width: 95, height: 95)
                 Text("A picture worth a thousand words they say ;)")
                     .font(AppFont.headline)
                     .foregroundStyle(AppColor.onBackground)

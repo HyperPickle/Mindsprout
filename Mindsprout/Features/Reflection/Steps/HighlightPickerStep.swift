@@ -30,7 +30,7 @@ struct HighlightPickerStep: View {
     private var sproutHeader: some View {
         HStack(alignment: .center, spacing: Spacing.sm) {
             BlinkingSproutView()
-                .frame(width: 86, height: 86)
+                .frame(width: 103, height: 103)
             Text("What was the highlight of your day?")
                 .font(AppFont.title)
                 .foregroundStyle(AppColor.onBackground)
