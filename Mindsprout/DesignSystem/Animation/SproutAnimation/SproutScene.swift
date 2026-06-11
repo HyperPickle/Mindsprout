@@ -15,9 +15,16 @@ class SproutScene: SKScene {
     var sprout: SKSpriteNode?
     var shadow: SKShapeNode?
     var isWalking = false
+    var isReturning = false
     var isHungry = false
     var isHappy = false
     var behaviorTimer: Timer?
+    var isDoingBehavior = false
+    var tapCount = 0
+    var tapTimer: Timer?
+    var lastBehavior: Int = -1
+
+    
     private var pendingState: SproutState = .idle  // ✅ une seule fois
     private var isPlayingFaceGesture = false
 
@@ -35,24 +42,26 @@ class SproutScene: SKScene {
 
         let texture = SKTexture(imageNamed: "Sprout_idle_1")
         let aspect = texture.size().height / texture.size().width
-        let sproutHeight = size.height * 0.9
+        let sproutHeight = CGFloat (400)
         let sproutWidth = sproutHeight / aspect
         let sproutSize = CGSize(width: sproutWidth, height: sproutHeight)
 
-        let shadowNode = SKShapeNode(ellipseOf: CGSize(width: sproutWidth * 0.55, height: 12))
-        shadowNode.fillColor = UIColor.black.withAlphaComponent(0.2)
-        shadowNode.strokeColor = .clear
-        shadowNode.position = CGPoint(x: size.width / 2, y: size.height / 2 - sproutHeight / 2 + sproutHeight * 0.28)
-        shadowNode.zPosition = 0
-        addChild(shadowNode)
-        shadow = shadowNode
-
         let sproutNode = SKSpriteNode(texture: texture)
-        sproutNode.size = sproutSize
-        sproutNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        sproutNode.zPosition = 1
-        addChild(sproutNode)
-        sprout = sproutNode
+           sproutNode.size = sproutSize
+           sproutNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
+           sproutNode.zPosition = 1
+           addChild(sproutNode)
+           sprout = sproutNode
+           
+           // ✅ Ombre enfant de Sprout — suit automatiquement !
+           let shadowNode = SKShapeNode(ellipseOf: CGSize(width: sproutWidth * 0.55, height: 12))
+           shadowNode.fillColor = UIColor.black.withAlphaComponent(0.2)
+           shadowNode.strokeColor = .clear
+           // ✅ Position relative à Sprout (pas à la scène)
+           shadowNode.position = CGPoint(x: 0, y: -sproutHeight / 2 + sproutHeight * 0.28)
+           shadowNode.zPosition = -1  // ← derrière Sprout
+           sproutNode.addChild(shadowNode)  // ✅ enfant de sproutNode !
+           shadow = shadowNode
 
         updateState(pendingState)
     }
@@ -87,7 +96,7 @@ class SproutScene: SKScene {
         sprout.texture = SKTexture(imageNamed: "Sprout_idle_1")
         startBreatheLoop()
         startBlinkLoop()
-        scheduleRandomWalk()
+        startRandomBehavior()
     }
 
     private func stopIdleLoops() {
@@ -98,15 +107,13 @@ class SproutScene: SKScene {
         isPlayingFaceGesture = false
     }
 
-    func startBreatheLoop() {
-        guard let sprout = sprout else { return }
-        let wait = SKAction.wait(forDuration: 12.5, withRange: 5)
-        let fire = SKAction.run { [weak self] in self?.playBreath() }
-        sprout.run(SKAction.repeatForever(SKAction.sequence([wait, fire])), withKey: "breathe")
-    }
-
     private func playBreath() {
-        guard let sprout = sprout, isIdle, !isPlayingFaceGesture else { return }
+        // ✅ Ne respire que si vraiment inactif
+        guard let sprout = sprout,
+              isIdle,
+              !isDoingBehavior,      // ← pas en train de faire quelque chose
+              !isPlayingFaceGesture else { return }
+        
         isPlayingFaceGesture = true
 
         let idleFrames = (1...9).map { SKTexture(imageNamed: "Sprout_idle_\($0)") }
@@ -115,8 +122,10 @@ class SproutScene: SKScene {
 
         if let shadow = shadow {
             let dur = timePerFrame * Double(idleFrames.count) / 2
-            let up = SKAction.scale(to: 1.05, duration: dur); up.timingMode = .easeInEaseOut
-            let down = SKAction.scale(to: 1.0, duration: dur); down.timingMode = .easeInEaseOut
+            let up = SKAction.scale(to: 1.05, duration: dur)
+            up.timingMode = .easeInEaseOut
+            let down = SKAction.scale(to: 1.0, duration: dur)
+            down.timingMode = .easeInEaseOut
             shadow.run(SKAction.sequence([up, down]), withKey: "shadowBreath")
         }
 
@@ -171,13 +180,61 @@ class SproutScene: SKScene {
         playWalk()
     }
 
+//    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+//        guard let touch = touches.first, let sprout = sprout else { return }
+//        if sprout.contains(touch.location(in: self)) {
+//            playJump()
+//        }
+//    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let sprout = sprout else { return }
-        if sprout.contains(touch.location(in: self)) {
-            playSitDown()
+        guard let touch = touches.first,
+              let sprout = sprout else { return }
+        
+        let location = touch.location(in: self)
+        touchPoints = [location]
+        swipeStartX = location.x
+        lastTouchPosition = location
+        
+        if sprout.contains(location) {
+            tapCount += 1
+            
+            // ✅ Reset timer à chaque tap
+            tapTimer?.invalidate()
+            tapTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
+                guard let self = self else { return }
+                
+                switch self.tapCount {
+                case 1:
+                    self.playJump()     // ✅ single tap → jump
+                case 2:
+                    self.playHappy()    // ✅ double tap → happy
+                default:
+                    break
+                }
+                self.tapCount = 0
+            }
+            
+            // ✅ Drag
+            isDragging = true
+            stopIdleLoops()
+            dragOffset = CGPoint(
+                x: sprout.position.x - location.x,
+                y: sprout.position.y - location.y
+            )
+            
+            let grabbedFrames = (1...5).map {
+                SKTexture(imageNamed: "Sprout_grabbed_\($0)")
+            }
+            let grabbed = SKAction.animate(
+                with: grabbedFrames,
+                timePerFrame: 0.1,
+                resize: false,
+                restore: false
+            )
+            sprout.run(grabbed)
         }
     }
-
     func playHungry() {
         guard let sprout = sprout else { return }
         stopIdleLoops()
@@ -201,18 +258,116 @@ class SproutScene: SKScene {
     func playWalk() {
         guard let sprout = sprout else { return }
         stopIdleLoops()
-        let startFrames = (1...4).map { SKTexture(imageNamed: "Sprout_walk_start_\($0)") }
-        let startTransition = SKAction.animate(with: startFrames, timePerFrame: 0.12, resize: false, restore: false)
+        
+        // ✅ Direction aléatoire — gauche ou droite
+        let goRight = Bool.random()
+        let direction: CGFloat = goRight ? 1 : -1
+        
+        // ✅ Flip Sprout selon la direction
+        sprout.xScale = goRight ? 1.0 : -1.0  // ← miroir si va à gauche
+        
+        let startFrames = (1...4).map {
+            SKTexture(imageNamed: "Sprout_walk_start_\($0)")
+        }
+        let startTransition = SKAction.animate(
+            with: startFrames,
+            timePerFrame: 0.12,
+            resize: false,
+            restore: false
+        )
+        
         let walkDuration = Double.random(in: 3...6)
+        let walkDistance = direction * CGFloat(walkDuration) * 40  // ← vitesse de déplacement
+        
+        // ✅ Déplacement horizontal
+        let moveAction = SKAction.moveBy(
+            x: walkDistance,
+            y: 0,
+            duration: walkDuration
+        )
+        
         let waitThenStop = SKAction.sequence([
             SKAction.wait(forDuration: walkDuration),
             SKAction.run { [weak self] in self?.stopWalk() }
         ])
+
         sprout.run(startTransition) { [weak self] in
             guard let self = self else { return }
             self.walkLoop()
+            
+            // ✅ Déplacement + timer en parallèle
+            self.sprout?.run(moveAction, withKey: "walkMove")
             self.sprout?.run(waitThenStop, withKey: "walkTimer")
         }
+    }
+
+    func stopWalk() {
+        guard let sprout = sprout else { return }
+           sprout.removeAllActions()
+           isWalking = false
+           
+           let center = CGPoint(x: size.width/2, y: size.height/2)
+           let distance = abs(sprout.position.x - center.x)
+           let returnDuration = Double(distance / 80)
+           
+           // ✅ Flip vers le centre
+           sprout.xScale = sprout.position.x > center.x ? -1.0 : 1.0
+           
+           // ✅ Flag séparé pour le retour
+           isReturning = true
+           returnWalkLoop()
+           
+           let returnHome = SKAction.move(to: center, duration: returnDuration)
+           returnHome.timingMode = .linear
+           
+           sprout.run(returnHome) { [weak self] in
+               guard let self = self else { return }
+               
+               // ✅ Stoppe la marche de retour
+               self.isReturning = false
+               
+               let endFrames = (1...4).map {
+                   SKTexture(imageNamed: "Sprout_walk_end_\($0)")
+               }
+               let endTransition = SKAction.animate(
+                   with: endFrames,
+                   timePerFrame: 0.12,
+                   resize: false,
+                   restore: false
+               )
+               
+               self.sprout?.run(endTransition) { [weak self] in
+                   self?.sprout?.xScale = 1.0
+                   self?.startIdle()
+               }
+           }
+    }
+    
+    func returnWalkLoop() {
+        guard let sprout = sprout, isReturning else { return }
+        
+        let walkFrames = (1...11).map {
+            SKTexture(imageNamed: "Sprout_walk_\($0)")
+        }
+        let walk = SKAction.animate(
+            with: walkFrames,
+            timePerFrame: 0.1,
+            resize: false,
+            restore: false
+        )
+        
+        sprout.run(walk) { [weak self] in
+            self?.returnWalkLoop()
+        }
+    }
+    
+    func startBreatheLoop() {
+        guard let sprout = sprout else { return }
+        
+        // ✅ Respire toutes les 4-7 secondes — plus visible !
+        let wait = SKAction.wait(forDuration: 5.5, withRange: 3)
+        let fire = SKAction.run { [weak self] in self?.playBreath() }
+        sprout.run(SKAction.repeatForever(SKAction.sequence([wait, fire])), withKey: "breathe")
     }
 
     func walkLoop() {
@@ -221,18 +376,6 @@ class SproutScene: SKScene {
         let walk = SKAction.animate(with: walkFrames, timePerFrame: 0.1, resize: false, restore: false)
         let loopAction = SKAction.sequence([walk, SKAction.run { [weak self] in self?.walkLoop() }])
         sprout.run(loopAction, withKey: "walkLoop")
-    }
-
-    func stopWalk() {
-        guard let sprout = sprout else { return }
-        sprout.removeAction(forKey: "walkLoop")
-        let endFrames = (1...4).map { SKTexture(imageNamed: "Sprout_walk_end_\($0)") }
-        let endTransition = SKAction.animate(with: endFrames, timePerFrame: 0.12, resize: false, restore: false)
-        sprout.run(endTransition) { [weak self] in
-            guard let self = self else { return }
-            self.isWalking = false
-            self.startIdle()
-        }
     }
 
     func playLevelUp(willEvolve: Bool = false) {
@@ -401,26 +544,73 @@ class SproutScene: SKScene {
         let standUp = SKAction.animate(with: standUpFrames, timePerFrame: 0.15, resize: false, restore: false)
         sprout.run(standUp) { [weak self] in
             self?.startIdle()
+            self?.isDoingBehavior = false
             self?.startRandomBehavior()
         }
     }
 
     func startRandomBehavior() {
-        let randomDelay = Double.random(in: 30...60)
-        behaviorTimer = Timer.scheduledTimer(withTimeInterval: randomDelay, repeats: false) { [weak self] _ in
-            self?.chooseRandomBehavior()
+        guard !isDoingBehavior else { return }
+        
+        let randomDelay = Double.random(in: 10...30)  // ← plus fréquent
+        
+        behaviorTimer = Timer.scheduledTimer(
+            withTimeInterval: randomDelay,
+            repeats: false
+        ) { [weak self] _ in
+            guard let self = self, self.isIdle else {
+                self?.startRandomBehavior()  // ← réessaie si occupé
+                return
+            }
+            self.chooseRandomBehavior()
         }
     }
 
     func chooseRandomBehavior() {
-        let random = Int.random(in: 0...2)
-        switch random {
-        case 0: playRandomWalk()
-        case 1: playSitDown()
-        default: startRandomBehavior()
+        isDoingBehavior = true
+            
+            var random: Int
+            
+            // ✅ Évite de répéter la même action
+            repeat {
+                random = Int.random(in: 0...4)
+            } while random == lastBehavior
+            
+            lastBehavior = random
+            
+            switch random {
+            case 0:
+                walkThenReturn()
+            case 1:
+                playSitDown()
+            case 2:
+                isDoingBehavior = false
+                startRandomBehavior()
+            default:
+                isDoingBehavior = false
+                startRandomBehavior()
+            }
+    }
+    
+    func walkThenReturn() {
+        isWalking = true
+        playWalk()
+        
+        let walkDuration = Double.random(in: 3...6)
+        DispatchQueue.main.asyncAfter(deadline: .now() + walkDuration) { [weak self] in
+            guard let self = self else { return }
+            self.isWalking = false
+            self.stopWalk()
+            
+            // ✅ Après retour → nouvelle action aléatoire
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.isDoingBehavior = false
+                self?.startRandomBehavior()
+            }
         }
     }
-
+    
+    
     func playRandomWalk() {
         isWalking = true
         playWalk()
@@ -436,6 +626,163 @@ class SproutScene: SKScene {
     func playEvolution() {
         startIdle()
     }
+    
+    // ✅ Variables à ajouter en haut de la classe
+    var isDragging = false
+    var dragOffset = CGPoint.zero
+    var lastTouchPosition = CGPoint.zero
+    var touchPoints: [CGPoint] = []
+    var swipeStartX: CGFloat = 0
+
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first,
+              let sprout = sprout,
+              isDragging else { return }
+        
+        let location = touch.location(in: self)
+        touchPoints.append(location)
+        
+        // ✅ Sprout suit le doigt
+        sprout.position = CGPoint(
+            x: location.x + dragOffset.x,
+            y: location.y + dragOffset.y
+        )
+        
+        let deltaX = location.x - lastTouchPosition.x
+        
+        // ✅ Change texture selon direction
+        if deltaX > 5 {
+            // Drag droite — 2 frames alternées
+            let rightFrames = (1...2).map {
+                SKTexture(imageNamed: "Sprout_drag_right_\($0)")
+            }
+            let dragRight = SKAction.animate(
+                with: rightFrames,
+                timePerFrame: 0.1,
+                resize: false,
+                restore: false
+            )
+            sprout.run(dragRight, withKey: "dragDirection")
+            
+        } else if deltaX < -5 {
+            // Drag gauche — 2 frames alternées
+            let leftFrames = (1...2).map {
+                SKTexture(imageNamed: "Sprout_drag_left_\($0)")
+            }
+            let dragLeft = SKAction.animate(
+                with: leftFrames,
+                timePerFrame: 0.1,
+                resize: false,
+                restore: false
+            )
+            sprout.run(dragLeft, withKey: "dragDirection")
+            
+        } else {
+            // Idle drag — 1 frame
+            sprout.texture = SKTexture(imageNamed: "Sprout_drag_idle")
+            sprout.removeAction(forKey: "dragDirection")
+        }
+        
+        lastTouchPosition = location
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first,
+              let sprout = sprout else { return }
+        
+        isDragging = false
+        sprout.removeAction(forKey: "dragDirection")
+        
+        let currentY = sprout.position.y
+        let centerY = size.height / 2
+        
+        // ✅ Si en hauteur → dropped
+        if currentY > centerY + 100 {
+            playDropped()
+        } else {
+            // ✅ Release normal → retour centre
+            returnToCenter()
+        }
+        
+        touchPoints = []
+    }
+
+    // ✅ Retour au centre
+    func returnToCenter() {
+        guard let sprout = sprout else { return }
+           
+           // ✅ Centre exact de la scène
+           let center = CGPoint(x: size.width/2, y: size.height/2)
+           
+           let returnHome = SKAction.move(
+               to: center,
+               duration: 0.4
+           )
+           returnHome.timingMode = .easeOut
+           let resetScale = SKAction.scale(to: 1.0, duration: 0.2)
+           let resetRotation = SKAction.rotate(toAngle: 0, duration: 0.2)  // ✅ reset rotation aussi
+           
+           sprout.run(SKAction.group([returnHome, resetScale, resetRotation])) { [weak self] in
+               self?.startIdle()
+           }
+    }
+
+    // ✅ Dropped — 5 frames + retombe sur ses pieds
+    func playDropped() {
+        guard let sprout = sprout else { return }
+        
+        // Tombe vers le centre
+        let fall = SKAction.move(
+            to: CGPoint(x: size.width/2, y: size.height/2),
+            duration: 0.3
+        )
+        fall.timingMode = .easeIn
+        
+        // ✅ 5 frames dropped
+        let droppedFrames = (1...5).map {
+            SKTexture(imageNamed: "Sprout_dropped_\($0)")
+        }
+        let dropped = SKAction.animate(
+            with: droppedFrames,
+            timePerFrame: 0.12,
+            resize: false,
+            restore: false
+        )
+        
+        sprout.run(SKAction.sequence([fall, dropped])) { [weak self] in
+            self?.startIdle()  // ← retour idle ✅
+        }
+    }
+    
+    func playJump() {
+        guard let sprout = sprout else { return }
+        stopIdleLoops()
+        
+        let levelUpFrames = (1...16).map {
+            SKTexture(imageNamed: "Sprout_levelup_\($0)")
+        }
+        
+        let jumpBig = SKAction.animate(
+            with: levelUpFrames,
+            timePerFrame: 0.1,   // ← normal
+            resize: false,
+            restore: false
+        )
+
+        let jumpSmall = SKAction.animate(
+            with: levelUpFrames,
+            timePerFrame: 0.06,  // ← plus rapide = plus petit effet
+            resize: false,
+            restore: false
+        )
+        
+        // ✅ Deux sauts enchaînés → retour idle
+        sprout.run(SKAction.sequence([jumpBig, jumpSmall])) { [weak self] in
+            self?.startIdle()
+        }
+    }
+    
 }
 
 // ✅ SproutSceneHolder
@@ -443,7 +790,10 @@ class SproutSceneHolder: ObservableObject {
     let scene: SproutScene
     init() {
         scene = SproutScene()
-        scene.size = CGSize(width: 300, height: 400)
+        scene.size = CGSize(
+            width: UIScreen.main.bounds.width,
+            height: UIScreen.main.bounds.height
+        )
         scene.scaleMode = .resizeFill
         scene.backgroundColor = .clear
     }
@@ -456,12 +806,11 @@ struct SproutView: View {
 
     var body: some View {
         SpriteView(scene: holder.scene, options: [.allowsTransparency])
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onChange(of: state, initial: true) { _, newState in
                 holder.scene.updateState(newState)
             }
-            .onTapGesture {
-                holder.scene.tapReaction()
-            }
+        
     }
 }
 
