@@ -334,6 +334,7 @@
 				DEVELOPMENT_TEAM = Q542L49V3D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Mindsprout;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Mindsprout uses the camera so you can capture photos for your travel reflections.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Mindsprout uses the microphone so you can record audio reflections.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Mindsprout accesses your photo library so you can attach photos to your travel reflections.";
@@ -372,6 +373,7 @@
 				DEVELOPMENT_TEAM = Q542L49V3D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Mindsprout;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Mindsprout uses the camera so you can capture photos for your travel reflections.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Mindsprout uses the microphone so you can record audio reflections.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Mindsprout accesses your photo library so you can attach photos to your travel reflections.";
