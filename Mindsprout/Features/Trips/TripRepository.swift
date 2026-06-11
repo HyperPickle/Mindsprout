@@ -13,19 +13,30 @@ struct TripRepository {
     func create(
         destination: String,
         country: String,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
         startDate: Date,
         endDate: Date,
         type: TripType,
         expectations: [String]
     ) throws -> Trip {
+        let trips = try allTrips()
         let trip = Trip(
             destination: destination,
             country: country,
+            latitude: latitude,
+            longitude: longitude,
             startDate: startDate,
             endDate: endDate,
             type: type,
             expectations: expectations
         )
+        
+        // If this is the first trip, make it manually active by default
+        if trips.isEmpty {
+            trip.isManuallyActive = true
+        }
+
         context.insert(trip)
         try context.save()
         return trip

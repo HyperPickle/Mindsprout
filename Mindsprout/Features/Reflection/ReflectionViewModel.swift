@@ -43,24 +43,8 @@ final class ReflectionViewModel {
     }
 
     var affirmationHeadline: String {
-        let lookup: [String: String] = [
-            "first-time":     "You actually went for it!",
-            "got-lost":       "Getting lost was the plan all along.",
-            "chat-local":     "Those are the conversations that last.",
-            "stumbled-place": "The best places find you.",
-            "quiet-spot":     "Stillness is underrated.",
-            "people-watch":   "You took it all in.",
-            "solo-decided":   "That one was all yours.",
-            "solo-free":      "Freedom looks good on you.",
-            "group-laugh":    "That's the kind you'll talk about for years.",
-            "group-close":    "Connection is the whole point.",
-            "family-home":    "Home can travel with you.",
-            "family-learn":   "The people closest to us still surprise us.",
-            "biz-routine":    "Even work trips have moments.",
-            "biz-notwork":    "The best part wasn't the meeting."
-        ]
-        guard let id = selectedPrompt?.id else { return "Tell me more." }
-        return lookup[id] ?? "Tell me more."
+        if let prompt = selectedPrompt { return prompt.title }
+        return customPromptText
     }
 
     private var draftReflection: Reflection?
@@ -153,13 +137,8 @@ final class ReflectionViewModel {
         selectedPrompt = nil
     }
 
-    func saveDraft() {
-        persistCurrent(commit: false)
-        onDismiss()
-    }
-
     func feedSprout() {
-        let reward = persistCurrent(commit: true)
+        let reward = persistCurrent()
         onDismiss()
         guard let reward else { return }
         Task { @MainActor in
@@ -192,7 +171,7 @@ final class ReflectionViewModel {
     }
 
     @discardableResult
-    private func persistCurrent(commit: Bool) -> PendingLevelUpReward? {
+    private func persistCurrent() -> PendingLevelUpReward? {
         guard let r = draftReflection else { return nil }
         r.highlightPrompt = selectedPrompt?.id ?? customPromptText
         r.bodyKind = bodyKind
@@ -200,10 +179,10 @@ final class ReflectionViewModel {
         r.audioAssetID = bodyKind == .audio ? audioAssetID : nil
         r.photoAssetIDs = photoAssetIDs
         r.moodTags = moodTags
-        r.isDraft = !commit
+        r.isDraft = false
 
         var pendingReward: PendingLevelUpReward?
-        if commit, r.xpAwarded == 0 {
+        if r.xpAwarded == 0 {
             let sprout = fetchOrCreateSprout()
             let result = SproutProgressionEngine(config: gameConfig).applyFeed(to: sprout)
             r.xpAwarded = result.xpAwarded

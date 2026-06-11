@@ -12,7 +12,7 @@ struct SettingsView: View {
         ZStack {
             // Animated Background
             BackgroundSky()
-            
+
             VStack(spacing: 0) {
                 // Custom Navigation Bar
                 HStack {
@@ -25,32 +25,25 @@ struct SettingsView: View {
                             .padding(Spacing.sm)
                             .contentShape(Rectangle())
                     }
-                    
+
                     Spacer()
-                    
+
                     Text("Settings")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                    
+
                     Spacer()
-                    
-                    // Invisible spacer to balance the back button
+
                     Color.clear
                         .frame(width: 44, height: 44)
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.top, Spacing.sm)
-                
+
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        SettingsActionButton(title: "Notifications", icon: "bell") {
-                            modalCoordinator.present(.notificationsSettings)
-                        }
                         SettingsActionButton(title: "Appearance", icon: "eye") {
                             modalCoordinator.present(.themeSettings)
-                        }
-                        SettingsActionButton(title: "Help and Support", icon: "headphones") {
-                            modalCoordinator.present(.helpSupport)
                         }
                         SettingsActionButton(title: "Privacy Policy", icon: "lock.shield") {
                             showPrivacyPolicy = true

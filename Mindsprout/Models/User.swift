@@ -7,17 +7,20 @@ final class User {
     var displayName: String = ""
     var email: String = ""
     var createdAt: Date = Date()
+    var profilePhotoPath: String? = nil
 
     init(
         appleUserID: String = "",
         displayName: String = "",
         email: String = "",
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        profilePhotoPath: String? = nil
     ) {
         self.appleUserID = appleUserID
         self.displayName = displayName
         self.email = email
         self.createdAt = createdAt
+        self.profilePhotoPath = profilePhotoPath
     }
 
     @discardableResult

@@ -5,6 +5,23 @@
 
 ---
 
+## 0. Current status (2026-06-11)
+
+The MVP core loop is **built and shipping** — create/edit trip → reflect → feed Sprout → XP/level/evolve → insight/postcard. Phases 0–6 are substantially complete; remaining work is Phase 7 polish plus the deferred items in §6.
+
+**Built beyond the original plan / since these decisions were settled — see flags inline in §2:**
+- **Tabs are now four:** Adventures / **Reflect** / Home / Profile (a dedicated Reflect tab was added).
+- **Sign in with Apple is implemented** (`AuthService`/`AppleAuthService`/`KeychainStore`, `WelcomeView` gate) — the §2 "do not build it now" decision was superseded.
+- **Onboarding is a real flow** (travel-type onboarding, flag-gated via `FeatureFlags.onboardingEnabled`), not a placeholder.
+- **Profile and Home/Dashboard now have designs** (`UI-Scaffold/Profile/profile`, `Dashboard/dashboard-default` + `Sprout`) and are built to them. **Shop remains the only true placeholder.**
+- **Edit Trip flow** exists (`EditTripFlow`/`EditTripViewModel`) — beyond the original New-Trip-only scope.
+- **`AnalyticsService` seam exists** (contradicts §2 "no analytics").
+- **Deployment target is `iOS 26.0`**, not the 18.0 in §2/Phase 0.1 (see flag).
+
+`MindsproutTests/` is live (GameConfig/progression, reflection cadence + VM, content packs, AI templates, persistence, media store, trip repo, auth, Sprout state, home dashboard). Build/test with `DEVELOPER_DIR=…` against **iPhone 17** — see `AGENTS.md`.
+
+---
+
 ## 1. Product in one paragraph
 
 Mindsprout turns travel into personal growth for 18–35 year-olds via a ~10-minute daily "game." Two intertwined systems: **(1) Trips & Reflections** — the user creates a trip (Solo/Friends/Family/Business, each with an expectations step) and logs one reflection per day against the active trip; **(2) The Sprout** — a single companion creature that gains XP from each reflection, levels up, and *evolves* at milestone levels through a cinematic level-up flow. The Sprout is the retention hook; reflection should never feel like homework. Design priorities: **Reflective + Engaging**, retention via lowered emotional friction.
@@ -23,11 +40,11 @@ These are settled. Do not relitigate without updating this section.
 
 ### Architecture
 - **MVVM + Observation** (`@Observable` view-models). One VM per feature/flow; SwiftData models are the source of truth.
-- **Navigation:** root `TabView` (Adventures / Home / Profile) with a **per-tab `NavigationStack`** driven by **enum routes**. Multi-step flows (New Trip, Reflection, Level-up) are **self-contained modal coordinators**.
+- **Navigation:** root `TabView` (**now Adventures / Reflect / Home / Profile** — a Reflect tab was added since this was written) with a **per-tab `NavigationStack`** driven by **enum routes**. Multi-step flows (New Trip, Edit Trip, Reflection, Level-up) are **self-contained modal coordinators** (`ModalCoordinator`). A pre-shell auth gate (`WelcomeView`) and onboarding flow precede the tab shell.
 - **Folder organisation:** feature-based (see §4).
 
 ### Platform & scope
-- **iOS 18.0 minimum** (lower the current `IPHONEOS_DEPLOYMENT_TARGET = 26.5`, an accidental default).
+- ~~**iOS 18.0 minimum**~~ **⚠ Superseded:** the project now ships `IPHONEOS_DEPLOYMENT_TARGET = 26.0` (iOS 26 SDK / Xcode 26). The original "lower to 18.0" decision was reversed.
 - **iPhone-only, portrait-locked.** Set `TARGETED_DEVICE_FAMILY = 1`.
 - **Capabilities:** Camera, Photo Library, Microphone. **No location.** Add the corresponding `Info.plist` usage strings.
 - **No third-party dependencies** for MVP.
@@ -58,20 +75,20 @@ These are settled. Do not relitigate without updating this section.
 - **AI generation:** an `AIGenerationService` **protocol**. MVP ships a **deterministic on-device template/rule-based generator** (works fully offline). A documented **seam + config** allows a real LLM (Claude via a future backend proxy) to be swapped in without touching feature code. "Online" AI = when that seam is wired.
 
 ### Auth & accounts
-- **Local single-user, no auth.** All data on-device. Design a seam for **Sign in with Apple** + accounts later (needed when sync/Shop purchases arrive); do not build it now.
+- ~~Local single-user, no auth; build the Sign in with Apple seam later.~~ **⚠ Superseded:** **Sign in with Apple is now built** (`AuthService` protocol + `AppleAuthService`, token in `KeychainStore`, `WelcomeView` gate in `RootView`). Still single-user/local-first — no multi-user backend or accounts server yet; keep that seam, don't expand scope.
 
 ### Tabs & placeholders
-- **Adventures tab → Trips** (overview/detail). **Home tab → functional Sprout home**, reconstructed from `levelup-sleeping-*` and `levelup-evo-finished` (Sprout, XP bar, currency, active-trip context, "Reflect To Feed" CTA) — **flagged as subject to revision** when a dedicated Home design lands. **Profile tab → placeholder.**
-- **Placeholders (navigable, empty + TODO):** **Profile** (3rd tab), **Shop** (tap the currency/coin counter on Home), **Onboarding** (first-launch gate, flag-controlled, skippable, before the tab bar). Wire nav, invent no UI.
+- **Adventures tab → Trips** (overview/detail). **Reflect tab → reflection capture entry.** **Home tab → functional Sprout home** built to `UI-Scaffold/Dashboard/dashboard-default` + `Sprout` (Sprout art, XP bar, currency, active-trip context, "Reflect To Feed" CTA). **Profile tab → built** to `UI-Scaffold/Profile/profile` (real user/trip data + settings).
+- **⚠ Updated:** Profile, Home, and Onboarding are no longer placeholders (designs landed / flows built). **Shop is the only remaining placeholder** (navigable, empty + TODO; opened by tapping the Home currency counter).
 
 ### Non-functionals
 - **Testing:** **Swift Testing** for domain logic (XP math, level curve, evolution triggers, cadence rules, AI-fallback templates). SwiftUI `#Preview`s for visual checks. **No XCUITest suite** for MVP.
-- **No analytics** (future).
+- ~~No analytics (future).~~ **⚠ Updated:** an `AnalyticsService` seam exists in `Core/Services/`.
 - **No formal accessibility pass** for MVP **except honor Reduce Motion** in the animation-heavy level-up flow (provide a reduced variant).
 - **English-only**, but route all user-facing copy through a **String Catalog (`.xcstrings`)** + the externalized content pack so localization is later a content task, not a refactor.
 
 ### Process
-- **Simple imperative commit messages**, **one PR per phase**, PR description references the plan phase. Squash-merge to `main`. Agent commits include a co-author trailer.
+- **Simple imperative commit messages**, **one PR per phase**, PR description references the plan phase. Squash-merge to `main`. **No co-author trailers** on agent commits unless explicitly requested (per `AGENTS.md`).
 
 ---
 
@@ -80,18 +97,21 @@ These are settled. Do not relitigate without updating this section.
 | Screen / flow | Screenshot(s) | Phase |
 |---|---|---|
 | Trips overview (cards, ACTIVE, memory count, headline, theme, REVISIT) | `UI-Scaffold/Trips/trips-overview.png` | P1 |
-| Trip detail (Day N, reflection text, audio playback, photo album) | `UI-Scaffold/Trips/trip-detail.png`, `trips-image-selected.png` | P1 |
+| Trip detail (Day N, reflection text, audio playback, photo album) | `UI-Scaffold/Trips/trip-detail.png`, `trip-day-detail.png`, `trips-image-selected.png` | P1 |
+| Edit Trip flow | *(reuses New-Trip screens)* | post-P1 |
 | New Trip — basics (destination, dates, type) | `UI-Scaffold/Trips/New-Trip/newtrip-firstscreen.png` | P1 |
 | New Trip — expectations (per type) | `newtrip-soloexpectation.png`, `-friendsexpectation.png`, `-familyexpectation.png`, `-businessexpectation.png` | P1 |
 | Reflection — highlight picker (presets + own + dice) | `UI-Scaffold/Reflection/reflection-initalscreen.png` | P2 |
 | Reflection — Type entry (≤200 chars, Inspiration) | `UI-Scaffold/Reflection/Reflection-type.png` | P2 |
 | Reflection — Record (audio waveform) | `UI-Scaffold/Reflection/Reflection screen-record.png` | P2 |
 | Reflection — attach photo / placeholder; Draft vs Feed Sprout | `Reflection-attachphoto.png`, `Reflection-photoattachedplaceholder.png` | P2 |
-| Home / Sprout (reconstructed) | `UI-Scaffold/Dashboard/Level-up/levelup-sleeping-1.png`, `levelup-sleeping-2.png`, `levelup-evo-finished.png` | P3 |
+| Home / Sprout | `UI-Scaffold/Dashboard/dashboard-default.png`, `Sprout.png` (design landed) | P3 |
 | Level-up — sleeping → transition → evolve → level | `levelup-sleeping-1/2.png`, `levelup-transition-card.png`, `levelup-transitioncard-2.png`, `levelup-evoprompt.png`, `levelup-evo-finished.png` | P4 |
 | Level-up — growth insight (trait word) | `levelup-growth-insight.png` | P4 / P5 |
 | Level-up — postcard (narrative summary) | `levelup-postcard1.png` | P4 / P5 |
-| Profile / Shop / Onboarding | *(no designs — placeholder)* | P6 |
+| Profile | `UI-Scaffold/Profile/profile.png` (design landed; built with settings) | P6 |
+| Onboarding / auth | *(no scaffold; built, revisable)* | post-P0 |
+| Shop | *(no design — placeholder)* | P6 |
 
 ---
 
@@ -102,7 +122,7 @@ Mindsprout/
   App/                 MindsproutApp, root TabView, app-level routing
   Core/
     Persistence/       SwiftData ModelContainer setup, migration plan
-    Services/          AIGenerationService (+ Template impl), MediaStore, ContentPack loader
+    Services/          AIGenerationService (+ Template impl), MediaStore, ContentPack loader, Auth (AuthService/AppleAuthService/KeychainStore), AnalyticsService
     GameConfig/        XP curve, bonuses, evolution stage table, currency constants
     Extensions/        small shared helpers
   DesignSystem/        Colors, Typography/fonts, ButtonStyles, CardStyle, spacing, backgrounds
@@ -111,11 +131,10 @@ Mindsprout/
     Trips/             overview, detail, New-Trip coordinator + VMs
     Reflection/        capture coordinator (highlight → entry → media → feed) + VMs
     Sprout/            Home view, Sprout view, feeding + leveling
-    LevelUp/           evolution flow coordinator
-    Insights/          growth insight + postcard presentation
-    Profile/           placeholder
+    LevelUp/           evolution flow coordinator + insight/postcard presentation
+    Profile/           profile + settings (built)
     Shop/              placeholder
-    Onboarding/        placeholder + first-launch gate
+    Onboarding/        first-launch onboarding flow + auth/Welcome gate (built)
   Resources/
     ContentPacks/      prompts.json, expectations.json, insight templates
     Localizable.xcstrings
@@ -134,8 +153,8 @@ Each milestone lists **Objective · Screens · Models touched · Definition of D
 > Goal: a runnable, well-structured shell everything else builds on. No feature UI yet.
 
 - **0.1 Project configuration**
-  - *Objective:* Correct the project settings. Lower `IPHONEOS_DEPLOYMENT_TARGET` to **18.0**, set `TARGETED_DEVICE_FAMILY = 1`, portrait-only. Add `Info.plist` usage strings for Camera, Photo Library, Microphone. Replace the stock `ContentView` with the app shell.
-  - *Models:* none. *DoD:* app builds & launches to an empty `TabView` (Adventures / Home / Profile) on an iOS 18 iPhone simulator.
+  - *Objective:* Correct the project settings. Set `IPHONEOS_DEPLOYMENT_TARGET` (**shipped value: 26.0** — the original 18.0 plan was reversed), `TARGETED_DEVICE_FAMILY = 1`, portrait-only. Add `Info.plist` usage strings for Camera, Photo Library, Microphone. Replace the stock `ContentView` with the app shell.
+  - *Models:* none. *DoD:* app builds & launches to the app shell `TabView` on an iPhone 17 simulator.
 - **0.2 DesignSystem**
   - *Objective:* Colors, typography (register the rounded display font), primary green `ButtonStyle`, card style, spacing tokens, grass/sky background treatments — matching the screenshots.
   - *DoD:* a `#Preview` gallery renders all tokens/components; used by later phases.
@@ -208,13 +227,13 @@ Track these explicitly; most need product/art/balancing input, not engineering.
 1. **Economy balancing** — exact XP base/bonus values, level thresholds, currency amounts. (Placeholders in `GameConfig` until tuned.)
 2. **Evolution specifics** — total number of stages and exact trigger levels; depends on final art count.
 3. **Final art** — Sprout stage×state image sets + level-up animation assets (artist deliverable). Naming convention defined; finals pending.
-4. **Dedicated Home/Dashboard design** — currently reconstructed from level-up screens; confirm or supersede.
-5. **Profile, Shop, Onboarding designs** — placeholders until delivered.
+4. ~~Dedicated Home/Dashboard design.~~ **Resolved:** `UI-Scaffold/Dashboard/dashboard-default` + `Sprout` landed; Home built to them.
+5. **Shop design** — still a placeholder until delivered. (Profile + Onboarding designs/flows have landed.)
 6. **Backend + real LLM** — if/when to stand up a proxy and enable Claude; exact prompts/templates and content guidelines for insight/postcard/theme/tags.
 7. **Currency sources & sinks** — finalize once the Shop is designed.
 8. **Streak rules** — grace days, timezone handling for "a day," what counts toward a streak.
 9. **CloudKit sync** — timing, multi-device conflict strategy.
-10. **Accounts** — Sign in with Apple timing (tied to sync/Shop purchases).
+10. **Accounts** — ~~Sign in with Apple timing~~ **SiwA now built**; remaining: multi-user/backend accounts timing (tied to sync/Shop purchases).
 11. **Media lifecycle** — storage limits, retention, export/delete, privacy copy.
 12. **Localization** — target languages and when.
 13. **Reflection edit/delete** — can a committed reflection be edited/deleted, and does that reverse XP? (Assumed: editable; XP not clawed back. Confirm.)

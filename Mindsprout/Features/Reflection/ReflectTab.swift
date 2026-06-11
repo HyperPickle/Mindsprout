@@ -6,8 +6,10 @@ struct ReflectTab: View {
     @Environment(\.modelContext) private var context
     @Environment(ModalCoordinator.self) private var modalCoordinator
 
+    @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
+
     private var activeTrip: Trip? {
-        try? TripRepository(context: context).activeTrip()
+        TripResolver.active(in: trips)
     }
 
     var body: some View {

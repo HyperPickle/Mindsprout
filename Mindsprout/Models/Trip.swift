@@ -6,6 +6,8 @@ final class Trip {
     var id: UUID = UUID()
     var destination: String = ""
     var country: String = ""
+    var latitude: Double?
+    var longitude: Double?
     var startDate: Date = Date()
     var endDate: Date = Date()
     var type: TripType = TripType.solo
@@ -21,6 +23,8 @@ final class Trip {
         id: UUID = UUID(),
         destination: String = "",
         country: String = "",
+        latitude: Double? = nil,
+        longitude: Double? = nil,
         startDate: Date = Date(),
         endDate: Date = Date(),
         type: TripType = .solo,
@@ -30,6 +34,8 @@ final class Trip {
         self.id = id
         self.destination = destination
         self.country = country
+        self.latitude = latitude
+        self.longitude = longitude
         self.startDate = startDate
         self.endDate = endDate
         self.type = type

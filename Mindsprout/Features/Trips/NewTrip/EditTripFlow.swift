@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import MapKit
 
 struct EditTripFlow: View {
     let tripID: UUID
@@ -112,12 +113,13 @@ struct EditTripFlow: View {
     private var destinationField: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             sectionLabel("Where did you go?")
-            TextField("", text: $viewModel.destination)
-                .font(AppFont.body)
-                .foregroundStyle(AppColor.ink)
-                .tint(AppColor.primary)
-                .padding(Spacing.md)
-                .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            DestinationPickerView(
+                selectedCity: $viewModel.destination,
+                onCoordinateSelected: { lat, lng in
+                    viewModel.latitude = lat
+                    viewModel.longitude = lng
+                }
+            )
         }
     }
 

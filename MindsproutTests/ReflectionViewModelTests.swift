@@ -35,39 +35,6 @@ struct ReflectionViewModelTests {
         )
     }
 
-    @Test func loadsAndPersistsMoodTagsForDraftReflection() throws {
-        let container = PersistenceController.makeInMemoryContainer()
-        let context = ModelContext(container)
-        let trip = Trip(destination: "Kyoto", country: "Japan", startDate: .now, endDate: .now, type: .solo)
-        let reflection = Reflection(
-            tripID: trip.id,
-            dayIndex: 1,
-            date: .now,
-            highlightPrompt: "first-time",
-            isDraft: true
-        )
-        reflection.moodTags = ["Serene", "Curious"]
-        context.insert(trip)
-        context.insert(reflection)
-        try context.save()
-
-        let vm = makeViewModel(
-            context: context,
-            mediaStore: MediaStore(root: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)),
-            tripID: trip.id
-        )
-
-        vm.onAppear()
-        #expect(vm.moodTags == ["Serene", "Curious"])
-
-        vm.moodTags = ["Grounded", "Open"]
-        vm.saveDraft()
-
-        let fetched = try context.fetch(FetchDescriptor<Reflection>()).first
-        #expect(fetched?.moodTags == ["Grounded", "Open"])
-        #expect(fetched?.isDraft == true)
-    }
-
     @Test func feedSproutPersistsUpdatedMoodTags() throws {
         let container = PersistenceController.makeInMemoryContainer()
         let context = ModelContext(container)

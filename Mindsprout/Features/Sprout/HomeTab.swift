@@ -4,6 +4,7 @@ import SwiftData
 struct HomeTab: View {
     private let tripPillWidth: CGFloat = 98
 
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var selection: AppTab
 
     @Environment(\.modelContext) private var context
@@ -13,6 +14,10 @@ struct HomeTab: View {
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     @Query(sort: \Reflection.date, order: .reverse) private var reflections: [Reflection]
     @Query(sort: \Sprout.createdAt) private var sprouts: [Sprout]
+
+    private var pillTextColor: Color {
+        colorScheme == .dark ? .white : AppColor.ink
+    }
 
     private var activeTrip: Trip? {
         TripResolver.active(in: trips)
@@ -37,7 +42,7 @@ struct HomeTab: View {
                 dashboardContent
                 bottomPanel
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.xl + 50)
+                    .padding(.bottom, Spacing.xl + 75)
             }
             .task {
                 ensureSproutExists()
@@ -57,17 +62,17 @@ struct HomeTab: View {
             let layout = HomeDashboardLayout(size: proxy.size)
 
             ZStack {
+                sproutStage(layout: layout)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+
                 tripPill
                     .frame(width: layout.tripGroupWidth, height: layout.tripPillHeight)
                     .position(x: layout.tripGroupCenterX, y: layout.topRowCenterY)
 
                 currencyButton
-                    .frame(width: layout.currencyPillWidth, height: layout.currencyPillHeight)
+                    .frame(height: layout.currencyPillHeight)
                     .position(x: layout.currencyPillCenterX, y: layout.topRowCenterY)
-
-                sproutStage(layout: layout)
-                    .frame(width: layout.sproutWidth, height: layout.sproutHeight)
-                    .position(x: layout.sproutCenterX, y: layout.sproutCenterY)
             }
         }
     }
@@ -77,12 +82,12 @@ struct HomeTab: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(activeTrip?.destination ?? "No trip yet")
                     .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(pillTextColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
                 Text(activeTrip?.country ?? "Start an adventure")
                     .font(.system(size: 9, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(pillTextColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
             }
@@ -98,7 +103,8 @@ struct HomeTab: View {
         .overlay(alignment: .trailing) {
             if let activeTrip {
                 dayBadge(day: displayedDayIndex(for: activeTrip), totalDays: tripDuration(for: activeTrip))
-                    .offset(x: 39, y: 14)
+                    .scaleEffect(1.35)
+                    .offset(x: 46, y: 18)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -132,18 +138,18 @@ struct HomeTab: View {
         Button {
             modalCoordinator.present(.shop)
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 Image(systemName: "leaf.fill")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(pillTextColor)
                 Text("\(displaySprout.currency)")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(pillTextColor)
                     .monospacedDigit()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.78)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 10)
+            .frame(maxHeight: .infinity)
             .glassEffect(in: Capsule())
         }
         .buttonStyle(.plain)
@@ -174,15 +180,13 @@ struct HomeTab: View {
             Text(ctaLabel)
                 .font(AppFont.button)
                 .textCase(.uppercase)
-                .foregroundStyle(AppColor.primaryEdge)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.md)
-                .background {
-                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                        .fill(.white)
-                }
+                .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
         .buttonStyle(.plain)
+        .containerRelativeFrame(.horizontal) { w, _ in w * 0.75 }
     }
 
     private var ctaLabel: LocalizedStringKey {
@@ -214,7 +218,6 @@ private struct HomeDashboardLayout {
     let tripGroupWidth: CGFloat
     let tripPillHeight: CGFloat
     let currencyPillCenterX: CGFloat
-    let currencyPillWidth: CGFloat
     let currencyPillHeight: CGFloat
     let sproutCenterX: CGFloat
     let sproutCenterY: CGFloat
@@ -233,7 +236,6 @@ private struct HomeDashboardLayout {
         tripPillHeight = 52 * scaleY
 
         currencyPillCenterX = 338 * scaleX
-        currencyPillWidth = 112 * scaleX
         currencyPillHeight = 42 * scaleY
 
         sproutCenterX = 201 * scaleX

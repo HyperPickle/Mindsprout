@@ -7,6 +7,8 @@ struct WelcomeView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var authError: String?
+    
+    var onSignIn: ((String) -> Void)?
 
     var body: some View {
         ZStack {
@@ -40,17 +42,6 @@ struct WelcomeView: View {
                         .padding(.horizontal, 40)
                         .padding(.top, 10)
                 }
-
-                #if DEBUG
-                Button("Continue without signing in (Dev)") {
-                    UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-                    User.upsert(appleUserID: "dev-user", displayName: "Dev", email: nil, in: modelContext)
-                    withAnimation { env.auth.handleAuthorization(userID: "dev-user") }
-                }
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundColor(.white.opacity(0.7))
-                .padding(.top, 8)
-                #endif
 
                 Text("Grow your Sprout, save your reflections.")
                     .font(.system(size: 13, weight: .regular, design: .rounded))
@@ -92,9 +83,7 @@ struct WelcomeView: View {
             in: modelContext
         )
         authError = nil
-        withAnimation {
-            env.auth.handleAuthorization(userID: credential.user)
-        }
+        onSignIn?(credential.user)
     }
 }
 

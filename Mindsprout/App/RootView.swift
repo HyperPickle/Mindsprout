@@ -2,7 +2,6 @@ import SwiftUI
 import SwiftData
 
 struct RootView: View {
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
 
     @Environment(\.appEnvironment) private var env
@@ -15,22 +14,15 @@ struct RootView: View {
         self.featureFlags = featureFlags
     }
 
-    private var shouldShowOnboarding: Bool {
-        featureFlags.onboardingEnabled && !hasCompletedOnboarding
-    }
-
     var body: some View {
         Group {
             if !isLoggedIn {
                 authFlow
-            } else if shouldShowOnboarding {
-                onboardingFlow
             } else {
                 appShell
             }
         }
         .animation(.spring(duration: 0.5), value: isLoggedIn)
-        .animation(.spring(duration: 0.5), value: hasCompletedOnboarding)
         .task {
             if isLoggedIn {
                 await env.auth.revalidate()
@@ -39,15 +31,8 @@ struct RootView: View {
     }
 
     private var authFlow: some View {
-        WelcomeView()
+        OnboardingCoordinatorView()
             .transition(.opacity)
-    }
-
-    private var onboardingFlow: some View {
-        OnboardingView {
-            hasCompletedOnboarding = true
-        }
-        .transition(.move(edge: .bottom))
     }
 
     private var appShell: some View {

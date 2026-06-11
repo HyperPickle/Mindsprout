@@ -61,12 +61,9 @@ struct PhotoCommitStep: View {
             }
             .buttonStyle(.plain)
 
-            HStack(alignment: .top, spacing: Spacing.sm) {
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(AppColor.primary)
-                    .frame(width: 48, height: 48)
-                    .background(Circle().fill(AppColor.primary.opacity(0.12)))
+            HStack(alignment: .center, spacing: Spacing.sm) {
+                BlinkingSproutView()
+                    .frame(width: 95, height: 95)
                 Text("A picture worth a thousand words they say ;)")
                     .font(AppFont.headline)
                     .foregroundStyle(AppColor.onBackground)
@@ -187,15 +184,8 @@ struct PhotoCommitStep: View {
 
     private var ctaStack: some View {
         VStack(spacing: Spacing.sm) {
-            Button("Save To Draft") { vm.saveDraft() }
-                .font(AppFont.button)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.sm)
-                .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
-
             Button("Feed Sprout") { vm.feedSprout() }
-                .buttonStyle(.primary)
+                .buttonStyle(.primaryWhite)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.bottom, Spacing.md)
