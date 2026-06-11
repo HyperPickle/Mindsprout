@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import MapKit
 
 struct NewTripFlow: View {
     @Environment(\.modelContext) private var context
@@ -97,12 +98,13 @@ private struct NewTripBasicsView: View {
             Text("Where are we going?")
                 .font(AppFont.bodyEmphasized)
                 .foregroundStyle(.white)
-            TextField("", text: $viewModel.destination)
-                .font(AppFont.body)
-                .foregroundStyle(AppColor.ink)
-                .tint(AppColor.primary)
-                .padding(Spacing.md)
-                .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            DestinationPickerView(
+                selectedCity: $viewModel.destination,
+                onCoordinateSelected: { lat, lng in
+                    viewModel.latitude = lat
+                    viewModel.longitude = lng
+                }
+            )
         }
     }
 

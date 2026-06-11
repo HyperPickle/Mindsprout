@@ -37,12 +37,9 @@ struct EntryStep: View {
             }
             .buttonStyle(.plain)
 
-            HStack(alignment: .top, spacing: Spacing.sm) {
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(AppColor.primary)
-                    .frame(width: 48, height: 48)
-                    .background(Circle().fill(AppColor.primary.opacity(0.12)))
+            HStack(alignment: .center, spacing: Spacing.sm) {
+                BlinkingSproutView()
+                    .frame(width: 79, height: 79)
                 Text(vm.affirmationHeadline)
                     .font(AppFont.headline)
                     .foregroundStyle(AppColor.onBackground)
@@ -83,7 +80,7 @@ struct EntryStep: View {
         Button("Continue") {
             vm.step = 3
         }
-        .buttonStyle(.primary)
+        .buttonStyle(.primaryWhite)
         .disabled(!vm.canContinueStep2)
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.bottom, Spacing.md)
@@ -122,22 +119,6 @@ private struct TypeEntryCard: View {
             Divider().background(AppColor.hairline)
 
             HStack {
-                Button {
-                    vm.nextInspiration()
-                } label: {
-                    HStack(spacing: Spacing.xxs) {
-                        Image(systemName: "feather")
-                            .font(AppFont.callout)
-                        Text("Inspiration")
-                            .font(AppFont.callout)
-                    }
-                    .foregroundStyle(AppColor.inkSecondary)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.vertical, Spacing.xxs)
-                    .background(Capsule().fill(AppColor.hairline.opacity(0.4)))
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
                 Spacer()
                 Text("\(vm.entryText.count)/\(maxChars)")
                     .font(AppFont.caption)
@@ -182,13 +163,6 @@ private struct RecordEntryCard: View {
                 }
             }
 
-            ReflectionTagsSection(
-                tags: vm.moodTags,
-                title: "Reflection Tags",
-                emptyLabel: "Add tags"
-            ) { updatedTags in
-                vm.moodTags = updatedTags
-            }
         }
         .padding(Spacing.lg)
         .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))

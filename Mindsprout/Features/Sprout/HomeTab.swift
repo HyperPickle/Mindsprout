@@ -4,6 +4,7 @@ import SwiftData
 struct HomeTab: View {
     private let tripPillWidth: CGFloat = 98
 
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var selection: AppTab
 
     @Environment(\.modelContext) private var context
@@ -13,6 +14,10 @@ struct HomeTab: View {
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     @Query(sort: \Reflection.date, order: .reverse) private var reflections: [Reflection]
     @Query(sort: \Sprout.createdAt) private var sprouts: [Sprout]
+
+    private var pillTextColor: Color {
+        colorScheme == .dark ? .white : AppColor.ink
+    }
 
     private var activeTrip: Trip? {
         TripResolver.active(in: trips)
@@ -37,7 +42,7 @@ struct HomeTab: View {
                 dashboardContent
                 bottomPanel
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.xl + 50)
+                    .padding(.bottom, Spacing.xl + 75)
             }
             .task {
                 ensureSproutExists()
@@ -77,12 +82,12 @@ struct HomeTab: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(activeTrip?.destination ?? "No trip yet")
                     .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(pillTextColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
                 Text(activeTrip?.country ?? "Start an adventure")
                     .font(.system(size: 9, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(pillTextColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
             }
@@ -135,10 +140,10 @@ struct HomeTab: View {
             HStack(spacing: 6) {
                 Image(systemName: "leaf.fill")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(pillTextColor)
                 Text("\(displaySprout.currency)")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(pillTextColor)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
@@ -174,15 +179,18 @@ struct HomeTab: View {
             Text(ctaLabel)
                 .font(AppFont.button)
                 .textCase(.uppercase)
-                .foregroundStyle(AppColor.primaryEdge)
+                .foregroundStyle(AppColor.ink)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.md)
-                .background {
+                .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .overlay {
                     RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                        .fill(.white)
+                        .fill(.white.opacity(0.35))
+                        .allowsHitTesting(false)
                 }
         }
         .buttonStyle(.plain)
+        .containerRelativeFrame(.horizontal) { w, _ in w * 0.75 }
     }
 
     private var ctaLabel: LocalizedStringKey {

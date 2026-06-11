@@ -28,18 +28,14 @@ struct HighlightPickerStep: View {
     }
 
     private var sproutHeader: some View {
-        HStack(alignment: .top, spacing: Spacing.sm) {
-            Image(systemName: "leaf.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(AppColor.primary)
-                .frame(width: 52, height: 52)
-                .background(Circle().fill(AppColor.primary.opacity(0.12)))
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text("What was the highlight of your day?")
-                    .font(AppFont.title)
-                    .foregroundStyle(AppColor.onBackground)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        HStack(alignment: .center, spacing: Spacing.sm) {
+            BlinkingSproutView()
+                .frame(width: 86, height: 86)
+            Text("What was the highlight of your day?")
+                .font(AppFont.title)
+                .foregroundStyle(AppColor.onBackground)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
             Spacer()
         }
         .padding(.bottom, Spacing.sm)
@@ -146,7 +142,7 @@ struct HighlightPickerStep: View {
         Button("Continue") {
             vm.step = 2
         }
-        .buttonStyle(.primary)
+        .buttonStyle(.primaryWhite)
         .disabled(!vm.canContinueStep1)
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.bottom, Spacing.md)
@@ -161,20 +157,17 @@ private struct PromptCard: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.sm) {
-                VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    Text(prompt.title)
-                        .font(AppFont.bodyEmphasized)
-                        .foregroundStyle(AppColor.ink)
-                    Text(prompt.subtitle)
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.inkSecondary)
-                }
-                Spacer()
+                Text(prompt.title)
+                    .font(AppFont.bodyEmphasized)
+                    .foregroundStyle(AppColor.ink)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right")
                     .font(AppFont.body)
                     .foregroundStyle(isSelected ? AppColor.primary : AppColor.inkSecondary)
             }
             .padding(Spacing.md)
+            .frame(height: 76)
             .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)

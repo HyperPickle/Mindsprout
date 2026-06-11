@@ -11,6 +11,8 @@ struct ProfileTab: View {
     @Query(filter: #Predicate<Reflection> { $0.isDraft == false }) private var reflections: [Reflection]
 
     @State private var showSettings = false
+    @State private var isEditingName = false
+    @State private var editedName = ""
 
     private var sprout: Sprout? { sprouts.first }
     private var user: User? { users.first }
@@ -36,21 +38,62 @@ struct ProfileTab: View {
                     VStack(spacing: 20) {
                         // Header Section
                         VStack(spacing: 20) {
-                            // Avatar (Solid white circle with camera icon)
-                            Circle()
-                                .fill(.white)
-                                .frame(width: 120, height: 120)
-                                .overlay(
-                                    Image(systemName: "camera")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(.gray.opacity(0.4))
-                                )
-                                .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+                            // Avatar — tappable, shows profile photo when set
+                            Button {
+                                modalCoordinator.present(.profilePhoto)
+                            } label: {
+                                ZStack(alignment: .bottomTrailing) {
+                                    if let path = user?.profilePhotoPath {
+                                        AsyncImage(url: env.mediaStore.url(for: path)) { image in
+                                            image.resizable().scaledToFill()
+                                        } placeholder: {
+                                            Circle().fill(.white.opacity(0.6))
+                                        }
+                                        .frame(width: 120, height: 120)
+                                        .clipShape(Circle())
+                                    } else {
+                                        Circle()
+                                            .fill(.white)
+                                            .frame(width: 120, height: 120)
+                                            .overlay(
+                                                Image(systemName: "camera")
+                                                    .font(.system(size: 40))
+                                                    .foregroundColor(.gray.opacity(0.4))
+                                            )
+                                    }
+
+                                    if user?.profilePhotoPath != nil {
+                                        Circle()
+                                            .fill(.white)
+                                            .frame(width: 32, height: 32)
+                                            .overlay(
+                                                Image(systemName: "camera.fill")
+                                                    .font(.system(size: 13))
+                                                    .foregroundColor(.black.opacity(0.6))
+                                            )
+                                            .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+                                            .offset(x: 4, y: 4)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
                             
                             VStack(spacing: 20) {
-                                Text(displayName)
-                                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
+                                Button {
+                                    editedName = user?.displayName ?? ""
+                                    isEditingName = true
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Text(displayName)
+                                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white)
+                                        Image(systemName: "pencil")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.7))
+                                    }
+                                }
+                                .buttonStyle(.plain)
 
                                 // Location Badge (Full width) — reflects the active trip
                                 HStack(spacing: Spacing.xs) {
@@ -103,7 +146,7 @@ struct ProfileTab: View {
                         // Action Buttons
                         VStack(spacing: 20) {
                             ProfileActionButton(title: "Shop", icon: "bag") {
-                                // Shop action
+                                modalCoordinator.present(.shop)
                             }
                             ProfileActionButton(title: "Settings", icon: "gearshape") {
                                 showSettings = true
@@ -121,6 +164,17 @@ struct ProfileTab: View {
                 SettingsView()
             }
             .navigationBarHidden(true)
+            .alert("Edit Name", isPresented: $isEditingName) {
+                TextField("Your name", text: $editedName)
+                Button("Save") {
+                    let trimmed = editedName.trimmingCharacters(in: .whitespaces)
+                    if !trimmed.isEmpty {
+                        user?.displayName = trimmed
+                        try? modelContext.save()
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            }
         }
     }
 }

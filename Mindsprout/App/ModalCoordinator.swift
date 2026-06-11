@@ -6,9 +6,9 @@ enum AppModal: Identifiable, Equatable {
     case levelUp(LevelUpPresentation)
     case shop
     case themeSettings
-    case notificationsSettings
     case helpSupport
     case aboutSettings
+    case profilePhoto
 
     var id: String {
         switch self {
@@ -17,9 +17,9 @@ enum AppModal: Identifiable, Equatable {
         case .levelUp(let presentation): return "levelUp-\(presentation.id.uuidString)"
         case .shop: return "shop"
         case .themeSettings: return "themeSettings"
-        case .notificationsSettings: return "notificationsSettings"
         case .helpSupport: return "helpSupport"
         case .aboutSettings: return "aboutSettings"
+        case .profilePhoto: return "profilePhoto"
         }
     }
 }

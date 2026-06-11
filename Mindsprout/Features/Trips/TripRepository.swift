@@ -13,6 +13,8 @@ struct TripRepository {
     func create(
         destination: String,
         country: String,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
         startDate: Date,
         endDate: Date,
         type: TripType,
@@ -21,6 +23,8 @@ struct TripRepository {
         let trip = Trip(
             destination: destination,
             country: country,
+            latitude: latitude,
+            longitude: longitude,
             startDate: startDate,
             endDate: endDate,
             type: type,

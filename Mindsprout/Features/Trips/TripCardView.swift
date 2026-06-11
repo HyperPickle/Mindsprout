@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 // Reusable photo thumbnail with gradient fallback.
 struct TripPhotoThumb: View {
@@ -15,32 +16,6 @@ struct TripPhotoThumb: View {
     }
 }
 
-// Asymmetric 3-photo layout: 1 large left, 2 small top-right, optional view bottom-right.
-// Used by both RevisitTripCard and DayCard for visual consistency.
-struct TripPhotoLayout: View {
-    let strip: [UUID?]
-    var trailing: AnyView? = nil
-
-    var body: some View {
-        HStack(spacing: Spacing.sm) {
-            ZStack {
-                Color.clear.aspectRatio(1, contentMode: .fit)
-                TripPhotoThumb(assetID: strip[safe: 0] ?? nil)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            VStack(spacing: Spacing.sm) {
-                HStack(spacing: Spacing.sm) {
-                    TripPhotoThumb(assetID: strip[safe: 1] ?? nil)
-                    TripPhotoThumb(assetID: strip[safe: 2] ?? nil)
-                }
-                if let trailing { trailing } else { Spacer(minLength: 0) }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-}
-
 // Photo hero card — shared by ActiveTripCard (overview) and TripDetailView (hero section).
 // badge: optional capsule label ("ACTIVE", "MOST INSIGHT: Serenity", etc.)
 // showHeadline: false when the headline is displayed separately below the card.
@@ -54,14 +29,10 @@ struct TripHeroCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .bottom) {
-                ZStack {
-                    LinearGradient(colors: [AppColor.skyTop, AppColor.skyBottom], startPoint: .top, endPoint: .bottom)
-                    MediaImage(assetID: coverAssetID)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .frame(height: 196)
-                .frame(maxWidth: .infinity)
-                .clipped()
+                heroBackground
+                    .frame(height: 196)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
                 LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
                     .frame(height: 110)
                     .frame(maxWidth: .infinity)
@@ -98,6 +69,10 @@ struct TripHeroCard: View {
         .shadow(color: AppColor.ink.opacity(0.12), radius: 14, x: 0, y: 8)
     }
 
+    private var heroBackground: some View {
+        TripMapHero(trip: trip, coverAssetID: coverAssetID)
+    }
+
     private var photoOverlay: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
@@ -117,26 +92,37 @@ struct TripHeroCard: View {
     }
 }
 
-struct ActiveTripCard: View {
-    let summary: TripSummary
+// Map/photo hero — shared by TripHeroCard (detail) and TripOverviewCard (overview).
+struct TripMapHero: View {
+    let trip: Trip
+    let coverAssetID: UUID?
+
+    @ViewBuilder
     var body: some View {
-        TripHeroCard(
-            trip: summary.trip,
-            coverAssetID: summary.coverAssetID,
-            memoryCount: summary.memoryCount,
-            badge: "ACTIVE"
-        )
+        if let lat = trip.latitude, let lng = trip.longitude {
+            let region = MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: lat, longitude: lng),
+                span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15)
+            )
+            Map(initialPosition: .region(region))
+                .mapStyle(.standard)
+                .disabled(true)
+                .allowsHitTesting(false)
+        } else {
+            ZStack {
+                LinearGradient(colors: [AppColor.skyTop, AppColor.skyBottom], startPoint: .top, endPoint: .bottom)
+                MediaImage(assetID: coverAssetID)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
     }
 }
 
-struct RevisitTripCard: View {
+// Unified overview card: text header on top, map hero below, cream card surface.
+struct TripOverviewCard: View {
     let summary: TripSummary
+    var badge: String? = nil
     private var trip: Trip { summary.trip }
-    private var strip: [UUID?] {
-        var ids: [UUID?] = summary.photoStripIDs
-        while ids.count < 3 { ids.append(nil) }
-        return Array(ids.prefix(3))
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -150,17 +136,41 @@ struct RevisitTripCard: View {
                         .foregroundStyle(AppColor.ink)
                 }
                 Spacer()
-                Text("\(summary.memoryCount) memories")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.ink)
+                VStack(alignment: .trailing, spacing: Spacing.xxs) {
+                    if let badge {
+                        Text(badge)
+                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, Spacing.sm)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(AppColor.primary))
+                    }
+                    Text("\(summary.memoryCount) memories")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.ink)
+                }
             }
-            TripPhotoLayout(strip: strip, trailing: trip.theme.map { AnyView(themeBox($0)) })
+            TripMapHero(trip: trip, coverAssetID: summary.coverAssetID)
+                .frame(height: 160)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
         .cardStyle()
     }
+}
 
-    private func themeBox(_ theme: String) -> some View {
-        LabelBox(header: "THEME", text: theme)
+struct ActiveTripCard: View {
+    let summary: TripSummary
+    var body: some View {
+        TripOverviewCard(summary: summary, badge: "ACTIVE")
+    }
+}
+
+struct RevisitTripCard: View {
+    let summary: TripSummary
+    var body: some View {
+        TripOverviewCard(summary: summary)
     }
 }
 
@@ -185,11 +195,5 @@ struct LabelBox: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColor.sand)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-    }
-}
-
-private extension Array {
-    subscript(safe index: Int) -> Element? {
-        indices.contains(index) ? self[index] : nil
     }
 }

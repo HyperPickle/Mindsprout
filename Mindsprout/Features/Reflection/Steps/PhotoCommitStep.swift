@@ -61,12 +61,9 @@ struct PhotoCommitStep: View {
             }
             .buttonStyle(.plain)
 
-            HStack(alignment: .top, spacing: Spacing.sm) {
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(AppColor.primary)
-                    .frame(width: 48, height: 48)
-                    .background(Circle().fill(AppColor.primary.opacity(0.12)))
+            HStack(alignment: .center, spacing: Spacing.sm) {
+                BlinkingSproutView()
+                    .frame(width: 79, height: 79)
                 Text("A picture worth a thousand words they say ;)")
                     .font(AppFont.headline)
                     .foregroundStyle(AppColor.onBackground)
@@ -195,7 +192,7 @@ struct PhotoCommitStep: View {
                 .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
 
             Button("Feed Sprout") { vm.feedSprout() }
-                .buttonStyle(.primary)
+                .buttonStyle(.primaryWhite)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.bottom, Spacing.md)

@@ -12,15 +12,15 @@ struct ModalContainer: View {
         case .levelUp(let presentation):
             LevelUpFlow(presentation: presentation)
         case .shop:
-            ShopView()
+            ShopComingSoonModal()
         case .themeSettings:
             ThemeSettingsModal()
-        case .notificationsSettings:
-            NotificationsSettingsModal()
         case .helpSupport:
             HelpSupportModal()
         case .aboutSettings:
             AboutSettingsModal()
+        case .profilePhoto:
+            ProfilePhotoModal()
         }
     }
 }

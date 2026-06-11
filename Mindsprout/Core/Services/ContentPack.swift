@@ -11,7 +11,9 @@ struct PromptPack: Codable, Sendable, Equatable {
     var inspirationPrompts: [String]
 
     func highlights(for type: TripType) -> [HighlightPrompt] {
-        highlightPrompts[type.rawValue] ?? highlightPrompts["default"] ?? []
+        let defaults = highlightPrompts["default"] ?? []
+        let specific = highlightPrompts[type.rawValue] ?? []
+        return defaults + specific
     }
 }
 

@@ -39,6 +39,7 @@ class LocationSearchDelegate: NSObject, MKLocalSearchCompleterDelegate, Observab
 
 struct LocationPickerView: View {
     @Binding var selectedCity: String
+    var onCoordinateSelected: ((Double, Double) -> Void)? = nil
     @Environment(\.dismiss) var dismiss
     @StateObject private var searchDelegate = LocationSearchDelegate()
     @State private var searchText = ""
@@ -46,12 +47,18 @@ struct LocationPickerView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                // Liste des résultats
                 List(searchDelegate.results, id: \.title) { result in
                     Button {
-
                         let country = result.subtitle.components(separatedBy: ",").last?.trimmingCharacters(in: .whitespaces) ?? ""
                         selectedCity = "\(result.title), \(country)"
+                        if let callback = onCoordinateSelected {
+                            let request = MKLocalSearch.Request(completion: result)
+                            MKLocalSearch(request: request).start { response, _ in
+                                if let coord = response?.mapItems.first?.placemark.coordinate {
+                                    callback(coord.latitude, coord.longitude)
+                                }
+                            }
+                        }
                         dismiss()
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
@@ -64,7 +71,6 @@ struct LocationPickerView: View {
                         }
                         .padding(.vertical, 4)
                     }
-  
                     .overlay(alignment: .trailing) {
                         if selectedCity == result.title {
                             Image(systemName: "checkmark")
@@ -88,7 +94,8 @@ struct LocationPickerView: View {
 struct DestinationPickerView: View {
     @State private var showLocationPicker = false
     @Binding var selectedCity: String
-    
+    var onCoordinateSelected: ((Double, Double) -> Void)? = nil
+
     var body: some View {
         Button {
             showLocationPicker = true
@@ -106,7 +113,7 @@ struct DestinationPickerView: View {
             .background(Color.white.opacity(0.8), in: .rect(cornerRadius: CornerRadius.medium))
         }
         .sheet(isPresented: $showLocationPicker) {
-            LocationPickerView(selectedCity: $selectedCity)
+            LocationPickerView(selectedCity: $selectedCity, onCoordinateSelected: onCoordinateSelected)
         }
     }
 }

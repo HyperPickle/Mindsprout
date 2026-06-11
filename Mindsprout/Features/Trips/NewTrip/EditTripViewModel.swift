@@ -7,6 +7,8 @@ final class EditTripViewModel {
     let tripID: UUID
 
     var destination = ""
+    var latitude: Double? = nil
+    var longitude: Double? = nil
     var startDate = Date()
     var endDate = Date()
     var type: TripType = .solo
@@ -46,6 +48,8 @@ final class EditTripViewModel {
         self.trip = trip
 
         destination = trip.country.isEmpty ? trip.destination : "\(trip.destination), \(trip.country)"
+        latitude = trip.latitude
+        longitude = trip.longitude
         startDate = trip.startDate
         endDate = trip.endDate
         type = trip.type
@@ -90,6 +94,8 @@ final class EditTripViewModel {
         let parts = destination.split(separator: ",", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
         trip.destination = parts.first ?? destination.trimmingCharacters(in: .whitespaces)
         trip.country = parts.count > 1 ? parts[1] : ""
+        trip.latitude = latitude
+        trip.longitude = longitude
         trip.startDate = startDate
         trip.endDate = endDate
         trip.type = type

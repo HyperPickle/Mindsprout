@@ -5,6 +5,8 @@ import SwiftData
 @Observable
 final class NewTripViewModel {
     var destination = ""
+    var latitude: Double? = nil
+    var longitude: Double? = nil
     var startDate: Date
     var endDate: Date
     var type: TripType? = nil
@@ -55,6 +57,7 @@ final class NewTripViewModel {
         let country = parts.count > 1 ? parts[1] : ""
         return try? TripRepository(context: context).create(
             destination: city, country: country,
+            latitude: latitude, longitude: longitude,
             startDate: startDate, endDate: endDate,
             type: type ?? .solo, expectations: expectations
         )

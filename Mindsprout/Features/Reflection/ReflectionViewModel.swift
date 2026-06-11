@@ -43,24 +43,8 @@ final class ReflectionViewModel {
     }
 
     var affirmationHeadline: String {
-        let lookup: [String: String] = [
-            "first-time":     "You actually went for it!",
-            "got-lost":       "Getting lost was the plan all along.",
-            "chat-local":     "Those are the conversations that last.",
-            "stumbled-place": "The best places find you.",
-            "quiet-spot":     "Stillness is underrated.",
-            "people-watch":   "You took it all in.",
-            "solo-decided":   "That one was all yours.",
-            "solo-free":      "Freedom looks good on you.",
-            "group-laugh":    "That's the kind you'll talk about for years.",
-            "group-close":    "Connection is the whole point.",
-            "family-home":    "Home can travel with you.",
-            "family-learn":   "The people closest to us still surprise us.",
-            "biz-routine":    "Even work trips have moments.",
-            "biz-notwork":    "The best part wasn't the meeting."
-        ]
-        guard let id = selectedPrompt?.id else { return "Tell me more." }
-        return lookup[id] ?? "Tell me more."
+        if let prompt = selectedPrompt { return prompt.title }
+        return customPromptText
     }
 
     private var draftReflection: Reflection?

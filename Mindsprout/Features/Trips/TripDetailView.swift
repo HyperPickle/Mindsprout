@@ -41,10 +41,6 @@ struct TripDetailView: View {
                             showHeadline: false
                         )
                     }
-                    if let featured = featuredReflectionData {
-                        SectionDivider(title: "FEATURED REFLECTION", color: AppColor.onBackground)
-                        featuredReflectionCard(reflection: featured.reflection, index: featured.index)
-                    }
                     if !viewModel.reflections.isEmpty {
                         SectionDivider(title: "MOMENTS", color: AppColor.onBackground)
                         ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
@@ -111,65 +107,10 @@ struct TripDetailView: View {
         .padding(.bottom, Spacing.sm)
     }
 
-    private var featuredReflectionData: (index: Int, reflection: Reflection)? {
-        guard !viewModel.reflections.isEmpty else { return nil }
-
-        if let chosenID = viewModel.trip?.featuredReflectionID,
-           let idx = viewModel.reflections.firstIndex(where: { $0.id == chosenID }) {
-            return (idx, viewModel.reflections[idx])
-        }
-
-        if let headline = viewModel.trip?.headlineMemory, !headline.isEmpty {
-            if let idx = viewModel.reflections.firstIndex(where: { $0.text?.contains(headline) == true || headline.contains($0.text ?? "---") }) {
-                return (idx, viewModel.reflections[idx])
-            }
-        }
-        
-        if let idx = viewModel.reflections.enumerated().max(by: { ($0.element.text?.count ?? 0) < ($1.element.text?.count ?? 0) })?.offset {
-            return (idx, viewModel.reflections[idx])
-        }
-        
-        return (0, viewModel.reflections[0])
-    }
-
-    private func featuredReflectionCard(reflection: Reflection, index: Int) -> some View {
-        NavigationLink(value: AdventuresRoute.tripDayDetail(tripID: tripID, initialDayIndex: index)) {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                if let text = reflection.text, !text.isEmpty {
-                    Text(text)
-                        .font(AppFont.body)
-                        .foregroundStyle(AppColor.ink)
-                        .lineLimit(1)
-                }
-                
-                HStack(alignment: .bottom) {
-                    if !reflection.moodTags.isEmpty {
-                        HStack(spacing: Spacing.xs) {
-                            ForEach(Array(reflection.moodTags.enumerated()), id: \.offset) { i, tag in
-                                ReflectionTagChip(text: tag, accent: i.isMultiple(of: 2))
-                            }
-                        }
-                    }
-                    Spacer()
-                    Text("Open Memory →")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColor.primary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .cardStyle()
-        }
-        .buttonStyle(.plain)
-    }
 }
 
 private struct DayCard: View {
     let reflection: Reflection
-    private var strip: [UUID?] {
-        var ids: [UUID?] = reflection.photoAssetIDs.map { Optional($0) }
-        while ids.count < 3 { ids.append(nil) }
-        return Array(ids.prefix(3))
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -182,11 +123,25 @@ private struct DayCard: View {
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColor.primary)
             }
-            TripPhotoLayout(
-                strip: strip,
-                trailing: reflection.text.flatMap { $0.isEmpty ? nil : $0 }
-                    .map { AnyView(LabelBox(header: "MOMENT", text: String($0.prefix(80)))) }
-            )
+            if let featured = reflection.photoAssetIDs.first {
+                TripPhotoThumb(assetID: featured)
+                    .frame(height: 180)
+                    .frame(maxWidth: .infinity)
+                    .overlay(alignment: .topTrailing) {
+                        if reflection.photoAssetIDs.count > 1 {
+                            Label("\(reflection.photoAssetIDs.count)", systemImage: "photo.on.rectangle")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, Spacing.sm)
+                                .padding(.vertical, 5)
+                                .background(Capsule().fill(.black.opacity(0.4)))
+                                .padding(Spacing.sm)
+                        }
+                    }
+            }
+            if let text = reflection.text, !text.isEmpty {
+                LabelBox(header: "MOMENT", text: String(text.prefix(80)))
+            }
         }
         .cardStyle()
     }
@@ -330,12 +285,12 @@ private struct DayContentView: View {
                     AudioPlayerView(url: url)
                 }
                 if !reflection.photoAssetIDs.isEmpty {
-                    SectionDivider(title: "ALBUM")
+                    SectionDivider(title: "ALBUM", color: .white)
                     LazyVGrid(columns: columns, spacing: Spacing.xs) {
                         ForEach(reflection.photoAssetIDs, id: \.self) { id in
-                            MediaImage(assetID: id)
-                                .aspectRatio(1, contentMode: .fill)
-                                .frame(maxWidth: .infinity)
+                            Color.clear
+                                .overlay(MediaImage(assetID: id))
+                                .aspectRatio(1, contentMode: .fit)
                                 .clipped()
                                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                                 .onTapGesture { lightboxAsset = id }
@@ -359,14 +314,6 @@ private struct DayContentView: View {
                     .font(AppFont.body)
                     .foregroundStyle(AppColor.ink)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-            ReflectionTagsSection(
-                tags: reflection.moodTags,
-                title: "Reflection Tags",
-                emptyLabel: "Add tags"
-            ) { updatedTags in
-                reflection.moodTags = updatedTags
-                try? context.save()
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
