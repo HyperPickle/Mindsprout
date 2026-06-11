@@ -42,7 +42,7 @@ struct HomeTab: View {
                 dashboardContent
                 bottomPanel
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.xl + 75)
+                    .padding(.bottom, Spacing.xl + 100)
             }
             .task {
                 ensureSproutExists()
@@ -111,27 +111,19 @@ struct HomeTab: View {
     }
 
     private func dayBadge(day: Int, totalDays: Int) -> some View {
-        ZStack {
-            Image(systemName: "cloud.fill")
-                .font(.system(size: 43, weight: .medium))
-                .foregroundStyle(AppColor.cardSurface)
-                .shadow(color: AppColor.ink.opacity(0.08), radius: 4, x: 0, y: 2)
-                .offset(y: 5)
-
-            VStack(spacing: 0) {
-                Text("day")
-                    .font(.system(size: 6, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColor.inkSecondary)
-                    .textCase(.uppercase)
-                    .offset(y: 7)
-                Text("\(day) / \(totalDays)")
-                    .font(.system(size: 9, weight: .black, design: .rounded))
-                    .foregroundStyle(AppColor.ink)
-                    .monospacedDigit()
-                    .offset(y: 7)
-            }
+        VStack(spacing: 0) {
+            Text("day")
+                .font(.system(size: 6, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.inkSecondary)
+                .textCase(.uppercase)
+            Text("\(day) / \(totalDays)")
+                .font(.system(size: 9, weight: .black, design: .rounded))
+                .foregroundStyle(AppColor.ink)
+                .monospacedDigit()
         }
-        .frame(width: 40, height: 26)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var currencyButton: some View {
@@ -148,7 +140,8 @@ struct HomeTab: View {
                     .monospacedDigit()
                     .lineLimit(1)
             }
-            .padding(.horizontal, 10)
+            .padding(.leading, 10)
+            .padding(.trailing, 16)
             .frame(maxHeight: .infinity)
             .glassEffect(in: Capsule())
         }
