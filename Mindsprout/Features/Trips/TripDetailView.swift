@@ -311,11 +311,9 @@ private struct DayContentView: View {
                     
                     Spacer()
                     
-                    if let date = reflection.date {
-                        Text(date.formatted(date: .abbreviated, time: .omitted))
-                            .font(AppFont.caption)
-                            .foregroundStyle(AppColor.inkMuted)
-                    }
+                    Text(reflection.date.formatted(date: .abbreviated, time: .omitted))
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.inkMuted)
                 }
                 
                 if let text = reflection.text, !text.isEmpty {
