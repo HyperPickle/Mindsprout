@@ -138,8 +138,8 @@ struct ProfileTab: View {
                         
                         // Stats Grid
                         HStack(spacing: Spacing.md) {
-                            StatCard(value: "\(trips.count)", label: "Adventures\nCompleted")
-                            StatCard(value: "\(reflections.count)", label: "Reflections\nCompleted")
+                            StatCard(value: "\(trips.count)", label: trips.count == 1 ? "Adventure" : "Adventures")
+                            StatCard(value: "\(reflections.count)", label: reflections.count == 1 ? "Reflection" : "Reflections")
                         }
                         .padding(.horizontal, Spacing.screenEdge)
                         

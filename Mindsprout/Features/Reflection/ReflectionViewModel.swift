@@ -137,13 +137,8 @@ final class ReflectionViewModel {
         selectedPrompt = nil
     }
 
-    func saveDraft() {
-        persistCurrent(commit: false)
-        onDismiss()
-    }
-
     func feedSprout() {
-        let reward = persistCurrent(commit: true)
+        let reward = persistCurrent()
         onDismiss()
         guard let reward else { return }
         Task { @MainActor in
@@ -176,7 +171,7 @@ final class ReflectionViewModel {
     }
 
     @discardableResult
-    private func persistCurrent(commit: Bool) -> PendingLevelUpReward? {
+    private func persistCurrent() -> PendingLevelUpReward? {
         guard let r = draftReflection else { return nil }
         r.highlightPrompt = selectedPrompt?.id ?? customPromptText
         r.bodyKind = bodyKind
@@ -184,10 +179,10 @@ final class ReflectionViewModel {
         r.audioAssetID = bodyKind == .audio ? audioAssetID : nil
         r.photoAssetIDs = photoAssetIDs
         r.moodTags = moodTags
-        r.isDraft = !commit
+        r.isDraft = false
 
         var pendingReward: PendingLevelUpReward?
-        if commit, r.xpAwarded == 0 {
+        if r.xpAwarded == 0 {
             let sprout = fetchOrCreateSprout()
             let result = SproutProgressionEngine(config: gameConfig).applyFeed(to: sprout)
             r.xpAwarded = result.xpAwarded

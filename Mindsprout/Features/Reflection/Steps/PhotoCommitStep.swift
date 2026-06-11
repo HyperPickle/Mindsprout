@@ -184,13 +184,6 @@ struct PhotoCommitStep: View {
 
     private var ctaStack: some View {
         VStack(spacing: Spacing.sm) {
-            Button("Save To Draft") { vm.saveDraft() }
-                .font(AppFont.button)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.sm)
-                .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
-
             Button("Feed Sprout") { vm.feedSprout() }
                 .buttonStyle(.primaryWhite)
         }

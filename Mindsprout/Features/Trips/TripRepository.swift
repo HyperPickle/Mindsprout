@@ -20,6 +20,7 @@ struct TripRepository {
         type: TripType,
         expectations: [String]
     ) throws -> Trip {
+        let trips = try allTrips()
         let trip = Trip(
             destination: destination,
             country: country,
@@ -30,6 +31,12 @@ struct TripRepository {
             type: type,
             expectations: expectations
         )
+        
+        // If this is the first trip, make it manually active by default
+        if trips.isEmpty {
+            trip.isManuallyActive = true
+        }
+
         context.insert(trip)
         try context.save()
         return trip

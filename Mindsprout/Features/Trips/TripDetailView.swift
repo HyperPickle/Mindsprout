@@ -70,38 +70,33 @@ struct TripDetailView: View {
     }
 
     private var header: some View {
-        HStack {
-            Button { if let onBack { onBack() } else { dismiss() } } label: {
-                HStack(spacing: Spacing.xxs) {
+        ZStack {
+            HStack {
+                Button { if let onBack { onBack() } else { dismiss() } } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Trips")
-                        .font(AppFont.callout)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(.white.opacity(0.15)))
                 }
-                .padding(.vertical, Spacing.xs)
-                .contentShape(Rectangle())
-                .foregroundStyle(.white)
+                Spacer()
+                Button {
+                    modalCoordinator.present(.editTrip(tripID: tripID))
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(.white.opacity(0.15)))
+                }
             }
-            Spacer()
-            Button {
-                modalCoordinator.present(.editTrip(tripID: tripID))
-            } label: {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.vertical, Spacing.xs)
-                    .contentShape(Rectangle())
-            }
-        }
-        .overlay {
-            Text(viewModel.trip?.destination ?? "")
-                .font(.system(size: 22, weight: .heavy, design: .rounded))
+            
+            Text(viewModel.trip?.destination ?? "Trip")
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
                 .lineLimit(1)
+                .padding(.horizontal, 80)
         }
-        .padding(.horizontal, Spacing.md)
-        .frame(height: 56)
-        .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)
@@ -173,21 +168,25 @@ struct TripDayDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            if viewModel.reflections.isEmpty {
-                emptyState
-            } else {
-                TabView(selection: $index) {
-                    ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
-                        DayContentView(reflection: reflection, lightboxAsset: $lightboxAsset)
-                            .tag(offset)
+        ZStack {
+            BackgroundSky().ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                header
+                
+                if viewModel.reflections.isEmpty {
+                    emptyState
+                } else {
+                    TabView(selection: $index) {
+                        ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
+                            DayContentView(reflection: reflection, lightboxAsset: $lightboxAsset)
+                                .tag(offset)
+                        }
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
             }
         }
-        .background(BackgroundSky())
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .task {
@@ -203,32 +202,31 @@ struct TripDayDetailView: View {
     private var header: some View {
         HStack {
             Button { if let onBack { onBack() } else { dismiss() } } label: {
-                HStack(spacing: Spacing.xxs) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text(viewModel.trip?.destination ?? "")
-                        .font(AppFont.callout)
-                        .lineLimit(1)
-                }
-                .foregroundStyle(.white)
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(.white.opacity(0.15)))
             }
+            
             Spacer()
-            Text(viewModel.trip?.destination ?? "")
-                .font(.system(size: 22, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
-                .lineLimit(1)
+            
+            VStack(spacing: 2) {
+                Text(viewModel.trip?.destination ?? "Trip")
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                
+                Text("DAY \(current?.dayIndex ?? 1)")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .tracking(1)
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            
             Spacer()
-            Text("Day \(current?.dayIndex ?? 1)")
-                .font(AppFont.callout)
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .padding(.horizontal, Spacing.sm)
-                .padding(.vertical, Spacing.xs)
-                .background(Capsule().fill(.white.opacity(0.2)))
+            
+            // Balanced spacer
+            Color.clear.frame(width: 40, height: 40)
         }
-        .padding(.horizontal, Spacing.md)
-        .frame(height: 56)
-        .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)
@@ -276,54 +274,85 @@ private struct DayContentView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.md) {
-                if let featured = reflection.photoAssetIDs.first {
-                    MediaImage(assetID: featured)
-                        .frame(height: 230)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-                        .shadow(color: AppColor.ink.opacity(0.12), radius: 12, y: 6)
-                        .onTapGesture { lightboxAsset = featured }
-                }
-                reflectionCard
+            VStack(spacing: Spacing.lg) {
+                mainCard
+                
                 if let audioID = reflection.audioAssetID, let url = audioURL(audioID) {
                     AudioPlayerView(url: url)
+                        .padding(.horizontal, Spacing.xs)
                 }
-                if !reflection.photoAssetIDs.isEmpty {
-                    SectionDivider(title: "ALBUM", color: .white)
-                    LazyVGrid(columns: columns, spacing: Spacing.xs) {
-                        ForEach(reflection.photoAssetIDs, id: \.self) { id in
-                            Color.clear
-                                .overlay(MediaImage(assetID: id))
-                                .aspectRatio(1, contentMode: .fit)
-                                .clipped()
-                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-                                .onTapGesture { lightboxAsset = id }
-                        }
-                    }
+                
+                if reflection.photoAssetIDs.count > 1 {
+                    albumSection
                 }
             }
             .padding(.horizontal, Spacing.screenEdge)
+            .padding(.top, Spacing.sm)
             .padding(.bottom, Spacing.xl)
         }
     }
 
-    private var reflectionCard: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("REFLECTION")
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .tracking(0.8)
-                .foregroundStyle(AppColor.ink)
-            if let text = reflection.text, !text.isEmpty {
-                Text(text)
-                    .font(AppFont.body)
-                    .foregroundStyle(AppColor.ink)
-                    .fixedSize(horizontal: false, vertical: true)
+    private var mainCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let featured = reflection.photoAssetIDs.first {
+                MediaImage(assetID: featured)
+                    .frame(height: 280)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .onTapGesture { lightboxAsset = featured }
+            }
+            
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("REFLECTION")
+                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .tracking(1.5)
+                        .foregroundStyle(AppColor.primary)
+                    
+                    Spacer()
+                    
+                    if let date = reflection.date {
+                        Text(date.formatted(date: .abbreviated, time: .omitted))
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.inkMuted)
+                    }
+                }
+                
+                if let text = reflection.text, !text.isEmpty {
+                    Text(text)
+                        .font(AppFont.body)
+                        .lineSpacing(4)
+                        .foregroundStyle(AppColor.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("No words for this day, just memories.")
+                        .font(AppFont.body)
+                        .italic()
+                        .foregroundStyle(AppColor.inkMuted)
+                }
+            }
+            .padding(Spacing.lg)
+        }
+        .background(AppColor.cardSurface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+        .shadow(color: AppColor.ink.opacity(0.12), radius: 15, y: 8)
+    }
+
+    private var albumSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            SectionDivider(title: "ALBUM", color: .white)
+            
+            LazyVGrid(columns: columns, spacing: Spacing.xs) {
+                ForEach(reflection.photoAssetIDs, id: \.self) { id in
+                    MediaImage(assetID: id)
+                        .aspectRatio(1, contentMode: .fill)
+                        .frame(minWidth: 0, maxWidth: .infinity)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                        .onTapGesture { lightboxAsset = id }
+                }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardStyle()
     }
 
     private func audioURL(_ id: UUID) -> URL? {

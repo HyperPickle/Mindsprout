@@ -62,17 +62,17 @@ struct HomeTab: View {
             let layout = HomeDashboardLayout(size: proxy.size)
 
             ZStack {
+                sproutStage(layout: layout)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+
                 tripPill
                     .frame(width: layout.tripGroupWidth, height: layout.tripPillHeight)
                     .position(x: layout.tripGroupCenterX, y: layout.topRowCenterY)
 
                 currencyButton
-                    .frame(width: layout.currencyPillWidth, height: layout.currencyPillHeight)
+                    .frame(height: layout.currencyPillHeight)
                     .position(x: layout.currencyPillCenterX, y: layout.topRowCenterY)
-
-                sproutStage(layout: layout)
-                    .frame(width: layout.sproutWidth, height: layout.sproutHeight)
-                    .position(x: layout.sproutCenterX, y: layout.sproutCenterY)
             }
         }
     }
@@ -103,7 +103,8 @@ struct HomeTab: View {
         .overlay(alignment: .trailing) {
             if let activeTrip {
                 dayBadge(day: displayedDayIndex(for: activeTrip), totalDays: tripDuration(for: activeTrip))
-                    .offset(x: 39, y: 14)
+                    .scaleEffect(1.35)
+                    .offset(x: 46, y: 18)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -137,7 +138,7 @@ struct HomeTab: View {
         Button {
             modalCoordinator.present(.shop)
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 Image(systemName: "leaf.fill")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(pillTextColor)
@@ -146,9 +147,9 @@ struct HomeTab: View {
                     .foregroundStyle(pillTextColor)
                     .monospacedDigit()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.78)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 10)
+            .frame(maxHeight: .infinity)
             .glassEffect(in: Capsule())
         }
         .buttonStyle(.plain)
@@ -217,7 +218,6 @@ private struct HomeDashboardLayout {
     let tripGroupWidth: CGFloat
     let tripPillHeight: CGFloat
     let currencyPillCenterX: CGFloat
-    let currencyPillWidth: CGFloat
     let currencyPillHeight: CGFloat
     let sproutCenterX: CGFloat
     let sproutCenterY: CGFloat
@@ -236,7 +236,6 @@ private struct HomeDashboardLayout {
         tripPillHeight = 52 * scaleY
 
         currencyPillCenterX = 338 * scaleX
-        currencyPillWidth = 112 * scaleX
         currencyPillHeight = 42 * scaleY
 
         sproutCenterX = 201 * scaleX

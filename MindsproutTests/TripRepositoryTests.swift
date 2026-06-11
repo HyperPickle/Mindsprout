@@ -69,6 +69,19 @@ struct TripRepositoryTests {
         #expect(TripResolver.active(in: []) == nil)
     }
 
+    @Test func newlyCreatedTripIsImmediatelyActiveIfOnlyTrip() throws {
+        let trip = Trip(destination: "Paris", startDate: days(1), endDate: days(5), createdAt: Date())
+        let resolved = TripResolver.active(in: [trip])
+        #expect(resolved === trip)
+    }
+
+    @Test func newlyCreatedTripIsActiveEvenIfFutureDated() throws {
+        let oldTrip = Trip(destination: "London", startDate: days(-10), endDate: days(-5), createdAt: days(-10))
+        let newFutureTrip = Trip(destination: "Paris", startDate: days(1), endDate: days(5), createdAt: Date())
+        let resolved = TripResolver.active(in: [oldTrip, newFutureTrip])
+        #expect(resolved === newFutureTrip)
+    }
+
     @Test func partitionPutsActiveApartAndSortsRevisitByStartDate() {
         let active = Trip(destination: "Kyoto", startDate: days(-100), endDate: days(-90), createdAt: days(-1))
         let recentTravel = Trip(destination: "Tasmania", startDate: days(-30), endDate: days(-25), createdAt: days(-20))
