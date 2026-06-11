@@ -104,9 +104,22 @@ struct HighlightPickerStep: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .unevenCardBackground(
-            lineWidth: (writeOwnExpanded && vm.selectedPrompt == nil && !customText.isEmpty) ? 2 : 0,
-            strokeColor: AppColor.primary
+        .glassEffect(.regular.tint(.white), in: UnevenRoundedRectangle(
+            topLeadingRadius: 12,
+            bottomLeadingRadius: CornerRadius.large,
+            bottomTrailingRadius: CornerRadius.large,
+            topTrailingRadius: 12,
+            style: .continuous
+        ))
+        .overlay(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 12,
+                bottomLeadingRadius: CornerRadius.large,
+                bottomTrailingRadius: CornerRadius.large,
+                topTrailingRadius: 12,
+                style: .continuous
+            )
+            .stroke((writeOwnExpanded && vm.selectedPrompt == nil && !customText.isEmpty) ? AppColor.primary : Color.clear, lineWidth: 2)
         )
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: writeOwnExpanded)
     }
@@ -162,7 +175,7 @@ private struct PromptCard: View {
                     .foregroundStyle(isSelected ? AppColor.primary : AppColor.inkSecondary)
             }
             .padding(Spacing.md)
-            .background(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous).fill(.white))
+            .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .stroke(isSelected ? AppColor.primary : Color.clear, lineWidth: 2)

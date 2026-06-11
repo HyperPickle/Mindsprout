@@ -25,6 +25,7 @@ struct TripDetailView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(ModalCoordinator.self) private var modalCoordinator
     @State private var viewModel = TripViewModel()
 
     var body: some View {
@@ -63,6 +64,13 @@ struct TripDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .task { viewModel.load(tripID: tripID, context: context) }
+        .onChange(of: modalCoordinator.presented) { _, newValue in
+            guard newValue == nil else { return }
+            viewModel.load(tripID: tripID, context: context)
+            if viewModel.trip == nil {
+                if let onBack { onBack() } else { dismiss() }
+            }
+        }
     }
 
     private var header: some View {
@@ -76,26 +84,28 @@ struct TripDetailView: View {
                 }
                 .padding(.vertical, Spacing.xs)
                 .contentShape(Rectangle())
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
             }
             Spacer()
-            Image(systemName: "square.and.pencil")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(AppColor.ink)
+            Button {
+                modalCoordinator.present(.editTrip(tripID: tripID))
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.vertical, Spacing.xs)
+                    .contentShape(Rectangle())
+            }
         }
         .overlay {
             Text(viewModel.trip?.destination ?? "")
                 .font(.system(size: 22, weight: .heavy, design: .rounded))
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
                 .lineLimit(1)
         }
         .padding(.horizontal, Spacing.md)
         .frame(height: 56)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
-                .fill(AppColor.cardSurface)
-                .shadow(color: AppColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
-        )
+        .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)
@@ -103,7 +113,12 @@ struct TripDetailView: View {
 
     private var featuredReflectionData: (index: Int, reflection: Reflection)? {
         guard !viewModel.reflections.isEmpty else { return nil }
-        
+
+        if let chosenID = viewModel.trip?.featuredReflectionID,
+           let idx = viewModel.reflections.firstIndex(where: { $0.id == chosenID }) {
+            return (idx, viewModel.reflections[idx])
+        }
+
         if let headline = viewModel.trip?.headlineMemory, !headline.isEmpty {
             if let idx = viewModel.reflections.firstIndex(where: { $0.text?.contains(headline) == true || headline.contains($0.text ?? "---") }) {
                 return (idx, viewModel.reflections[idx])
@@ -234,29 +249,25 @@ struct TripDayDetailView: View {
                         .font(AppFont.callout)
                         .lineLimit(1)
                 }
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
             }
             Spacer()
             Text(viewModel.trip?.destination ?? "")
                 .font(.system(size: 22, weight: .heavy, design: .rounded))
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
                 .lineLimit(1)
             Spacer()
             Text("Day \(current?.dayIndex ?? 1)")
                 .font(AppFont.callout)
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .padding(.horizontal, Spacing.sm)
                 .padding(.vertical, Spacing.xs)
-                .background(Capsule().fill(AppColor.sand))
+                .background(Capsule().fill(.white.opacity(0.2)))
         }
         .padding(.horizontal, Spacing.md)
         .frame(height: 56)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
-                .fill(AppColor.cardSurface)
-                .shadow(color: AppColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
-        )
+        .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)

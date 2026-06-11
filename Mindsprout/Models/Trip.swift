@@ -13,6 +13,8 @@ final class Trip {
     var coverAssetID: UUID?
     var theme: String?
     var headlineMemory: String?
+    var featuredReflectionID: UUID?
+    var isManuallyActive: Bool = false
     var createdAt: Date = Date()
 
     init(

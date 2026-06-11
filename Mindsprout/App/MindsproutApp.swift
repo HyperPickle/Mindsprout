@@ -12,7 +12,6 @@ struct MindsproutApp: App {
         FontRegistration.registerBundledFontsIfNeeded()
         let container = PersistenceController.makeContainer()
         let environment = AppEnvironment.live()
-        SampleData.seedIfEmpty(context: container.mainContext, mediaStore: environment.mediaStore)
         modelContainer = container
         appEnvironment = environment
     }

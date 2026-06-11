@@ -56,10 +56,7 @@ struct AnimatedMeshGradient: View {
                    ])
             .ignoresSafeArea()
             .onAppear {
-                withAnimation(
-                    .easeInOut(duration: 4)
-                    .repeatForever(autoreverses: true)
-                ) {
+                withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
                     animate = true
                 }
             }
@@ -99,10 +96,7 @@ struct DarkAnimatedMeshGradient: View{
             ])
             .ignoresSafeArea()
             .onAppear {
-                withAnimation(
-                    .easeInOut(duration: 4)
-                    .repeatForever(autoreverses: true)
-                ) {
+                withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
                     animate = true
                 }
             }

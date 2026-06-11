@@ -7,7 +7,7 @@ final class NewTripViewModel {
     var destination = ""
     var startDate: Date
     var endDate: Date
-    var type: TripType = .solo
+    var type: TripType? = nil
     var selectedExpectations: Set<String> = []
     var customExpectation = ""
 
@@ -26,7 +26,7 @@ final class NewTripViewModel {
     }
 
     var canContinue: Bool {
-        !destination.trimmingCharacters(in: .whitespaces).isEmpty && endDate >= startDate
+        !destination.trimmingCharacters(in: .whitespaces).isEmpty && endDate >= startDate && type != nil
     }
 
     var expectations: [String] {
@@ -37,7 +37,7 @@ final class NewTripViewModel {
     }
 
     func presets(from pack: ContentPack) -> [String] {
-        pack.expectations.presets(for: type)
+        pack.expectations.presets(for: type ?? .solo)
     }
 
     func toggle(_ expectation: String) {
@@ -56,7 +56,7 @@ final class NewTripViewModel {
         return try? TripRepository(context: context).create(
             destination: city, country: country,
             startDate: startDate, endDate: endDate,
-            type: type, expectations: expectations
+            type: type ?? .solo, expectations: expectations
         )
     }
 }

@@ -3,13 +3,28 @@ import SwiftData
 
 struct ProfileTab: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appEnvironment) private var env
+    @Environment(ModalCoordinator.self) private var modalCoordinator
     @Query private var sprouts: [Sprout]
+    @Query private var users: [User]
     @Query private var trips: [Trip]
     @Query(filter: #Predicate<Reflection> { $0.isDraft == false }) private var reflections: [Reflection]
-    
+
     @State private var showSettings = false
-    
+
     private var sprout: Sprout? { sprouts.first }
+    private var user: User? { users.first }
+    private var activeTrip: Trip? { TripResolver.active(in: trips) }
+
+    private var displayName: String {
+        let name = user?.displayName ?? ""
+        return name.isEmpty ? "Traveler" : name
+    }
+
+    private var levelProgress: (within: Int, span: Int) {
+        SproutProgressionEngine(config: env.gameConfig)
+            .levelProgress(totalXP: sprout?.xp ?? 0, level: sprout?.level ?? 1)
+    }
     
     var body: some View {
         NavigationStack {
@@ -33,22 +48,16 @@ struct ProfileTab: View {
                                 .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
                             
                             VStack(spacing: 20) {
-                                HStack(spacing: Spacing.xs) {
-                                    Text("Remi Rata")
-                                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
-                                    
-                                    Image(systemName: "pencil")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(.white)
-                                }
-                                
-                                // Location Badge (Full width)
+                                Text(displayName)
+                                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+
+                                // Location Badge (Full width) — reflects the active trip
                                 HStack(spacing: Spacing.xs) {
                                     Spacer()
-                                    Image(systemName: "mappin")
+                                    Image(systemName: activeTrip == nil ? "map" : "mappin")
                                         .font(.system(size: 14) )
-                                    Text("Kyoto, Japan")
+                                    Text(activeTrip.map { "\($0.destination), \($0.country)" } ?? "Planning next trip")
                                         .font(.system(size: 14, weight: .medium, design: .rounded))
                                     Spacer()
                                 }
@@ -64,11 +73,15 @@ struct ProfileTab: View {
                                     
                                     Text("Lv. \(sprout?.level ?? 1)")
                                         .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    
-                                    XPBar(progress: Double(sprout?.xp ?? 200) / 1000.0)
+
+                                    XPBar(progress: levelProgress.span > 0
+                                        ? Double(levelProgress.within) / Double(levelProgress.span)
+                                        : 1)
                                         .frame(height: 10)
-                                    
-                                    Text("\(sprout?.xp ?? 200)/1000xp")
+
+                                    Text(levelProgress.span > 0
+                                        ? "\(levelProgress.within)/\(levelProgress.span)xp"
+                                        : "MAX")
                                         .font(.system(size: 10, weight: .medium, design: .rounded))
                                         .frame(width: 65, alignment: .trailing)
                                 }
@@ -94,6 +107,9 @@ struct ProfileTab: View {
                             }
                             ProfileActionButton(title: "Settings", icon: "gearshape") {
                                 showSettings = true
+                            }
+                            ProfileActionButton(title: "About", icon: "questionmark.circle") {
+                                modalCoordinator.present(.aboutSettings)
                             }
                         }
                         .padding(.horizontal, Spacing.screenEdge)
@@ -180,5 +196,5 @@ private struct ProfileActionButton: View {
 
 #Preview {
     ProfileTab()
-        .modelContainer(for: [Sprout.self, Trip.self, Reflection.self], inMemory: true)
+        .modelContainer(for: [Sprout.self, User.self, Trip.self, Reflection.self], inMemory: true)
 }

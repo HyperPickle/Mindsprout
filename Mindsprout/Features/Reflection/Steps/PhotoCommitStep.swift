@@ -98,8 +98,7 @@ struct PhotoCommitStep: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.xxl)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous).fill(.white))
-        .shadow(color: AppColor.ink.opacity(0.08), radius: 8, y: 4)
+        .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
     }
 
     private var filledPhotoCard: some View {
@@ -130,8 +129,7 @@ struct PhotoCommitStep: View {
             }
             .padding(.vertical, Spacing.md)
         }
-        .background(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous).fill(.white))
-        .shadow(color: AppColor.ink.opacity(0.08), radius: 8, y: 4)
+        .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
     }
 
     private var addMoreButton: some View {
@@ -146,7 +144,7 @@ struct PhotoCommitStep: View {
             }
         } label: {
             RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
-                .fill(AppColor.hairline.opacity(0.4))
+                .fill(Color.white.opacity(0.35))
                 .frame(width: 100, height: 100)
                 .overlay {
                     Image(systemName: "plus")
@@ -194,8 +192,7 @@ struct PhotoCommitStep: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.sm)
-                .background(RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous).fill(AppColor.headerBrown))
-                .contentShape(RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
+                .glassEffect(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
 
             Button("Feed Sprout") { vm.feedSprout() }
                 .buttonStyle(.primary)

@@ -82,6 +82,14 @@ struct SproutProgressionEngine: Sendable {
         return min(max(1, level), config.maxLevel)
     }
 
+    func levelProgress(totalXP xp: Int, level: Int) -> (within: Int, span: Int) {
+        let currentLevel = clampedLevel(level)
+        guard currentLevel < config.maxLevel else { return (0, 0) }
+        let current = threshold(for: currentLevel)
+        let next = threshold(for: currentLevel + 1)
+        return (max(0, xp - current), max(0, next - current))
+    }
+
     func progressWithinLevel(totalXP xp: Int, level: Int) -> Double {
         let currentLevel = clampedLevel(level)
         guard currentLevel < config.maxLevel else { return 1 }

@@ -69,7 +69,8 @@ struct RangeCalendarView: View {
                 if let day {
                     DayCell(
                         day: calendar.component(.day, from: day),
-                        state: state(for: day)
+                        state: state(for: day),
+                        isSingleSelection: calendar.startOfDay(for: startDate) == calendar.startOfDay(for: endDate)
                     )
                     .onTapGesture { select(day) }
                 } else {
@@ -146,6 +147,7 @@ struct RangeCalendarView: View {
 private struct DayCell: View {
     let day: Int
     let state: RangeCalendarView.DayState
+    var isSingleSelection: Bool = false
 
     var body: some View {
         Text("\(day)")
@@ -168,11 +170,24 @@ private struct DayCell: View {
 
     @ViewBuilder private var background: some View {
         switch state {
-        case .start, .end:
-            RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
-                .fill(AppColor.calendarSelected)
+        case .start:
+            UnevenRoundedRectangle(
+                topLeadingRadius: CornerRadius.small,
+                bottomLeadingRadius: CornerRadius.small,
+                bottomTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
+                topTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
+                style: .continuous
+            ).fill(AppColor.primary)
+        case .end:
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: CornerRadius.small,
+                topTrailingRadius: CornerRadius.small,
+                style: .continuous
+            ).fill(AppColor.primary)
         case .inRange:
-            Rectangle().fill(AppColor.calendarInRange)
+            Rectangle().fill(AppColor.primary.opacity(0.22))
         case .normal:
             Color.clear
         }

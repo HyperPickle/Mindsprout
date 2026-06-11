@@ -58,7 +58,7 @@ struct EntryStep: View {
             toggleSegment("Record", kind: .audio)
         }
         .padding(3)
-        .background(Capsule().fill(AppColor.ink.opacity(0.08)))
+        .glassEffect(in: Capsule())
     }
 
     private func toggleSegment(_ label: String, kind: ReflectionBodyKind) -> some View {
@@ -67,11 +67,11 @@ struct EntryStep: View {
         } label: {
             Text(label)
                 .font(AppFont.callout)
-                .foregroundStyle(vm.bodyKind == kind ? .white : AppColor.inkSecondary)
+                .foregroundStyle(vm.bodyKind == kind ? .white : .white.opacity(0.6))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.xs)
                 .background(
-                    Capsule().fill(vm.bodyKind == kind ? AppColor.ink : Color.clear)
+                    Capsule().fill(vm.bodyKind == kind ? Color.white.opacity(0.3) : Color.clear)
                 )
                 .contentShape(Capsule())
         }
@@ -145,8 +145,7 @@ private struct TypeEntryCard: View {
             }
             .padding(Spacing.sm)
         }
-        .background(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous).fill(.white))
-        .shadow(color: AppColor.ink.opacity(0.08), radius: 8, y: 4)
+        .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
     }
 }
 
@@ -192,8 +191,7 @@ private struct RecordEntryCard: View {
             }
         }
         .padding(Spacing.lg)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous).fill(.white))
-        .shadow(color: AppColor.ink.opacity(0.08), radius: 8, y: 4)
+        .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
         .alert("Microphone Access Required", isPresented: $recorder.showPermissionAlert) {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {

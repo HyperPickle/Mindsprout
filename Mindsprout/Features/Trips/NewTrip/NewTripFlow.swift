@@ -17,15 +17,25 @@ struct NewTripFlow: View {
                     }
                 }
         }
+        .presentationCornerRadius(36)
+        .presentationDragIndicator(.visible)
+    }
+}
+
+extension TripType {
+    var systemImage: String {
+        switch self {
+        case .solo: return "person.fill"
+        case .family: return "figure.2.and.child.holdinghands"
+        case .friends: return "person.2.fill"
+        case .business: return "briefcase.fill"
+        }
     }
 }
 
 struct NewTripHeader: View {
     let title: LocalizedStringKey
-    var leadingSystemImage: String?
-    var trailingSystemImage: String?
     var onLeading: (() -> Void)?
-    var onTrailing: (() -> Void)?
 
     var body: some View {
         ZStack {
@@ -33,29 +43,23 @@ struct NewTripHeader: View {
                 .font(AppFont.headline)
                 .foregroundStyle(.white)
             HStack {
-                if let leadingSystemImage {
-                    Button { onLeading?() } label: {
-                        Image(systemName: leadingSystemImage)
-                            .font(.system(size: 18, weight: .bold))
+                if let onLeading {
+                    Button(action: onLeading) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
                     }
                 }
                 Spacer()
-                if let trailingSystemImage {
-                    Button { onTrailing?() } label: {
-                        Image(systemName: trailingSystemImage)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                }
             }
         }
-        .padding(.horizontal, Spacing.md)
-        .frame(height: 52)
-        .background(AppColor.headerBrown)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         .padding(.horizontal, Spacing.sm)
-        .padding(.top, Spacing.xs)
+        .frame(height: 52)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+        .padding(.horizontal, Spacing.sm)
+        .padding(.top, Spacing.xs + 20)
+        .padding(.bottom, Spacing.xs)
     }
 }
 
@@ -66,14 +70,10 @@ private struct NewTripBasicsView: View {
 
     var body: some View {
         ZStack {
-            GrassBackground()
+            BackgroundSky()
+            LinearGradient(colors: [.black.opacity(0.1), .black.opacity(0.4)], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             VStack(spacing: 0) {
-                NewTripHeader(
-                    title: "New Trip",
-                    leadingSystemImage: "suitcase.fill",
-                    trailingSystemImage: "xmark",
-                    onTrailing: { dismiss() }
-                )
+                NewTripHeader(title: "New Trip", onLeading: { dismiss() })
                 ScrollView {
                     VStack(alignment: .leading, spacing: Spacing.lg) {
                         field
@@ -86,7 +86,7 @@ private struct NewTripBasicsView: View {
                     .buttonStyle(.primary)
                     .disabled(!viewModel.canContinue)
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.md)
+                    .padding(.bottom, Spacing.xs)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -96,11 +96,13 @@ private struct NewTripBasicsView: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text("Where are we going?")
                 .font(AppFont.bodyEmphasized)
-                .foregroundStyle(AppColor.ink)
-            TextField("City, Country", text: $viewModel.destination)
+                .foregroundStyle(.white)
+            TextField("", text: $viewModel.destination)
                 .font(AppFont.body)
+                .foregroundStyle(AppColor.ink)
+                .tint(AppColor.primary)
                 .padding(Spacing.md)
-                .background(RoundedRectangle(cornerRadius: CornerRadius.medium).fill(.white))
+                .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
     }
 
@@ -109,16 +111,18 @@ private struct NewTripBasicsView: View {
             HStack {
                 Text("Select Travel Dates")
                     .font(AppFont.bodyEmphasized)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(.white)
                 Spacer()
                 Text("\(viewModel.durationDays) days")
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.ink)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, 6)
-                    .background(Capsule().fill(.white))
+                    .glassEffect(.regular.tint(.white), in: Capsule())
             }
             RangeCalendarView(startDate: $viewModel.startDate, endDate: $viewModel.endDate)
+                .padding(Spacing.md)
+                .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
     }
 
@@ -126,7 +130,7 @@ private struct NewTripBasicsView: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Type of Travel")
                 .font(AppFont.bodyEmphasized)
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
             HStack(spacing: Spacing.sm) {
                 ForEach(TripTypeOption.allCases) { option in
                     TripTypeCell(option: option, isSelected: viewModel.type == option.type) {
@@ -148,18 +152,18 @@ struct NewTripExpectationsView: View {
 
     var body: some View {
         ZStack {
-            GrassBackground()
+            BackgroundSky()
+            LinearGradient(colors: [.black.opacity(0.1), .black.opacity(0.4)], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             VStack(spacing: 0) {
                 NewTripHeader(
                     title: titleKey,
-                    leadingSystemImage: "arrow.left",
                     onLeading: { dismiss() }
                 )
                 ScrollView {
                     VStack(alignment: .leading, spacing: Spacing.md) {
                         Text("What's your trip expectation?")
                             .font(AppFont.bodyEmphasized)
-                            .foregroundStyle(AppColor.ink)
+                            .foregroundStyle(.white)
                             .padding(.top, Spacing.xs)
                         ForEach(presets, id: \.self) { preset in
                             ExpectationRow(text: preset, isSelected: viewModel.selectedExpectations.contains(preset)) {
@@ -177,7 +181,7 @@ struct NewTripExpectationsView: View {
                 Button("Save", action: onSave)
                     .buttonStyle(.primary)
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.md)
+                    .padding(.bottom, Spacing.xs)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -194,11 +198,12 @@ struct NewTripExpectationsView: View {
         case .friends: return "Friends Trip"
         case .family: return "Family Trip"
         case .business: return "Business Trip"
+        case .none: return "New Trip"
         }
     }
 }
 
-private struct ExpectationRow: View {
+struct ExpectationRow: View {
     let text: String
     let isSelected: Bool
     let action: () -> Void
@@ -222,7 +227,7 @@ private struct ExpectationRow: View {
     }
 }
 
-private enum TripTypeOption: CaseIterable, Identifiable {
+enum TripTypeOption: CaseIterable, Identifiable {
     case solo, family, friends, business
     var id: Self { self }
 
@@ -244,17 +249,10 @@ private enum TripTypeOption: CaseIterable, Identifiable {
         }
     }
 
-    var systemImage: String {
-        switch self {
-        case .solo: return "person.fill"
-        case .family: return "figure.2.and.child.holdinghands"
-        case .friends: return "person.2.fill"
-        case .business: return "briefcase.fill"
-        }
-    }
+    var systemImage: String { type.systemImage }
 }
 
-private struct TripTypeCell: View {
+struct TripTypeCell: View {
     let option: TripTypeOption
     let isSelected: Bool
     let action: () -> Void
@@ -269,7 +267,7 @@ private struct TripTypeCell: View {
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.ink)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, Spacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)

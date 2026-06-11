@@ -2,6 +2,7 @@ import SwiftUI
 
 enum AppModal: Identifiable, Equatable {
     case newTrip
+    case editTrip(tripID: UUID)
     case levelUp(LevelUpPresentation)
     case shop
     case themeSettings
@@ -12,6 +13,7 @@ enum AppModal: Identifiable, Equatable {
     var id: String {
         switch self {
         case .newTrip: return "newTrip"
+        case .editTrip(let tripID): return "editTrip-\(tripID.uuidString)"
         case .levelUp(let presentation): return "levelUp-\(presentation.id.uuidString)"
         case .shop: return "shop"
         case .themeSettings: return "themeSettings"
