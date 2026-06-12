@@ -1,8 +1,7 @@
 import SwiftUI
 
 enum AppColor {
-    static let sand = Color(hex: 0xEFE7DA)
-    static let cardSurface = Color(hex: 0xFCFAF5)
+    static let cardSurface = Color.white
     static let skyTop = Color(hex: 0xBFE3EF)
     static let skyBottom = Color(hex: 0xE9F4F2)
     static let grassTop = Color(hex: 0x9BC56A)

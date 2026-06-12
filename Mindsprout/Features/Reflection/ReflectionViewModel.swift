@@ -96,8 +96,14 @@ final class ReflectionViewModel {
             entryText = existing.text ?? ""
             bodyKind = existing.bodyKind
             audioAssetID = existing.audioAssetID
-            photoAssetIDs = existing.photoAssetIDs
             moodTags = existing.moodTags
+            if existing.isDraft {
+                for id in existing.photoAssetIDs { deleteMediaAsset(id: id) }
+                existing.photoAssetIDs = []
+                photoAssetIDs = []
+            } else {
+                photoAssetIDs = existing.photoAssetIDs
+            }
         } else if let trip {
             let idx = dayIndex(for: trip)
             let r = Reflection(tripID: tripID, dayIndex: idx, date: Date(), isDraft: true)
