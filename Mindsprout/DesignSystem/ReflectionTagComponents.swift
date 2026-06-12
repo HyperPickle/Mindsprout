@@ -165,7 +165,7 @@ struct ReflectionTagEditorSheet: View {
                 Spacer()
             }
             .padding(Spacing.screenEdge)
-            .background(AppColor.sand.ignoresSafeArea())
+            .background(Color.white.ignoresSafeArea())
             .navigationTitle("Edit Tags")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

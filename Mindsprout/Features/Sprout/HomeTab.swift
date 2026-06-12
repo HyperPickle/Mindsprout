@@ -2,9 +2,10 @@ import SwiftUI
 import SwiftData
 
 struct HomeTab: View {
-    private let tripPillWidth: CGFloat = 98
+    private var tripPillWidth: CGFloat {
+        activeTrip == nil ? 150 : 98
+    }
 
-    @Environment(\.colorScheme) private var colorScheme
     @Binding var selection: AppTab
 
     @Environment(\.modelContext) private var context
@@ -16,7 +17,7 @@ struct HomeTab: View {
     @Query(sort: \Sprout.createdAt) private var sprouts: [Sprout]
 
     private var pillTextColor: Color {
-        colorScheme == .dark ? .white : AppColor.ink
+        .white
     }
 
     private var activeTrip: Trip? {
@@ -42,7 +43,7 @@ struct HomeTab: View {
                 dashboardContent
                 bottomPanel
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.xl + 75)
+                    .padding(.bottom, Spacing.xl + 85)
             }
             .task {
                 ensureSproutExists()
@@ -94,10 +95,11 @@ struct HomeTab: View {
             Spacer()
         }
         .padding(.leading, 16)
+        .padding(.trailing, activeTrip == nil ? 16 : 0)
         .frame(width: tripPillWidth, height: 48)
         .background(alignment: .leading) {
             Color.clear
-                .frame(width: tripPillWidth * 1.3, height: 48)
+                .frame(width: activeTrip == nil ? tripPillWidth : tripPillWidth * 1.3, height: 48)
                 .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .overlay(alignment: .trailing) {
@@ -111,27 +113,19 @@ struct HomeTab: View {
     }
 
     private func dayBadge(day: Int, totalDays: Int) -> some View {
-        ZStack {
-            Image(systemName: "cloud.fill")
-                .font(.system(size: 43, weight: .medium))
-                .foregroundStyle(AppColor.cardSurface)
-                .shadow(color: AppColor.ink.opacity(0.08), radius: 4, x: 0, y: 2)
-                .offset(y: 5)
-
-            VStack(spacing: 0) {
-                Text("day")
-                    .font(.system(size: 6, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColor.inkSecondary)
-                    .textCase(.uppercase)
-                    .offset(y: 7)
-                Text("\(day) / \(totalDays)")
-                    .font(.system(size: 9, weight: .black, design: .rounded))
-                    .foregroundStyle(AppColor.ink)
-                    .monospacedDigit()
-                    .offset(y: 7)
-            }
+        VStack(spacing: 0) {
+            Text("day")
+                .font(.system(size: 6, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white.opacity(0.8))
+                .textCase(.uppercase)
+            Text("\(day) / \(totalDays)")
+                .font(.system(size: 9, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
+                .monospacedDigit()
         }
-        .frame(width: 40, height: 26)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var currencyButton: some View {
@@ -148,7 +142,7 @@ struct HomeTab: View {
                     .monospacedDigit()
                     .lineLimit(1)
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 13)
             .frame(maxHeight: .infinity)
             .glassEffect(in: Capsule())
         }

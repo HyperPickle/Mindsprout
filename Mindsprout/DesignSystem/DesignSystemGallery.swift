@@ -7,7 +7,6 @@ struct DesignSystemGallery: View {
         ("currency", AppColor.currency),
         ("ink", AppColor.ink),
         ("inkSecondary", AppColor.inkSecondary),
-        ("sand", AppColor.sand),
         ("grassTop", AppColor.grassTop),
         ("grassBottom", AppColor.grassBottom),
         ("skyTop", AppColor.skyTop)
@@ -67,7 +66,7 @@ struct DesignSystemGallery: View {
             }
             .padding(Spacing.screenEdge)
         }
-        .background(AppColor.sand.ignoresSafeArea())
+        .background(Color.white.ignoresSafeArea())
     }
 
     @ViewBuilder

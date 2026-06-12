@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SandBackground: View {
     var body: some View {
-        AppColor.sand.ignoresSafeArea()
+        Color.white.ignoresSafeArea()
     }
 }
 

@@ -116,4 +116,33 @@ struct ReflectionViewModelTests {
         #expect(!FileManager.default.fileExists(atPath: store.url(for: path).path))
         #expect(try context.fetch(FetchDescriptor<MediaAsset>()).isEmpty)
     }
+
+    @Test func onAppearClearsAbandonedDraftPhotoButResumesText() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let trip = Trip(destination: "Oslo", country: "Norway", startDate: .now, endDate: .now, type: .solo)
+        context.insert(trip)
+
+        let mediaRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = MediaStore(root: mediaRoot)
+        let path = try store.write(Data("photo".utf8), kind: .photo, fileExtension: "jpg")
+        let asset = MediaAsset(kind: .photo, relativePath: path)
+        context.insert(asset)
+
+        let draft = Reflection(tripID: trip.id, date: .now, text: "Resumed thought", isDraft: true)
+        draft.photoAssetIDs = [asset.id]
+        context.insert(draft)
+        try context.save()
+
+        #expect(FileManager.default.fileExists(atPath: store.url(for: path).path))
+
+        let vm = makeViewModel(context: context, mediaStore: store, tripID: trip.id)
+        vm.onAppear()
+
+        #expect(vm.photoAssetIDs.isEmpty)
+        #expect(vm.entryText == "Resumed thought")
+        #expect(draft.photoAssetIDs.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: store.url(for: path).path))
+        #expect(try context.fetch(FetchDescriptor<MediaAsset>()).isEmpty)
+    }
 }
