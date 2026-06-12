@@ -326,6 +326,7 @@ class SproutScene: SKScene {
                 self?.isDoingBehavior = false
                 self?.startRandomBehavior()
             }
+        case 3: playSleepDaily()
         default:
             isDoingBehavior = false
             startRandomBehavior()

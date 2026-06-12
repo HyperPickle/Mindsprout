@@ -163,5 +163,9 @@ struct GlobeView: View {
 }
 
 #Preview {
-    GlobeView()
+    ZStack{
+    
+        BackgroundSky()
+        GlobeView()
+    }
 }

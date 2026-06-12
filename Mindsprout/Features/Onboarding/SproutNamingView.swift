@@ -15,6 +15,8 @@ struct SproutNamingView: View {
     @StateObject private var seedHolder = SeedSceneHolder()
     @FocusState private var isFieldFocused: Bool
     @Environment(\.dismiss) var dismiss
+    @State private var showTransformation = false
+    var onContinue: () -> Void
     
     var body: some View {
         ZStack {
@@ -70,9 +72,8 @@ struct SproutNamingView: View {
                     guard !sproutName.isEmpty else { return }
                     savedSproutName = sproutName
                     isFieldFocused = false
-                    seedHolder.scene.playSeedToSprout {
-                        hasCompletedOnboarding = true
-                    }
+                    showTransformation = true  // ✅ navigue
+                    onContinue()
                 } label: {
                     Text("Continue")
                         .font(.system(size: 17, weight: .semibold, design: .rounded))
@@ -87,6 +88,9 @@ struct SproutNamingView: View {
                 }
                 .disabled(sproutName.isEmpty)
                 .padding(.horizontal, 24)
+                .fullScreenCover(isPresented: $showTransformation) {
+                    SproutTransformationView(onFinish:{})  // ✅ page de transformation
+                }
             }
             .frame(maxHeight: .infinity)  // ✅ centré verticalement
         }
@@ -97,5 +101,5 @@ struct SproutNamingView: View {
 }
 
 #Preview {
-    SproutNamingView()
+    SproutNamingView(onContinue:{})
 }
