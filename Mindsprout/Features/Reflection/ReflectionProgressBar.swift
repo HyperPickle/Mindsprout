@@ -53,5 +53,5 @@ struct ReflectionProgressBar: View {
         ReflectionProgressBar(step: 3)
     }
     .padding()
-    .background(AppColor.sand)
+    .background(Color.white)
 }

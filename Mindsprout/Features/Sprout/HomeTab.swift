@@ -2,9 +2,10 @@ import SwiftUI
 import SwiftData
 
 struct HomeTab: View {
-    private let tripPillWidth: CGFloat = 98
+    private var tripPillWidth: CGFloat {
+        activeTrip == nil ? 150 : 98
+    }
 
-    @Environment(\.colorScheme) private var colorScheme
     @Binding var selection: AppTab
 
     @Environment(\.modelContext) private var context
@@ -16,7 +17,7 @@ struct HomeTab: View {
     @Query(sort: \Sprout.createdAt) private var sprouts: [Sprout]
 
     private var pillTextColor: Color {
-        colorScheme == .dark ? .white : AppColor.ink
+        .white
     }
 
     private var activeTrip: Trip? {
@@ -42,7 +43,7 @@ struct HomeTab: View {
                 dashboardContent
                 bottomPanel
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.xl + 100)
+                    .padding(.bottom, Spacing.xl + 85)
             }
             .task {
                 ensureSproutExists()
@@ -94,10 +95,11 @@ struct HomeTab: View {
             Spacer()
         }
         .padding(.leading, 16)
+        .padding(.trailing, activeTrip == nil ? 16 : 0)
         .frame(width: tripPillWidth, height: 48)
         .background(alignment: .leading) {
             Color.clear
-                .frame(width: tripPillWidth * 1.3, height: 48)
+                .frame(width: activeTrip == nil ? tripPillWidth : tripPillWidth * 1.3, height: 48)
                 .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .overlay(alignment: .trailing) {
@@ -114,11 +116,11 @@ struct HomeTab: View {
         VStack(spacing: 0) {
             Text("day")
                 .font(.system(size: 6, weight: .heavy, design: .rounded))
-                .foregroundStyle(AppColor.inkSecondary)
+                .foregroundStyle(.white.opacity(0.8))
                 .textCase(.uppercase)
             Text("\(day) / \(totalDays)")
                 .font(.system(size: 9, weight: .black, design: .rounded))
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(.white)
                 .monospacedDigit()
         }
         .padding(.horizontal, 10)
@@ -140,8 +142,7 @@ struct HomeTab: View {
                     .monospacedDigit()
                     .lineLimit(1)
             }
-            .padding(.leading, 10)
-            .padding(.trailing, 16)
+            .padding(.horizontal, 13)
             .frame(maxHeight: .infinity)
             .glassEffect(in: Capsule())
         }

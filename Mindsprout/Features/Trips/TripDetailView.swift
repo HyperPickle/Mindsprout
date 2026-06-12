@@ -249,17 +249,43 @@ struct TripDayDetailView: View {
         .frame(maxWidth: .infinity)
     }
 
+    private var lightboxSelection: Binding<UUID> {
+        Binding(get: { lightboxAsset ?? UUID() }, set: { lightboxAsset = $0 })
+    }
+
     @ViewBuilder private var lightbox: some View {
-        if let lightboxAsset {
+        if lightboxAsset != nil, let photos = current?.photoAssetIDs, !photos.isEmpty {
             ZStack {
                 Color.black.opacity(0.7).ignoresSafeArea()
-                MediaImage(assetID: lightboxAsset, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-                    .padding(Spacing.lg)
-                    .shadow(color: .black.opacity(0.4), radius: 20, y: 10)
+                    .onTapGesture { lightboxAsset = nil }
+
+                TabView(selection: lightboxSelection) {
+                    ForEach(photos, id: \.self) { id in
+                        MediaImage(assetID: id, contentMode: .fit)
+                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                            .padding(Spacing.lg)
+                            .shadow(color: .black.opacity(0.4), radius: 20, y: 10)
+                            .tag(id)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: photos.count > 1 ? .always : .never))
+
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button { lightboxAsset = nil } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 40, height: 40)
+                                .background(Circle().fill(.black.opacity(0.4)))
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(Spacing.screenEdge)
             }
             .transition(.opacity)
-            .onTapGesture { self.lightboxAsset = nil }
         }
     }
 }
@@ -342,11 +368,11 @@ private struct DayContentView: View {
             
             LazyVGrid(columns: columns, spacing: Spacing.xs) {
                 ForEach(reflection.photoAssetIDs, id: \.self) { id in
-                    MediaImage(assetID: id)
-                        .aspectRatio(1, contentMode: .fill)
-                        .frame(minWidth: 0, maxWidth: .infinity)
-                        .clipped()
+                    Color.clear
+                        .aspectRatio(1, contentMode: .fit)
+                        .overlay { MediaImage(assetID: id) }
                         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                        .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                         .onTapGesture { lightboxAsset = id }
                 }
             }

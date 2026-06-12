@@ -20,7 +20,7 @@ struct PlaceholderScreen: View {
         }
         .padding(Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColor.sand.ignoresSafeArea())
+        .background(Color.white.ignoresSafeArea())
     }
 }
 

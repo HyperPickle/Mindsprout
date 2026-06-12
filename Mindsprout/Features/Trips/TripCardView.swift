@@ -6,7 +6,7 @@ struct TripPhotoThumb: View {
     let assetID: UUID?
     var body: some View {
         ZStack {
-            LinearGradient(colors: [AppColor.skyTop, AppColor.sand], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [AppColor.skyTop, .white], startPoint: .top, endPoint: .bottom)
             MediaImage(assetID: assetID)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
@@ -28,41 +28,53 @@ struct TripHeroCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .bottom) {
-                heroBackground
-                    .frame(height: 196)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
-                    .frame(height: 110)
-                    .frame(maxWidth: .infinity)
-                photoOverlay
-            }
-            .overlay(alignment: .topTrailing) {
-                if let badge {
-                    Text(badge)
-                        .font(.system(size: 12, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, Spacing.sm)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(.black.opacity(0.28)))
-                        .padding(Spacing.sm)
+            heroBackground
+                .frame(height: 196)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .overlay(alignment: .topTrailing) {
+                    if let badge {
+                        Text(badge)
+                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, Spacing.sm)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(.black.opacity(0.28)))
+                            .padding(Spacing.sm)
+                    }
+                }
+
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(trip.destination)
+                            .font(.system(size: 22, weight: .heavy, design: .rounded))
+                            .foregroundStyle(AppColor.ink)
+                        Text(TripDateFormat.range(trip.startDate, trip.endDate, includeYear: false))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(AppColor.inkMuted)
+                    }
+                    Spacer()
+                    Text("\(memoryCount) \(memoryCount == 1 ? "memory" : "memories")")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.inkMuted)
+                }
+                if showHeadline, let headline = trip.headlineMemory, !headline.isEmpty {
+                    Rectangle().fill(AppColor.ink.opacity(0.08)).frame(height: 1)
+                    VStack(alignment: .leading, spacing: Spacing.xxs) {
+                        Text("HEADLINE MEMORY")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .tracking(0.5)
+                            .foregroundStyle(AppColor.ink)
+                        Text(headline)
+                            .font(AppFont.callout)
+                            .foregroundStyle(AppColor.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
-            if showHeadline, let headline = trip.headlineMemory, !headline.isEmpty {
-                VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    Text("HEADLINE MEMORY")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .tracking(0.5)
-                        .foregroundStyle(AppColor.ink)
-                    Text(headline)
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Spacing.md)
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.md)
         }
         .background(AppColor.cardSurface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
@@ -71,24 +83,6 @@ struct TripHeroCard: View {
 
     private var heroBackground: some View {
         TripMapHero(trip: trip, coverAssetID: coverAssetID)
-    }
-
-    private var photoOverlay: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(trip.destination)
-                    .font(.system(size: 30, weight: .heavy, design: .rounded))
-                Text(TripDateFormat.range(trip.startDate, trip.endDate, includeYear: false))
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .opacity(0.85)
-            }
-            Spacer()
-            Text("\(memoryCount) memories")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .opacity(0.95)
-        }
-        .foregroundStyle(.white)
-        .padding(Spacing.md)
     }
 }
 
@@ -194,7 +188,7 @@ struct LabelBox: View {
         }
         .padding(Spacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColor.sand)
+        .background(AppColor.cardSurface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 }
