@@ -3,7 +3,7 @@ import SwiftData
 
 struct HomeTab: View {
     private var tripPillWidth: CGFloat {
-        activeTrip == nil ? 150 : 98
+        activeTrip == nil ? 200 : 150
     }
 
     @Binding var selection: AppTab
@@ -39,20 +39,22 @@ struct HomeTab: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
-                dashboardBackground
                 dashboardContent
                 bottomPanel
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.xl + 85)
+                    .padding(.bottom, Spacing.xl + 50)
             }
             .task {
                 ensureSproutExists()
             }
+            .background(
+                dashboardBackground
+            )
         }
     }
 
     private var dashboardBackground: some View {
-        Image("dashboard_background")
+        Image("HomeBackground")
             .resizable()
             .scaledToFill()
             .ignoresSafeArea()
@@ -82,13 +84,13 @@ struct HomeTab: View {
         HStack {
             VStack(alignment: .leading, spacing: 0) {
                 Text(activeTrip?.destination ?? "No trip yet")
-                    .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(pillTextColor)
+                    .font(.system(size: 25, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color(hex: 0x705A4D))
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
                 Text(activeTrip?.country ?? "Start an adventure")
-                    .font(.system(size: 9, weight: .heavy, design: .rounded))
-                    .foregroundStyle(pillTextColor)
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .foregroundStyle(Color(hex: 0x705A4D))
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
             }
@@ -99,7 +101,7 @@ struct HomeTab: View {
         .frame(width: tripPillWidth, height: 48)
         .background(alignment: .leading) {
             Color.clear
-                .frame(width: activeTrip == nil ? tripPillWidth : tripPillWidth * 1.3, height: 48)
+                .frame(width: activeTrip == nil ? tripPillWidth : tripPillWidth * 1.3, height: 60)
                 .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .overlay(alignment: .trailing) {
@@ -113,19 +115,35 @@ struct HomeTab: View {
     }
 
     private func dayBadge(day: Int, totalDays: Int) -> some View {
-        VStack(spacing: 0) {
-            Text("day")
-                .font(.system(size: 6, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white.opacity(0.8))
-                .textCase(.uppercase)
-            Text("\(day) / \(totalDays)")
-                .font(.system(size: 9, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
-                .monospacedDigit()
+        ZStack{
+            Image("Cloud")
+                .resizable()
+                    .scaledToFit()
+                    .frame(width: 60, height: 60)  // ← ajuste la taille
+                    .foregroundStyle(pillTextColor)
+            VStack(spacing: 0) {
+                Text("day")
+                    .font(.system(size: 8, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Color(hex: 0x705A4D))
+                    .textCase(.uppercase)
+                Text("\(day) / \(totalDays)")
+                    .font(.system(size: 12, weight: .black, design: .rounded))
+                    .foregroundStyle(Color(hex: 0x705A4D))
+//                    .foregroundStyle(
+//                        LinearGradient(
+//                            colors: [.yellow, .orange],
+//                            startPoint: .leading,
+//                            endPoint: .trailing
+//                        )
+//                        )
+
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            //        .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))}
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
     }
 
     private var currencyButton: some View {
@@ -133,21 +151,26 @@ struct HomeTab: View {
             modalCoordinator.present(.shop)
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(pillTextColor)
-                Text("\(displaySprout.currency)")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(pillTextColor)
-                    .monospacedDigit()
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 13)
-            .frame(maxHeight: .infinity)
-            .glassEffect(in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open shop")
+                       Image("Points")
+                           .resizable()
+                           .scaledToFit()
+                           .frame(width: 44, height: 44)
+                           .offset(x: -4, y: -4)
+                
+                       Text("\(displaySprout.currency)")
+                           .font(.system(size: 18, weight: .bold, design: .rounded))
+                           .foregroundStyle(Color(hex: 0x6B4C2A))
+                           .monospacedDigit()
+                           .lineLimit(1)
+                        }
+                   .frame(height: 36)
+                   .padding(.trailing, 13)
+                   .glassEffect(in: Capsule())
+                   
+               }
+               .buttonStyle(.plain)
+               .accessibilityLabel("Open shop")
+
     }
 
     private func sproutStage(layout: HomeDashboardLayout) -> some View {
@@ -224,10 +247,10 @@ private struct HomeDashboardLayout {
         let scaleX = size.width / referenceWidth
         let scaleY = size.height / referenceHeight
 
-        topRowCenterY = 95 * scaleY
-        tripGroupCenterX = 106 * scaleX
-        tripGroupWidth = 192 * scaleX
-        tripPillHeight = 52 * scaleY
+        topRowCenterY = 50 * scaleY
+        tripGroupCenterX = (220 * scaleX / 2) + (8 * scaleX)
+        tripGroupWidth = 250 * scaleX
+        tripPillHeight = 60 * scaleY
 
         currencyPillCenterX = 338 * scaleX
         currencyPillHeight = 42 * scaleY
