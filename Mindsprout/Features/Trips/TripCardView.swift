@@ -192,3 +192,4 @@ struct LabelBox: View {
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 }
+

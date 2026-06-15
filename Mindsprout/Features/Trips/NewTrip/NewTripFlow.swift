@@ -106,7 +106,9 @@ private struct NewTripBasicsView: View {
                 }
             )
         }
+        .zIndex(999)
     }
+    
 
     private var dates: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -283,4 +285,41 @@ struct TripTypeCell: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+#Preview("New Trip - Basics") {
+    NewTripFlow()
+        .environment(\.appEnvironment, .preview)
+        .modelContainer(PersistenceController.makeInMemoryContainer())
+}
+
+#Preview("New Trip - Expectations") {
+    NavigationStack {
+        NewTripExpectationsView(
+            viewModel: NewTripViewModel(),
+            onSave: {}
+        )
+        .environment(\.appEnvironment, .preview)
+    }
+}
+
+#Preview("Trip Type Cell") {
+    HStack(spacing: 12) {
+        TripTypeCell(option: .solo, isSelected: true, action: {})
+        TripTypeCell(option: .friends, isSelected: false, action: {})
+        TripTypeCell(option: .family, isSelected: false, action: {})
+        TripTypeCell(option: .business, isSelected: false, action: {})
+    }
+    .padding()
+    .background(Color.blue)
+}
+
+#Preview("Expectation Row") {
+    VStack(spacing: 8) {
+        ExpectationRow(text: "Discover new cultures", isSelected: true, action: {})
+        ExpectationRow(text: "Rest and recharge", isSelected: false, action: {})
+        ExpectationRow(text: "Meet new people", isSelected: false, action: {})
+    }
+    .padding()
+    .background(Color.blue)
 }

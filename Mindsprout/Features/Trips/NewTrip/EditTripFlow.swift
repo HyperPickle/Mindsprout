@@ -121,6 +121,7 @@ struct EditTripFlow: View {
                 }
             )
         }
+        .zIndex(999)
     }
 
     private var dates: some View {
@@ -304,4 +305,23 @@ private struct FeaturedReflectionRow: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+#Preview{
+    let container = PersistenceController.makeInMemoryContainer()
+    let context = ModelContext(container)
+      
+    let trip = Trip(
+          destination: "Kyoto",
+          country: "Japan",
+          startDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(),
+          endDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()) ?? Date()
+      )
+      context.insert(trip)
+      try? context.save()
+      
+      return EditTripFlow(tripID: trip.id)
+          .environment(\.appEnvironment, .preview)
+          .modelContainer(container)
+    
 }

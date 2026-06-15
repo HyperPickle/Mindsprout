@@ -250,5 +250,7 @@ private struct ProfileActionButton: View {
 
 #Preview {
     ProfileTab()
+        .environment(ModalCoordinator())
+        .environment(\.appEnvironment, .preview)
         .modelContainer(for: [Sprout.self, User.self, Trip.self, Reflection.self], inMemory: true)
 }
