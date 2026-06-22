@@ -1,104 +1,102 @@
-//
-//  AnimatedMeshGradient.swift
-//  MindSprout
-//
-//  Created by Changrila Souksamlane on 3/6/2026.
-//
-
-
-// FILE FOR ANIMATED SKY BACKGROUND
-
 import SwiftUI
 
-struct BackgroundSky: View {
-    @Environment(\.colorScheme) private var colorScheme: ColorScheme
-
+struct BackgroundSky: View{
+    @Environment(\.colorScheme) var colorScheme: ColorScheme
     var body: some View {
-        ZStack {
-            AnimatedMeshGradient()
-                .opacity(colorScheme == .dark ? 0 : 1)
+        if colorScheme == .dark{
             DarkAnimatedMeshGradient()
-                .opacity(colorScheme == .dark ? 1 : 0)
+        } else  {
+            AnimatedMeshGradient()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-        .animation(.easeInOut(duration: 0.5), value: colorScheme)
     }
+    
 }
 
 
 struct AnimatedMeshGradient: View {
-    private let points: [SIMD2<Float>] = [
-        [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
-        [0.0, 0.30], [0.50, 0.30], [1.0, 0.30],
-        [0.0, 0.65], [0.50, 0.65], [1.0, 0.65],
-        [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
-    ]
+    @State var appear = false
+    @State private var animate = false
+        
+        var body: some View {
+            MeshGradient(width: 3, height: 4, points: [
+                [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
 
-    private enum Palette {
-        static let deepBlue: Color = Color(hex: 0x0D47A1)
-        static let blue: Color = Color(hex: 0x1565C0)
-        static let blueMid: Color = Color(hex: 0x1976D2)
-        static let blueBright: Color = Color(hex: 0x1E88E5)
-        static let sky: Color = Color(hex: 0x29B6F6)
-        static let skyBright: Color = Color(hex: 0x4FC3F7)
-        static let cloudLight: Color = Color(hex: 0xE1F5FE)
-        static let cloudMid: Color = Color(hex: 0xB3E5FC)
-        static let white: Color = Color(hex: 0xFFFFFF)
-    }
+                // ROW 2
+                [0.0, 0.30],[animate ? 0.45 : 0.55, animate ? 0.28 : 0.32], [1.0, 0.30],
 
-    private let colors: [Color] = [
-        Palette.deepBlue, Palette.blue, Palette.deepBlue,
-        Palette.blueMid, Palette.blueBright, Palette.blueMid,
-        Palette.sky, Palette.skyBright, Palette.sky,
-        Palette.cloudLight, Palette.white, Palette.cloudMid
-    ]
+                // ROW 3
+                [0.0, 0.65],[animate ? 0.55 : 0.45, animate ? 0.68 : 0.62],[1.0, 0.65],
 
-    var body: some View {
-        MeshGradient(width: 3, height: 4, points: points, colors: colors)
-    }
-}
+                // ROW 4
+                [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
+            ], colors: [
+                //DARKER BLUE COLOR
+                Color(hex: 0x0D47A1), Color(hex: 0x1565C0), Color(hex: 0x0D47A1),
 
+                // BLUE COLOR
+                Color(hex: 0x1976D2), Color(hex: 0x1E88E5), Color(hex: 0x1976D2),
 
-struct DarkAnimatedMeshGradient: View {
-    private let points: [SIMD2<Float>] = [
-        [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
-        [0.0, 0.30], [0.50, 0.30], [1.0, 0.30],
-        [0.0, 0.65], [0.50, 0.65], [1.0, 0.65],
-        [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
-    ]
+                // SKY BLUE COLOR
+                Color(hex: 0x29B6F6), animate ? Color(hex: 0x4FC3F7) : Color(hex: 0x29B6F6), Color(hex: 0x29B6F6),
 
-    private enum Palette {
-        static let indigo: Color = Color(hex: 0x1A1040)
-        static let indigoLight: Color = Color(hex: 0x1E1350)
-        static let violet: Color = Color(hex: 0x2D1B69)
-        static let violetBright: Color = Color(hex: 0x3D2580)
-        static let violetWarm: Color = Color(hex: 0x4A2080)
-        static let violetDeep: Color = Color(hex: 0x3D1870)
-        static let violetPink: Color = Color(hex: 0x5C2D8A)
-        static let magenta: Color = Color(hex: 0x5B1F6A)
-        static let magentaWarm: Color = Color(hex: 0x7B2D5E)
-    }
-
-    private let colors: [Color] = [
-        Palette.indigo, Palette.indigoLight, Palette.indigo,
-        Palette.violet, Palette.violetBright, Palette.violet,
-        Palette.violetWarm, Palette.violetPink, Palette.violetDeep,
-        Palette.magenta, Palette.magentaWarm, Palette.magenta
-    ]
-
-    var body: some View {
-        ZStack {
-            MeshGradient(width: 3, height: 4, points: points, colors: colors)
-            StarsView()
+                // WHITE CYAN COLOR - Cloud
+                animate ? Color(hex: 0xE1F5FE) : Color(hex: 0xB3E5FC), Color(hex: 0xFFFFFF),animate ? Color(hex: 0xB3E5FC) : Color(hex: 0xE1F5FE)
+                   ])
+            .ignoresSafeArea()
+            .onAppear {
+                withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
+                    animate = true
+                }
+            }
         }
     }
+
+
+struct DarkAnimatedMeshGradient: View{
+    @State var appear = false
+    @State private var animate = false
+        
+    var body: some View {
+        ZStack{
+            MeshGradient(width: 3, height: 4, points: [
+                [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+
+                [0.0, 0.30],[animate ? 0.4 : 0.6, animate ? 0.25 : 0.35],[1.0, 0.30],
+
+                [0.0, 0.65],[animate ? 0.6 : 0.4, animate ? 0.68 : 0.62],[1.0, 0.65],
+
+                [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
+            ], colors: [
+                
+                // UP — DARK INDIGO
+                Color(hex: 0x1A1040), Color(hex: 0x1E1350), Color(hex: 0x1A1040),
+
+                // MIDDLE UP — BLUE VIOLET
+                Color(hex: 0x2D1B69), animate ? Color(hex: 0x3D2580) : Color(hex: 0x2D1B69), Color(hex: 0x2D1B69),
+
+                // MIDDLE DOWN — VIOLET MORE WARM WITH HIT OF PINK/RED ON THE BOTTOM
+                animate ? Color(hex: 0x4A2080) : Color(hex: 0x3D1870),animate ? Color(hex: 0x5C2D8A) : Color(hex: 0x4A2080), animate ? Color(hex: 0x3D1870) : Color(hex: 0x4A2080),
+
+                // BOTTOM — WARM VIOLET
+                Color(hex: 0x5B1F6A), Color(hex: 0x7B2D5E), Color(hex: 0x5B1F6A)
+            ])
+            .ignoresSafeArea()
+            .onAppear {
+                withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
+                    animate = true
+                }
+            }
+            StarsView()
+            
+        }
+
+    }
+    
 }
 
 struct StarsView: View {
     struct Star: Identifiable {
-        let id: Int
+        let id = UUID()
         let x: CGFloat
         let y: CGFloat
         let size: CGFloat
@@ -106,39 +104,33 @@ struct StarsView: View {
         let animDuration: Double
     }
 
-    private static let stars: [Star] = (0..<200).map { index in
+    let stars: [Star] = (0..<200).map { _ in
         Star(
-            id: index,
-            x: CGFloat(value(for: index, key: "x", in: 0.0...1.0)),
-            y: CGFloat(value(for: index, key: "y", in: 0.0...1.0)),
-            size: CGFloat(value(for: index, key: "size", in: 0.8...2.5)),
-            opacity: value(for: index, key: "opacity", in: 0.5...1.0),
-            animDuration: value(for: index, key: "duration", in: 1.5...5.0)
+            x: CGFloat.random(in: 0...1),
+            y: CGFloat.random(in: 0...1),
+            size: CGFloat.random(in: 0.8...2.5),
+            opacity: Double.random(in: 0.5...1.0),
+            animDuration: Double.random(in: 1.5...5.0)
         )
     }
 
     var body: some View {
         GeometryReader { geo in
-            ZStack {
-                ForEach(Self.stars) { star in
-                    StarDot(size: star.size,
-                            opacity: star.opacity,
-                            duration: star.animDuration)
-                        .position(
-                            x: star.x * geo.size.width,
-                            y: star.y * geo.size.height
-                        )
-                }
+            ForEach(stars) { star in
+                StarDot(size: star.size,
+                        opacity: star.opacity,
+                        duration: star.animDuration)
+                    .position(
+                        x: star.x * geo.size.width,
+                        y: star.y * geo.size.height
+                    )
             }
         }
-    }
-
-    private static func value(for index: Int, key: String, in range: ClosedRange<Double>) -> Double {
-        let sample = Double(StableHash.fnv1a("background-star-\(index)-\(key)")) / Double(UInt64.max)
-        return range.lowerBound + (sample * (range.upperBound - range.lowerBound))
+        .ignoresSafeArea()
     }
 }
 
+// TO MAKE THE STAR ANIMATION
 struct StarDot: View {
     let size: CGFloat
     let opacity: Double
@@ -150,9 +142,13 @@ struct StarDot: View {
             .fill(Color.white)
             .frame(width: size, height: size)
             .opacity(twinkle ? opacity : opacity * 0.3)
-            .animation(.easeInOut(duration: duration).repeatForever(autoreverses: true), value: twinkle)
             .onAppear {
-                twinkle = true
+                withAnimation(
+                    .easeInOut(duration: duration)
+                    .repeatForever(autoreverses: true)
+                ) {
+                    twinkle = true
+                }
             }
     }
 }
