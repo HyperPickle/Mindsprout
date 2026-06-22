@@ -67,7 +67,7 @@ class SeedScene: SKScene {
             restore: false
         )
         
-        seed.run(transform) { [weak self] in
+        seed.run(transform) {
             completion?()
         }
     }

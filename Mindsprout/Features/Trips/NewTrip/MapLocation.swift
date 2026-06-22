@@ -10,7 +10,8 @@ import Combine
 import Network
 
 // MARK: - Network Monitor
-class NetworkMonitor: ObservableObject {
+@MainActor
+final class NetworkMonitor: ObservableObject {
     @Published var isConnected = true
     private let monitor = NWPathMonitor()
     
@@ -25,7 +26,8 @@ class NetworkMonitor: ObservableObject {
 }
 
 // MARK: - Location Search
-class LocationSearchDelegate: NSObject, MKLocalSearchCompleterDelegate, ObservableObject {
+@MainActor
+final class LocationSearchDelegate: NSObject, MKLocalSearchCompleterDelegate, ObservableObject {
     @Published var results: [MKLocalSearchCompletion] = []
     let completer = MKLocalSearchCompleter()
     
@@ -37,6 +39,11 @@ class LocationSearchDelegate: NSObject, MKLocalSearchCompleterDelegate, Observab
     
     func search(_ query: String) {
         completer.queryFragment = query
+    }
+
+    func clear() {
+        completer.queryFragment = ""
+        results = []
     }
     
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
@@ -77,6 +84,7 @@ struct DestinationPickerView: View {
     @StateObject private var searchDelegate = LocationSearchDelegate()
     @StateObject private var network = NetworkMonitor()
     @State private var searchText = ""
+    @State private var searchTask: Task<Void, Never>?
     @FocusState private var isFocused: Bool
     
     private var offlineResults: [String] {
@@ -89,49 +97,59 @@ struct DestinationPickerView: View {
     private var showSuggestions: Bool {
         !searchText.isEmpty && isFocused
     }
+
+    private var usesLiveSearch: Bool {
+        guard network.isConnected else { return false }
+#if targetEnvironment(simulator)
+        return false
+#else
+        return true
+#endif
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Image(systemName: "mappin.circle.fill")
-                        .foregroundStyle(Color(hex: 0x5C6A6E))
-                    
+                        .foregroundStyle(AppColor.label)
+
                     TextField(
-                        selectedCity.isEmpty ? "Search a city..." : selectedCity,
-                        text: $searchText
-                    )
-                    .font(.system(size: 16, design: .rounded))
-                    .foregroundStyle(Color(hex: 0x5C6A6E))
-                    .focused($isFocused)
-                    .onChange(of: searchText) { _, newValue in
-                        if network.isConnected {
-                            searchDelegate.search(newValue)
+                        text: $searchText,
+                        prompt: Text("Search a city...").foregroundStyle(AppColor.placeholder)
+                    ) {}
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.label)
+                        .tint(AppColor.label)
+                        .focused($isFocused)
+                        .onChange(of: searchText) { _, newValue in
+                            scheduleSearch(for: newValue)
                         }
-                    }
-                    
+
                     Spacer()
-                    
+
                     if !searchText.isEmpty {
                         Button {
-                            searchText = ""
-                            isFocused = false
+                            clearSearch(resetSelection: true)
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(Color(hex: 0x5C6A6E))
+                                .foregroundStyle(AppColor.label)
                         }
                     } else {
                         Image(systemName: "chevron.down")
-                            .foregroundStyle(Color(hex: 0x5C6A6E))
+                            .foregroundStyle(AppColor.label)
                     }
                 }
                 .padding()
-                .background(Color.white.opacity(0.8), in: .rect(cornerRadius: CornerRadius.medium))
+                .tripGlassSurface(
+                    style: isFocused ? .selected : .neutral,
+                    in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                )
                 
                 .overlay(alignment: .top) {
                     if showSuggestions {
                         VStack(alignment: .leading, spacing: 0) {
-                            if network.isConnected {
+                            if usesLiveSearch {
                                 ForEach(searchDelegate.results.prefix(6), id: \.title) { result in
                                     suggestionRow(
                                         title: result.title,
@@ -142,13 +160,12 @@ struct DestinationPickerView: View {
                                             .last?
                                             .trimmingCharacters(in: .whitespaces) ?? ""
                                         selectedCity = "\(result.title), \(country)"
-                                        searchText = ""
-                                        isFocused = false
+                                        clearSearch()
                                         
                                         if let callback = onCoordinateSelected {
                                             let request = MKLocalSearch.Request(completion: result)
                                             MKLocalSearch(request: request).start { response, _ in
-                                                if let coord = response?.mapItems.first?.placemark.coordinate {
+                                                if let coord = response?.mapItems.first?.location.coordinate {
                                                     callback(coord.latitude, coord.longitude)
                                                 }
                                             }
@@ -156,7 +173,9 @@ struct DestinationPickerView: View {
                                     }
                                     
                                     if result.title != searchDelegate.results.prefix(6).last?.title {
-                                        Divider().padding(.leading, 16)
+                                        Divider()
+                                            .overlay(AppColor.separator.opacity(0.45))
+                                            .padding(.leading, 16)
                                     }
                                 }
                             } else {
@@ -166,35 +185,61 @@ struct DestinationPickerView: View {
                                         subtitle: city.components(separatedBy: ", ").dropFirst().joined(separator: ", ")
                                     ) {
                                         selectedCity = city
-                                        searchText = ""
-                                        isFocused = false
+                                        clearSearch()
                                     }
                                     
                                     if city != offlineResults.prefix(6).last {
-                                        Divider().padding(.leading, 16)
+                                        Divider()
+                                            .overlay(AppColor.separator.opacity(0.45))
+                                            .padding(.leading, 16)
                                     }
                                 }
                                 
                                 HStack(spacing: 4) {
-                                    Image(systemName: "wifi.slash")
+                                    Image(systemName: usesLiveSearch ? "wifi.slash" : "iphone.gen3.slash")
                                         .font(.system(size: 10))
-                                    Text("Offline — showing popular cities")
-                                        .font(.system(size: 11, design: .rounded))
+                                    Text(usesLiveSearch ? "Offline — showing popular cities" : "Simulator fallback — showing popular cities")
+                                        .font(AppFont.caption)
                                 }
-                                .foregroundStyle(.gray)
+                                .foregroundStyle(AppColor.secondaryLabel)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                             }
                         }
-                        .background(Color.white.opacity(0.95))
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
-                        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
-                        .offset(y: 56)  // ← juste en dessous du TextField
+                        .padding(.top, 6)
+                        .background {
+                            Color.clear
+                                .tripGlassSurface(
+                                    style: .neutral,
+                                    in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                                )
+                        }
+                        .offset(y: 56)
                 
                     }
                 }
             }
             .zIndex(999)
+        }
+        .onAppear {
+            if searchText.isEmpty {
+                searchText = selectedCity
+            }
+        }
+        .onChange(of: isFocused) { _, focused in
+            if focused && searchText == selectedCity {
+                searchText = ""
+            } else if !focused && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                searchText = selectedCity
+            }
+        }
+        .onChange(of: selectedCity) { _, newValue in
+            if !isFocused {
+                searchText = newValue
+            }
+        }
+        .onDisappear {
+            searchTask?.cancel()
         }
     }
     
@@ -207,17 +252,17 @@ struct DestinationPickerView: View {
             HStack(spacing: 12) {
                 Image(systemName: "mappin.circle.fill")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(hex: 0x5C6A6E))
+                    .foregroundStyle(AppColor.label)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .font(AppFont.button)
+                        .foregroundStyle(AppColor.label)
                     
                     if !subtitle.isEmpty {
                         Text(subtitle)
-                            .font(.system(size: 12, design: .rounded))
-                            .foregroundStyle(.gray)
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.secondaryLabel)
                     }
                 }
                 Spacer()
@@ -227,6 +272,34 @@ struct DestinationPickerView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func scheduleSearch(for query: String) {
+        searchTask?.cancel()
+
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard usesLiveSearch, trimmed.count >= 2 else {
+            if trimmed.isEmpty || !usesLiveSearch {
+                searchDelegate.clear()
+            }
+            return
+        }
+
+        searchTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            searchDelegate.search(trimmed)
+        }
+    }
+
+    private func clearSearch(resetSelection: Bool = false) {
+        searchTask?.cancel()
+        searchDelegate.clear()
+        searchText = ""
+        if resetSelection {
+            selectedCity = ""
+        }
+        isFocused = false
     }
 }
 

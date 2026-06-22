@@ -13,6 +13,10 @@ class SproutScene: SKScene {
     // ✅ Sprout + Shadow
     var sprout: SKSpriteNode?
     var shadow: SKShapeNode?
+
+    private let sproutHeight: CGFloat = 400
+    private var idleSproutSize: CGSize = .zero
+    private var sleepSproutSize: CGSize = .zero
     
     // ✅ États
     var isWalking = false
@@ -41,6 +45,22 @@ class SproutScene: SKScene {
     var touchStartPosition: CGPoint = .zero
     var tapCount = 0
     var tapTimer: Timer?
+    private var touchStartedOnSprout = false
+    private var presentationScale: CGFloat = 1
+    private var restingVerticalOffset: CGFloat = 0
+
+    private var restingPosition: CGPoint {
+        CGPoint(x: size.width / 2, y: size.height / 2 - restingVerticalOffset)
+    }
+
+    func configurePresentation(scale: CGFloat, restingVerticalOffset: CGFloat) {
+        presentationScale = scale
+        self.restingVerticalOffset = restingVerticalOffset
+
+        guard let sprout, !isDragging, !isReturning else { return }
+        sprout.setScale(scale)
+        sprout.position = restingPosition
+    }
 
     // MARK: - Setup
     
@@ -54,14 +74,16 @@ class SproutScene: SKScene {
 
         let texture = SKTexture(imageNamed: "Sprout_idle_1")
         let aspect = texture.size().height / texture.size().width
-        let sproutHeight: CGFloat = 400
         let sproutWidth = sproutHeight / aspect
         let sproutSize = CGSize(width: sproutWidth, height: sproutHeight)
+        idleSproutSize = sproutSize
+        sleepSproutSize = CGSize(width: sproutHeight * (674.0 / 800.0), height: sproutHeight)
 
         // ✅ Sprout
         let sproutNode = SKSpriteNode(texture: texture)
         sproutNode.size = sproutSize
-        sproutNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        sproutNode.position = restingPosition
+        sproutNode.setScale(presentationScale)
         sproutNode.zPosition = 1
         addChild(sproutNode)
         sprout = sproutNode
@@ -78,14 +100,20 @@ class SproutScene: SKScene {
         updateState(pendingState)
     }
 
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        guard oldSize != .zero, let sprout, !isDragging, !isReturning else { return }
+        sprout.position = restingPosition
+    }
+
     // MARK: - State
 
     func updateState(_ state: SproutState) {
+        pendingState = state
+        guard !isDragging else { return }
         guard let sprout = sprout else {
-            pendingState = state
             return
         }
-        pendingState = state
         sprout.removeAllActions()
         isWalking = false
         isHungry = false
@@ -105,15 +133,23 @@ class SproutScene: SKScene {
         }
     }
 
+    private func resumePendingState() {
+        updateState(pendingState)
+    }
+
     // MARK: - Idle
 
     func startIdle() {
-        guard let sprout = sprout else { return }
+        guard let sprout = sprout, !isDragging else { return }
         stopIdleLoops()
         sprout.zRotation = 0
         sprout.xScale = 1.0
         sprout.yScale = 1.0
-        sprout.setScale(1.0)
+        sprout.setScale(presentationScale)
+        applySize(CGSize(
+            width: sproutHeight * HomeDashboardLayout.sproutAspectRatio,
+            height: sproutHeight
+        ))
         sprout.texture = SKTexture(imageNamed: "Sprout_idle_1")
         startBreatheLoop()
         startBlinkLoop()
@@ -140,14 +176,24 @@ class SproutScene: SKScene {
               !isPlayingFaceGesture else { return }
         isPlayingFaceGesture = true
 
-        let idleFrames = (1...9).map { SKTexture(imageNamed: "Sprout_idle_\($0)") }
-        let timePerFrame = 0.15
-        let breath = SKAction.animate(with: idleFrames, timePerFrame: timePerFrame, resize: false, restore: true)
+        sprout.texture = SKTexture(imageNamed: "Sprout_idle_1")
+
+        let inhaleX = SKAction.scaleX(to: presentationScale * 0.985, duration: 0.55)
+        inhaleX.timingMode = .easeInEaseOut
+        let inhaleY = SKAction.scaleY(to: presentationScale * 1.02, duration: 0.55)
+        inhaleY.timingMode = .easeInEaseOut
+        let exhaleX = SKAction.scaleX(to: presentationScale, duration: 0.55)
+        exhaleX.timingMode = .easeInEaseOut
+        let exhaleY = SKAction.scaleY(to: presentationScale, duration: 0.55)
+        exhaleY.timingMode = .easeInEaseOut
+        let breath = SKAction.sequence([
+            .group([inhaleX, inhaleY]),
+            .group([exhaleX, exhaleY])
+        ])
 
         if let shadow = shadow {
-            let dur = timePerFrame * Double(idleFrames.count) / 2
-            let up = SKAction.scale(to: 1.05, duration: dur); up.timingMode = .easeInEaseOut
-            let down = SKAction.scale(to: 1.0, duration: dur); down.timingMode = .easeInEaseOut
+            let up = SKAction.scale(to: 1.05, duration: 0.55); up.timingMode = .easeInEaseOut
+            let down = SKAction.scale(to: 1.0, duration: 0.55); down.timingMode = .easeInEaseOut
             shadow.run(SKAction.sequence([up, down]), withKey: "shadowBreath")
         }
 
@@ -260,11 +306,11 @@ class SproutScene: SKScene {
     }
 
     func stopWalk() {
-        guard let sprout = sprout else { return }
+        guard let sprout = sprout, !isDragging else { return }
         sprout.removeAllActions()
         isWalking = false
 
-        let center = CGPoint(x: size.width/2, y: size.height/2)
+        let center = restingPosition
         let distance = abs(sprout.position.x - center.x)
         let returnDuration = Double(distance / 80)
 
@@ -299,7 +345,7 @@ class SproutScene: SKScene {
     // MARK: - Random Behavior
 
     func startRandomBehavior() {
-        guard !isDoingBehavior else { return }
+        guard !isDoingBehavior, !isDragging else { return }
         behaviorTimer?.invalidate()
         let randomDelay = Double.random(in: 10...30)
         behaviorTimer = Timer.scheduledTimer(withTimeInterval: randomDelay, repeats: false) { [weak self] _ in
@@ -312,6 +358,7 @@ class SproutScene: SKScene {
     }
 
     func chooseRandomBehavior() {
+        guard !isDragging else { return }
         isDoingBehavior = true
         var random: Int
         repeat { random = Int.random(in: 0...3) } while random == lastBehavior
@@ -366,7 +413,7 @@ class SproutScene: SKScene {
     }
 
     func playStandUp() {
-        guard let sprout = sprout else { return }
+        guard let sprout = sprout, !isDragging else { return }
         sprout.removeAction(forKey: "sitIdle")
         let standUpFrames = (1...5).map { SKTexture(imageNamed: "Sprout_standup_\($0)") }
         let standUp = SKAction.animate(with: standUpFrames, timePerFrame: 0.15, resize: false, restore: false)
@@ -414,16 +461,30 @@ class SproutScene: SKScene {
 
     // MARK: - Sleep
 
+    private func applySize(_ size: CGSize) {
+        sprout?.size = size
+        if let shadow {
+            shadow.path = CGPath(ellipseIn: CGRect(
+                x: -size.width * 0.55 / 2, y: -6,
+                width: size.width * 0.55, height: 12
+            ), transform: nil)
+        }
+    }
+
     func playSleepDaily() {
-        guard let sprout = sprout else { return }
+        guard let sprout = sprout, !isDragging else { return }
         stopIdleLoops()
         let yawnFrames = (1...7).map { SKTexture(imageNamed: "Sprout_yawn_\($0)") }
         let yawn = SKAction.animate(with: yawnFrames, timePerFrame: 0.18, resize: false, restore: false)
+        let switchToSleepSize = SKAction.run { [weak self] in
+            guard let self else { return }
+            self.applySize(self.sleepSproutSize)
+        }
         let fallFrames = (1...4).map { SKTexture(imageNamed: "Sprout_fall_\($0)") }
         let fall = SKAction.animate(with: fallFrames, timePerFrame: 0.15, resize: false, restore: false)
         let sleepFrames = (1...7).map { SKTexture(imageNamed: "Sprout_sleep_\($0)") }
         let sleepLoop = SKAction.animate(with: sleepFrames, timePerFrame: 0.3, resize: false, restore: false)
-        sprout.run(SKAction.sequence([yawn, fall])) { [weak self] in
+        sprout.run(SKAction.sequence([yawn, switchToSleepSize, fall])) { [weak self] in
             self?.sprout?.run(SKAction.repeatForever(sleepLoop), withKey: "sleepLoop")
         }
     }
@@ -433,7 +494,11 @@ class SproutScene: SKScene {
         sprout.removeAction(forKey: "sleepLoop")
         let wakeUpFrames = (1...15).map { SKTexture(imageNamed: "Sprout_wakeup_\($0)") }
         let wakeUp = SKAction.animate(with: wakeUpFrames, timePerFrame: 0.12, resize: false, restore: false)
-        sprout.run(wakeUp) { [weak self] in self?.startIdle() }
+        sprout.run(wakeUp) { [weak self] in
+            guard let self else { return }
+            self.applySize(self.idleSproutSize)
+            self.startIdle()
+        }
     }
 
     func playSleepEvolution() {
@@ -441,11 +506,15 @@ class SproutScene: SKScene {
         stopIdleLoops()
         let yawnFrames = (1...7).map { SKTexture(imageNamed: "Sprout_yawn_\($0)") }
         let yawn = SKAction.animate(with: yawnFrames, timePerFrame: 0.18, resize: false, restore: false)
+        let switchToSleepSize = SKAction.run { [weak self] in
+            guard let self else { return }
+            self.applySize(self.sleepSproutSize)
+        }
         let fallFrames = (1...4).map { SKTexture(imageNamed: "Sprout_fall_\($0)") }
         let fall = SKAction.animate(with: fallFrames, timePerFrame: 0.15, resize: false, restore: false)
         let sleepFrames = (1...7).map { SKTexture(imageNamed: "Sprout_sleep_\($0)") }
         let sleepLoop = SKAction.animate(with: sleepFrames, timePerFrame: 0.3, resize: false, restore: false)
-        sprout.run(SKAction.sequence([yawn, fall])) { [weak self] in
+        sprout.run(SKAction.sequence([yawn, switchToSleepSize, fall])) { [weak self] in
             guard let self = self else { return }
             UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "sproutSleepTime")
             UserDefaults.standard.set(true, forKey: "sproutIsEvolving")
@@ -458,7 +527,11 @@ class SproutScene: SKScene {
         sprout.removeAction(forKey: "sleepLoop")
         let wakeUpFrames = (1...15).map { SKTexture(imageNamed: "Sprout_wakeup_\($0)") }
         let wakeUp = SKAction.animate(with: wakeUpFrames, timePerFrame: 0.12, resize: false, restore: false)
-        sprout.run(wakeUp) { [weak self] in self?.playEvolutionFlash() }
+        sprout.run(wakeUp) { [weak self] in
+            guard let self else { return }
+            self.applySize(self.idleSproutSize)
+            self.playEvolutionFlash()
+        }
     }
 
     // MARK: - Evolved
@@ -524,37 +597,51 @@ class SproutScene: SKScene {
     // MARK: - Drag & Touch
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let sprout = sprout else { return }
+        guard let touch = touches.first else { return }
+        beginInteraction(at: touch.location(in: self), timestamp: touch.timestamp)
+    }
 
-        let location = touch.location(in: self)
+    func beginInteraction(at location: CGPoint, timestamp: TimeInterval) {
+        guard let sprout else { return }
         touchPoints = [location]
         swipeStartX = location.x
         lastTouchPosition = location
-        touchStartTime = touch.timestamp
+        touchStartTime = timestamp
         touchStartPosition = location
+        touchStartedOnSprout = sprout.contains(location)
 
-        if sprout.contains(location) {
+        if touchStartedOnSprout {
             dragOffset = CGPoint(x: sprout.position.x - location.x, y: sprout.position.y - location.y)
         }
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let sprout = sprout else { return }
+        guard let touch = touches.first else { return }
+        updateInteraction(to: touch.location(in: self))
+    }
 
-        let location = touch.location(in: self)
+    func updateInteraction(to location: CGPoint) {
+        guard let sprout else { return }
         let distanceMoved = abs(location.x - touchStartPosition.x) + abs(location.y - touchStartPosition.y)
 
         // ✅ Démarre le drag seulement si bougé > 10px
-        if distanceMoved > 10 && sprout.contains(touchStartPosition) {
+        if distanceMoved > 10 && touchStartedOnSprout {
             if !isDragging {
                 isDragging = true
+                isReturning = false
                 stopIdleLoops()
+                behaviorTimer?.invalidate()
                 tapTimer?.invalidate()
                 tapCount = 0
+                isWalking = false
+                isHappy = false
+                isDoingBehavior = false
+                sprout.removeAllActions()
+                shadow?.removeAllActions()
 
                 let grabbedFrames = (1...5).map { SKTexture(imageNamed: "Sprout_grabbed_\($0)") }
                 let grabbed = SKAction.animate(with: grabbedFrames, timePerFrame: 0.1, resize: false, restore: false)
-                sprout.run(grabbed)
+                sprout.run(grabbed, withKey: "dragGrab")
             }
 
             touchPoints.append(location)
@@ -577,15 +664,25 @@ class SproutScene: SKScene {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let sprout = sprout else { return }
+        guard let touch = touches.first else { return }
+        endInteraction(at: touch.location(in: self), timestamp: touch.timestamp)
+    }
 
-        let location = touch.location(in: self)
-        let touchDuration = touch.timestamp - touchStartTime
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        let timestamp = touches.first?.timestamp ?? touchStartTime
+        let location = touches.first?.location(in: self) ?? lastTouchPosition
+        endInteraction(at: location, timestamp: timestamp, cancelled: true)
+    }
+
+    func endInteraction(at location: CGPoint, timestamp: TimeInterval, cancelled: Bool = false) {
+        guard let sprout else { return }
+        let touchDuration = timestamp - touchStartTime
         let distanceMoved = abs(location.x - touchStartPosition.x) + abs(location.y - touchStartPosition.y)
 
         // ✅ Tap — pas un drag
-        if distanceMoved < 10 && touchDuration < 0.3 {
+        if !cancelled && touchStartedOnSprout && distanceMoved < 10 && touchDuration < 0.3 {
             isDragging = false
+            touchStartedOnSprout = false
             tapCount += 1
             tapTimer?.invalidate()
             tapTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
@@ -603,6 +700,8 @@ class SproutScene: SKScene {
         // ✅ Drag
         if isDragging {
             isDragging = false
+            touchStartedOnSprout = false
+            sprout.removeAction(forKey: "dragGrab")
             sprout.removeAction(forKey: "dragDirection")
 
             if sprout.position.y > size.height / 2 + 100 {
@@ -613,26 +712,44 @@ class SproutScene: SKScene {
         }
 
         touchPoints = []
+        touchStartedOnSprout = false
     }
 
     func returnToCenter() {
         guard let sprout = sprout else { return }
-        let center = CGPoint(x: size.width/2, y: size.height/2)
-        let returnHome = SKAction.move(to: center, duration: 0.4); returnHome.timingMode = .easeOut
-        let resetScale = SKAction.scale(to: 1.0, duration: 0.2)
+        let returnHome = makeReturnMovementAction(duration: 0.4)
+        let resetScale = SKAction.scale(to: presentationScale, duration: 0.2)
+        resetScale.timingMode = .easeInEaseOut
         let resetRotation = SKAction.rotate(toAngle: 0, duration: 0.2)
-        sprout.run(SKAction.group([returnHome, resetScale, resetRotation])) { [weak self] in
-            self?.startIdle()
+        resetRotation.timingMode = .easeInEaseOut
+        isReturning = true
+        let finish = SKAction.run { [weak self] in
+            self?.isReturning = false
+            self?.resumePendingState()
         }
+        sprout.run(
+            SKAction.sequence([SKAction.group([returnHome, resetScale, resetRotation]), finish]),
+            withKey: "returnToCenter"
+        )
+    }
+
+    func makeReturnMovementAction(duration: TimeInterval) -> SKAction {
+        let action = SKAction.move(to: restingPosition, duration: duration)
+        action.timingMode = .easeInEaseOut
+        return action
     }
 
     func playDropped() {
         guard let sprout = sprout else { return }
-        let fall = SKAction.move(to: CGPoint(x: size.width/2, y: size.height/2), duration: 0.3)
-        fall.timingMode = .easeIn
+        let fall = makeReturnMovementAction(duration: 0.3)
         let droppedFrames = (1...5).map { SKTexture(imageNamed: "Sprout_dropped_\($0)") }
         let dropped = SKAction.animate(with: droppedFrames, timePerFrame: 0.12, resize: false, restore: false)
-        sprout.run(SKAction.sequence([fall, dropped])) { [weak self] in self?.startIdle() }
+        isReturning = true
+        let finish = SKAction.run { [weak self] in
+            self?.isReturning = false
+            self?.resumePendingState()
+        }
+        sprout.run(SKAction.sequence([fall, dropped, finish]), withKey: "returnToCenter")
     }
 
     // MARK: - Seed
@@ -661,17 +778,32 @@ class SproutScene: SKScene {
 
 class SproutSceneHolder: ObservableObject {
     let scene: SproutScene
-    init() {
+    init(presentationScale: CGFloat = 1, restingVerticalOffset: CGFloat = 0) {
         scene = SproutScene()
-        scene.size = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+        scene.size = CGSize(width: 1, height: 1)
         scene.scaleMode = .resizeFill
         scene.backgroundColor = .clear
+        scene.configurePresentation(scale: presentationScale, restingVerticalOffset: restingVerticalOffset)
     }
 }
 
 struct SproutView: View {
     let state: SproutState
-    @StateObject private var holder = SproutSceneHolder()
+    @StateObject private var holder: SproutSceneHolder
+
+    init(
+        state: SproutState,
+        presentationScale: CGFloat = 1,
+        restingVerticalOffset: CGFloat = 0
+    ) {
+        self.state = state
+        _holder = StateObject(
+            wrappedValue: SproutSceneHolder(
+                presentationScale: presentationScale,
+                restingVerticalOffset: restingVerticalOffset
+            )
+        )
+    }
 
     var body: some View {
         SpriteView(scene: holder.scene, options: [.allowsTransparency])

@@ -26,7 +26,7 @@ struct UnevenCardBackground: ViewModifier {
                 )
                 .stroke(strokeColor, lineWidth: lineWidth)
             )
-            .shadow(color: AppColor.ink.opacity(0.08), radius: 8, y: 4)
+            .shadow(color: AppColor.label.opacity(0.08), radius: 8, y: 4)
     }
 }
 

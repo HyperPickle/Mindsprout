@@ -7,10 +7,13 @@
 
 import SwiftUI
 import SpriteKit
+import SwiftData
 
 struct SproutTransformationView: View {
-    @AppStorage("sproutName") var sproutName = ""
+    @Query private var sprouts: [Sprout]
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+
+    private var sproutName: String { sprouts.first?.name ?? "" }
     @StateObject private var seedHolder = SeedSceneHolder()
     @State private var showSprout = false
     @State private var showText = false
@@ -37,12 +40,12 @@ struct SproutTransformationView: View {
                 if showText {
                     VStack(spacing: 8) {
                         Text("Meet \(sproutName)!")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                        
+                            .font(AppFont.screenTitle)
+                            .foregroundColor(AppColor.label)
+
                         Text("Your travel companion is ready\nto explore the world with you ")
-                            .font(.system(size: 16, design: .rounded))
-                            .foregroundColor(.white.opacity(0.9))
+                            .font(AppFont.callout)
+                            .foregroundColor(AppColor.label.opacity(0.9))
                             .multilineTextAlignment(.center)
                     }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -57,13 +60,8 @@ struct SproutTransformationView: View {
                         onFinish()
                     } label: {
                         Text("Start my journey!")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color(hex: 0x4CAF50))
-                            .clipShape(RoundedRectangle(cornerRadius: 30))
                     }
+                    .buttonStyle(.primaryWhite)
                     .padding(.horizontal, 24)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                     

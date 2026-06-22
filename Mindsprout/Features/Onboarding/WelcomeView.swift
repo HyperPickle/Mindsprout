@@ -36,16 +36,16 @@ struct WelcomeView: View {
 
                 if let authError {
                     Text(authError)
-                        .font(.system(size: 13, weight: .regular, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(AppFont.caption)
+                        .foregroundColor(AppColor.label)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                         .padding(.top, 10)
                 }
 
                 Text("Grow your Sprout, save your reflections.")
-                    .font(.system(size: 13, weight: .regular, design: .rounded))
-                    .foregroundColor(.white.opacity(0.85))
+                    .font(AppFont.caption)
+                    .foregroundColor(AppColor.label.opacity(0.85))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                     .padding(.top, 10)
@@ -76,10 +76,19 @@ struct WelcomeView: View {
             let formatted = PersonNameComponentsFormatter.localizedString(from: components, style: .default)
             return formatted.isEmpty ? nil : formatted
         }
+        let cachedProfile = env.auth.cachedProfile(for: credential.user)
+        let resolvedDisplayName = displayName ?? cachedProfile?.displayName
+        let resolvedEmail = credential.email ?? cachedProfile?.email
+
+        env.auth.updateCachedProfile(
+            for: credential.user,
+            displayName: resolvedDisplayName,
+            email: resolvedEmail
+        )
         User.upsert(
             appleUserID: credential.user,
-            displayName: displayName,
-            email: credential.email,
+            displayName: resolvedDisplayName,
+            email: resolvedEmail,
             in: modelContext
         )
         authError = nil
@@ -94,13 +103,13 @@ struct TitleView: View {
                 .frame(width: 228, height: 228)
 
             Text("mindsprout")
-                .font(.system(size: 40, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .font(AppFont.display)
+                .foregroundColor(AppColor.label)
                 .padding(.top, -28)
 
             Text("see the world, to see yourself").italic()
-                .font(.system(size: 15, weight: .light))
-                .foregroundColor(.white)
+                .font(AppFont.callout)
+                .foregroundColor(AppColor.label)
         }
         .frame(maxWidth: .infinity)
     }

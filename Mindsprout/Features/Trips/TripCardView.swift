@@ -1,30 +1,30 @@
 import SwiftUI
 import MapKit
+import UIKit
 
 // Reusable photo thumbnail with gradient fallback.
 struct TripPhotoThumb: View {
     let assetID: UUID?
     var body: some View {
-        ZStack {
-            LinearGradient(colors: [AppColor.skyTop, .white], startPoint: .top, endPoint: .bottom)
-            MediaImage(assetID: assetID)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+        GeometryReader { proxy in
+            ZStack {
+                LinearGradient(colors: [AppColor.skyTop, .white], startPoint: .top, endPoint: .bottom)
+                MediaImage(assetID: assetID, contentMode: .fill)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .clipped()
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 }
 
-// Photo hero card — shared by ActiveTripCard (overview) and TripDetailView (hero section).
-// badge: optional capsule label ("ACTIVE", "MOST INSIGHT: Serenity", etc.)
-// showHeadline: false when the headline is displayed separately below the card.
+// Photo hero card — shared by TripDetailView hero content.
 struct TripHeroCard: View {
     let trip: Trip
     let coverAssetID: UUID?
     let memoryCount: Int
-    var badge: String? = nil
-    var showHeadline: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -32,43 +32,37 @@ struct TripHeroCard: View {
                 .frame(height: 196)
                 .frame(maxWidth: .infinity)
                 .clipped()
-                .overlay(alignment: .topTrailing) {
-                    if let badge {
-                        Text(badge)
-                            .font(.system(size: 12, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, Spacing.sm)
-                            .padding(.vertical, 6)
-                            .background(Capsule().fill(.black.opacity(0.28)))
-                            .padding(Spacing.sm)
-                    }
-                }
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: CornerRadius.medium,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: CornerRadius.medium,
+                        style: .continuous
+                    )
+                )
 
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(trip.destination)
-                            .font(.system(size: 22, weight: .heavy, design: .rounded))
-                            .foregroundStyle(AppColor.ink)
-                        Text(TripDateFormat.range(trip.startDate, trip.endDate, includeYear: false))
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(AppColor.inkMuted)
-                    }
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                HStack(alignment: .top) {
+                    Text(TripDateFormat.range(trip.startDate, trip.endDate, includeYear: false))
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.label)
                     Spacer()
                     Text("\(memoryCount) \(memoryCount == 1 ? "memory" : "memories")")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.inkMuted)
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.label)
                 }
-                if showHeadline, let headline = trip.headlineMemory, !headline.isEmpty {
-                    Rectangle().fill(AppColor.ink.opacity(0.08)).frame(height: 1)
+
+                if let headline = trip.headlineMemory, !headline.isEmpty {
+                    Rectangle().fill(AppColor.label.opacity(0.08)).frame(height: 1)
                     VStack(alignment: .leading, spacing: Spacing.xxs) {
-                        Text("HEADLINE MEMORY")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                        Text("MEMORY")
+                            .font(AppFont.eyebrow)
                             .tracking(0.5)
-                            .foregroundStyle(AppColor.ink)
+                            .foregroundStyle(AppColor.label)
                         Text(headline)
-                            .font(AppFont.callout)
-                            .foregroundStyle(AppColor.ink)
+                            .font(AppFont.bodyEmphasized)
+                            .foregroundStyle(AppColor.label)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -76,9 +70,7 @@ struct TripHeroCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Spacing.md)
         }
-        .background(AppColor.cardSurface)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-        .shadow(color: AppColor.ink.opacity(0.12), radius: 14, x: 0, y: 8)
+        .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 
     private var heroBackground: some View {
@@ -91,31 +83,165 @@ struct TripMapHero: View {
     let trip: Trip
     let coverAssetID: UUID?
 
-    @ViewBuilder
     var body: some View {
         if let lat = trip.latitude, let lng = trip.longitude {
-            let region = MKCoordinateRegion(
-                center: CLLocationCoordinate2D(latitude: lat, longitude: lng),
-                span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15)
+            TripMapSnapshot(
+                tripID: trip.id,
+                coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng),
+                fallbackAssetID: coverAssetID
             )
-            Map(initialPosition: .region(region))
-                .mapStyle(.standard)
-                .disabled(true)
-                .allowsHitTesting(false)
         } else {
-            ZStack {
-                LinearGradient(colors: [AppColor.skyTop, AppColor.skyBottom], startPoint: .top, endPoint: .bottom)
-                MediaImage(assetID: coverAssetID)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            TripMapFallback(assetID: coverAssetID)
         }
     }
 }
 
-// Unified overview card: text header on top, map hero below, cream card surface.
+private struct TripMapSnapshot: View {
+    let tripID: UUID
+    let coordinate: CLLocationCoordinate2D
+    let fallbackAssetID: UUID?
+
+    @Environment(\.appEnvironment) private var env
+    @Environment(\.displayScale) private var displayScale
+    @State private var snapshot: UIImage?
+    @State private var loadTask: Task<Void, Never>?
+
+    var body: some View {
+        GeometryReader { proxy in
+            content
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .task(id: snapshotKey(for: proxy.size)) {
+                    await loadSnapshotIfNeeded(for: proxy.size)
+                }
+        }
+        .onDisappear {
+            loadTask?.cancel()
+            loadTask = nil
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let snapshot {
+            Image(uiImage: snapshot)
+                .resizable()
+                .scaledToFill()
+        } else {
+            TripMapLiveFallback(
+                coordinate: coordinate,
+                assetID: fallbackAssetID
+            )
+        }
+    }
+
+    private func snapshotKey(for size: CGSize) -> String {
+        snapshotRelativePath(for: size)
+    }
+
+    @MainActor
+    private func loadSnapshotIfNeeded(for size: CGSize) async {
+        guard size.width > 1, size.height > 1 else { return }
+
+        loadTask?.cancel()
+        let relativePath = snapshotRelativePath(for: size)
+
+        let task = Task {
+            if let cached = loadCachedSnapshot(relativePath: relativePath) {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    snapshot = cached
+                }
+                return
+            }
+
+            let options = MKMapSnapshotter.Options()
+            options.region = MKCoordinateRegion(
+                center: coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15)
+            )
+            options.size = size
+            options.scale = displayScale
+            options.mapType = .standard
+
+            do {
+                let result = try await MKMapSnapshotter(options: options).start()
+                guard !Task.isCancelled else { return }
+                persistSnapshotImage(result.image, relativePath: relativePath)
+                await MainActor.run {
+                    snapshot = result.image
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+            }
+        }
+
+        loadTask = task
+        await task.value
+    }
+
+    private func snapshotRelativePath(for size: CGSize) -> String {
+        let pixelWidth = Int((size.width * displayScale).rounded())
+        let pixelHeight = Int((size.height * displayScale).rounded())
+        let latBucket = Int((coordinate.latitude * 10_000).rounded())
+        let lngBucket = Int((coordinate.longitude * 10_000).rounded())
+        return "maps/trips/\(tripID.uuidString)_\(latBucket)_\(lngBucket)_\(pixelWidth)x\(pixelHeight).jpg"
+    }
+
+    private func loadCachedSnapshot(relativePath: String) -> UIImage? {
+        UIImage(contentsOfFile: env.mediaStore.url(for: relativePath).path)
+    }
+
+    private func persistSnapshotImage(_ image: UIImage, relativePath: String) {
+        guard let data = image.jpegData(compressionQuality: 0.9) else { return }
+        try? env.mediaStore.write(data, relativePath: relativePath)
+    }
+}
+
+private struct TripMapLiveFallback: View {
+    let coordinate: CLLocationCoordinate2D
+    let assetID: UUID?
+
+    private var region: MKCoordinateRegion {
+        MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15)
+        )
+    }
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [AppColor.skyTop, AppColor.skyBottom], startPoint: .top, endPoint: .bottom)
+
+            if let assetID {
+                MediaImage(assetID: assetID)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+                    .opacity(0.22)
+            }
+
+            Map(initialPosition: .region(region))
+                .mapStyle(.standard)
+                .disabled(true)
+                .allowsHitTesting(false)
+        }
+    }
+}
+
+private struct TripMapFallback: View {
+    let assetID: UUID?
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [AppColor.skyTop, AppColor.skyBottom], startPoint: .top, endPoint: .bottom)
+            MediaImage(assetID: assetID, showsShimmerPlaceholder: true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+}
+
+// Unified overview card: text header on top, map hero below.
 struct TripOverviewCard: View {
     let summary: TripSummary
-    var badge: String? = nil
     private var trip: Trip { summary.trip }
 
     var body: some View {
@@ -123,26 +249,16 @@ struct TripOverviewCard: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(trip.destination)
-                        .font(AppFont.headline)
-                        .foregroundStyle(AppColor.ink)
+                        .font(AppFont.sectionTitle)
+                        .foregroundStyle(AppColor.label)
                     Text(TripDateFormat.range(trip.startDate, trip.endDate, includeYear: true))
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.ink)
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.label)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: Spacing.xxs) {
-                    if let badge {
-                        Text(badge)
-                            .font(.system(size: 12, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, Spacing.sm)
-                            .padding(.vertical, 6)
-                            .background(Capsule().fill(AppColor.primary))
-                    }
-                    Text("\(summary.memoryCount) memories")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.ink)
-                }
+                Text("\(summary.memoryCount) \(summary.memoryCount == 1 ? "memory" : "memories")")
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.label)
             }
             TripMapHero(trip: trip, coverAssetID: summary.coverAssetID)
                 .frame(height: 160)
@@ -150,14 +266,15 @@ struct TripOverviewCard: View {
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
-        .cardStyle()
+        .padding(Spacing.md)
+        .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 }
 
 struct ActiveTripCard: View {
     let summary: TripSummary
     var body: some View {
-        TripOverviewCard(summary: summary, badge: "ACTIVE")
+        TripOverviewCard(summary: summary)
     }
 }
 
@@ -177,12 +294,12 @@ struct LabelBox: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(header)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(AppFont.eyebrow)
                 .tracking(0.5)
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(AppColor.label)
             Text(text)
                 .font(AppFont.bodyEmphasized)
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(AppColor.label)
                 .lineLimit(lineLimit)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -192,4 +309,3 @@ struct LabelBox: View {
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 }
-

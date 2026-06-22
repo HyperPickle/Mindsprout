@@ -6,16 +6,21 @@ import AVFoundation
 struct PhotoCommitStep: View {
     @Bindable var vm: ReflectionViewModel
 
+    @Query private var sprouts: [Sprout]
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showCamera = false
     @State private var showCameraPermissionAlert = false
     @State private var lightboxID: UUID?
 
+    private var sproutName: String { sprouts.first?.name.isEmpty == false ? sprouts.first!.name : "Sprout" }
+
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: Spacing.md) {
-                    sproutHeader
+                    ReflectionStepHeader(title: "Attach a Picture") {
+                        vm.step = .entry
+                    }
                     photoCard
                 }
                 .padding(.horizontal, Spacing.screenEdge)
@@ -25,7 +30,6 @@ struct PhotoCommitStep: View {
             ctaStack
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(BackgroundSky())
         .sheet(item: $lightboxID) { id in
             LightboxView(assetID: id)
         }
@@ -49,30 +53,6 @@ struct PhotoCommitStep: View {
         }
     }
 
-    private var sproutHeader: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Button { vm.step = 2 } label: {
-                HStack(spacing: Spacing.xxs) {
-                    Image(systemName: "chevron.left")
-                    Text("Back")
-                }
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.onBackground)
-            }
-            .buttonStyle(.plain)
-
-            HStack(alignment: .center, spacing: Spacing.sm) {
-                BlinkingSproutView()
-                    .frame(width: 95, height: 95)
-                Text("A picture worth a thousand words they say ;)")
-                    .font(AppFont.headline)
-                    .foregroundStyle(AppColor.onBackground)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-            }
-        }
-    }
-
     @ViewBuilder
     private var photoCard: some View {
         if vm.photoAssetIDs.isEmpty {
@@ -86,7 +66,7 @@ struct PhotoCommitStep: View {
         VStack(spacing: Spacing.lg) {
             Image(systemName: "camera")
                 .font(.system(size: 52))
-                .foregroundStyle(AppColor.hairline)
+                .foregroundStyle(ReflectionSurfaceStyle.controlTextColor)
 
             VStack(spacing: Spacing.sm) {
                 cameraButton
@@ -95,7 +75,7 @@ struct PhotoCommitStep: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.xxl)
-        .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+        .reflectionCardSurface(in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
     }
 
     private var filledPhotoCard: some View {
@@ -113,7 +93,7 @@ struct PhotoCommitStep: View {
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .font(.system(size: 20))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(AppColor.label)
                                     .shadow(color: .black.opacity(0.3), radius: 2)
                                     .contentShape(Circle())
                             }
@@ -126,7 +106,7 @@ struct PhotoCommitStep: View {
             }
             .padding(.vertical, Spacing.md)
         }
-        .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+        .reflectionCardSurface(in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
     }
 
     private var addMoreButton: some View {
@@ -141,13 +121,14 @@ struct PhotoCommitStep: View {
             }
         } label: {
             RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
-                .fill(Color.white.opacity(0.35))
+                .fill(Color.clear)
                 .frame(width: 100, height: 100)
                 .overlay {
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundStyle(AppColor.inkSecondary)
+                        .foregroundStyle(ReflectionSurfaceStyle.controlTextColor)
                 }
+                .reflectionControlSurface(in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -157,35 +138,37 @@ struct PhotoCommitStep: View {
         Button {
             Task { await requestCameraAndShow() }
         } label: {
-            Label("Take a photo", systemImage: "camera")
-                .font(AppFont.body)
-                .foregroundStyle(AppColor.ink)
-                .frame(maxWidth: 220)
-                .padding(.vertical, Spacing.sm)
-                .background(Capsule().fill(.white).shadow(color: AppColor.ink.opacity(0.1), radius: 4, y: 2))
-                .overlay(Capsule().stroke(AppColor.hairline, lineWidth: 1))
-                .contentShape(Capsule())
+            ReflectionMediaActionLabel(
+                title: "Take a photo",
+                systemImage: "camera",
+                iconColor: ReflectionSurfaceStyle.controlTextColor
+            )
         }
         .buttonStyle(.plain)
     }
 
     private var libraryButton: some View {
         PhotosPickerWrapper(items: $photoPickerItems) {
-            Label("Choose from album", systemImage: "photo.on.rectangle")
-                .font(AppFont.body)
-                .foregroundStyle(AppColor.ink)
-                .frame(maxWidth: 220)
-                .padding(.vertical, Spacing.sm)
-                .background(Capsule().fill(.white).shadow(color: AppColor.ink.opacity(0.1), radius: 4, y: 2))
-                .overlay(Capsule().stroke(AppColor.hairline, lineWidth: 1))
-                .contentShape(Capsule())
+            ReflectionMediaActionLabel(
+                title: "Choose from album",
+                systemImage: "photo.on.rectangle",
+                iconColor: ReflectionSurfaceStyle.controlTextColor
+            )
         }
     }
 
     private var ctaStack: some View {
         VStack(spacing: Spacing.sm) {
-            Button("Feed Sprout") { vm.feedSprout() }
+            if let submissionErrorMessage = vm.submissionErrorMessage {
+                Text(submissionErrorMessage)
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.label)
+                    .multilineTextAlignment(.center)
+            }
+
+            Button("Feed \(sproutName)") { vm.feedSprout() }
                 .buttonStyle(.primaryWhite)
+                .disabled(vm.isSubmitting)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.bottom, Spacing.md)
@@ -223,6 +206,34 @@ struct PhotoCommitStep: View {
             vm.context.insert(asset)
             vm.photoAssetIDs.append(asset.id)
         }
+    }
+}
+
+private struct ReflectionMediaActionLabel: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let iconColor: Color
+
+    var body: some View {
+        ZStack {
+            Text(title)
+                .font(AppFont.button)
+                .foregroundStyle(ReflectionSurfaceStyle.controlTextColor)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            HStack {
+                Image(systemName: systemImage)
+                    .font(.system(size: ReflectionSurfaceStyle.mediaActionButtonIconSize, weight: .semibold))
+                    .foregroundStyle(iconColor)
+                Spacer()
+            }
+            .padding(.leading, ReflectionSurfaceStyle.mediaActionButtonIconLeadingPadding)
+        }
+        .frame(width: ReflectionSurfaceStyle.mediaActionButtonWidth)
+        .padding(.vertical, Spacing.sm)
+        .reflectionControlSurface(in: Capsule())
+        .contentShape(Capsule())
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -314,8 +325,9 @@ extension UUID: @retroactive Identifiable {
         mediaStore: MediaStore(root: FileManager.default.temporaryDirectory),
         gameConfig: .default,
         ai: TemplateAIGenerationService(),
+        transcriber: SpeechTranscriptionService(),
         tripType: .solo,
-        onDismiss: {}
+        onComplete: { _ in }
     )
     PhotoCommitStep(vm: vm)
 }

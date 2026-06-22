@@ -2,6 +2,7 @@ import Foundation
 
 enum TripDateFormat {
     private static let month: DateFormatter = formatter("MMM d")
+    private static let fullDate: DateFormatter = formatter("d MMM yyyy")
     private static let day: DateFormatter = formatter("d")
     private static let year: DateFormatter = formatter("yyyy")
 
@@ -11,6 +12,10 @@ enum TripDateFormat {
         var result = "\(month.string(from: start)) – \(endText)"
         if includeYear { result += " \(year.string(from: end))" }
         return result
+    }
+
+    static func dayDetail(_ date: Date) -> String {
+        fullDate.string(from: date)
     }
 
     private static func formatter(_ format: String) -> DateFormatter {

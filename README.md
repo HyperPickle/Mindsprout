@@ -4,6 +4,8 @@ Mindsprout is an iOS app about turning travel into a small daily habit of reflec
 
 The point is to make looking back on a trip feel light rather than like a chore. A reflection takes a couple of minutes, and the Sprout gives you a reason to come back the next day.
 
+For design-system specifics that do not belong in this overview, use `TYPOGRAPHY.MD` for type rules and `ASSET-GUIDE.md` for asset creation, naming, and usage guidance.
+
 ## Trips and Reflections
 
 You start a trip and say what you're hoping to get out of it. Trips come in a few kinds, solo, with friends, with family, or for work, and each one asks slightly different things. While the trip is on, you log one reflection a day against it. A reflection can be typed or recorded as audio, and you can attach photos to it.
@@ -22,6 +24,7 @@ The groundwork is done. The app builds and runs, the data and design layers are 
 
 - **Platform.** SwiftUI app targeting iOS 18 and up. iPhone only, portrait. No third-party dependencies.
 - **Structure.** Grouped by feature, so everything for a given screen tends to live in one place. `App` holds the entry point and tab navigation, `Core` holds shared services, `DesignSystem` holds the visual building blocks, `Models` holds the stored types, and each thing under `Features` is self-contained.
+- **Design references.** Use `TYPOGRAPHY.MD` when adjusting fonts, text hierarchy, or type tokens, and `ASSET-GUIDE.md` when adding or updating images, icons, or exported visual assets.
 
   ```
   Mindsprout/

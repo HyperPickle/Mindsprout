@@ -12,6 +12,9 @@ final class Reflection {
     var bodyKind: ReflectionBodyKind = ReflectionBodyKind.text
     var text: String?
     var audioAssetID: UUID?
+    /// On-device transcript of the audio recording (when bodyKind == .audio).
+    /// Generated locally after recording; used by future AI features.
+    var transcript: String?
     var photoAssetIDs: [UUID] = []
     var moodTags: [String] = []
     var isDraft: Bool = true

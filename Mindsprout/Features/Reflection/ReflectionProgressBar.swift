@@ -1,15 +1,15 @@
 import SwiftUI
 
 struct ReflectionProgressBar: View {
-    let step: Int
+    let step: ReflectionStep
 
-    private let icons = ["mappin", "mappin", "airplane.departure"]
+    private let icons = ["mappin", "square.and.pencil", "photo", "leaf.fill"]
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(0..<3) { index in
+            ForEach(icons.indices, id: \.self) { index in
                 stepIcon(index: index)
-                if index < 2 {
+                if index < icons.count - 1 {
                     connector(afterIndex: index)
                 }
             }
@@ -18,7 +18,7 @@ struct ReflectionProgressBar: View {
     }
 
     private func stepIcon(index: Int) -> some View {
-        let active = index + 1 <= step
+        let active = index <= step.rawValue
         return Image(systemName: icons[index])
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(active ? AppColor.primary : AppColor.hairline)
@@ -30,7 +30,7 @@ struct ReflectionProgressBar: View {
     }
 
     private func connector(afterIndex index: Int) -> some View {
-        let filled = index + 2 <= step
+        let filled = index + 1 <= step.rawValue
         return GeometryReader { geo in
             Path { path in
                 let y = geo.size.height / 2
@@ -48,9 +48,10 @@ struct ReflectionProgressBar: View {
 
 #Preview {
     VStack(spacing: Spacing.lg) {
-        ReflectionProgressBar(step: 1)
-        ReflectionProgressBar(step: 2)
-        ReflectionProgressBar(step: 3)
+        ReflectionProgressBar(step: .highlight)
+        ReflectionProgressBar(step: .entry)
+        ReflectionProgressBar(step: .photos)
+        ReflectionProgressBar(step: .reward)
     }
     .padding()
     .background(Color.white)

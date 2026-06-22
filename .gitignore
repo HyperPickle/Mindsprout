@@ -1,5 +1,7 @@
 # Xcode
 build/
+.build/
+.derivedData/
 DerivedData/
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
@@ -11,6 +13,9 @@ $RECYCLE.BIN/
 .claude/
 Claude.md
 build.log
+REFLECTION-MODAL-MIGRATION-PLAN.md
+
+checklist.md
 
 # macOS
 .DS_Store

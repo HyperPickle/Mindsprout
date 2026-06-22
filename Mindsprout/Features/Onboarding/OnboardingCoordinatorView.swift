@@ -48,7 +48,7 @@ struct OnboardingCoordinatorView: View {
                 ))
 
             case .profilePhoto(let userID):
-                ProfilePhotoOnboardingView {
+                ProfilePhotoOnboardingView(userID: userID) {
                     withAnimation {
                         env.auth.handleAuthorization(userID: userID) 
                     }

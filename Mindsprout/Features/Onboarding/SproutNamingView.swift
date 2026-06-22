@@ -7,11 +7,12 @@
 
 import SwiftUI
 import SpriteKit
+import SwiftData
 
 struct SproutNamingView: View {
     @State private var sproutName = ""
-    @AppStorage("sproutName") var savedSproutName = ""
-    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    @Environment(\.modelContext) private var context
+    @Query private var sprouts: [Sprout]
     @StateObject private var seedHolder = SeedSceneHolder()
     @FocusState private var isFieldFocused: Bool
     @Environment(\.dismiss) var dismiss
@@ -32,7 +33,7 @@ struct SproutNamingView: View {
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColor.label)
                             .padding(12)
                     }
                     Spacer()
@@ -52,7 +53,7 @@ struct SproutNamingView: View {
                 VStack(spacing: 8) {
                     TextField("", text: $sproutName)
                         .multilineTextAlignment(.center)
-                        .font(.system(size: 16, design: .rounded))
+                        .font(AppFont.callout)
                         .padding(.vertical, 14)
                         .padding(.horizontal, 20)
                         .background(Color.white.opacity(0.5))
@@ -61,8 +62,8 @@ struct SproutNamingView: View {
                         .padding(.horizontal, 24)
                     
                     Text("Name little seed and press continue to see your sprout.")
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(AppFont.caption)
+                        .foregroundColor(AppColor.label)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
@@ -70,22 +71,21 @@ struct SproutNamingView: View {
                 // ✅ Bouton Continue
                 Button {
                     guard !sproutName.isEmpty else { return }
-                    savedSproutName = sproutName
+                    if let existing = sprouts.first {
+                        existing.name = sproutName
+                    } else {
+                        let sprout = Sprout()
+                        sprout.name = sproutName
+                        context.insert(sprout)
+                    }
+                    try? context.save()
                     isFieldFocused = false
                     showTransformation = true  // ✅ navigue
                     onContinue()
                 } label: {
                     Text("Continue")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            Color(hex: 0x4CAF50)
-                                .opacity(sproutName.isEmpty ? 0.5 : 1.0)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 30))
                 }
+                .buttonStyle(.primaryWhite)
                 .disabled(sproutName.isEmpty)
                 .padding(.horizontal, 24)
                 .fullScreenCover(isPresented: $showTransformation) {

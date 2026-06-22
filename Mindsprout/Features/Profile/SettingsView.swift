@@ -1,12 +1,16 @@
 import SwiftUI
 import SafariServices
+import SwiftData
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ModalCoordinator.self) private var modalCoordinator
     @Environment(\.appEnvironment) private var env
+    @Query private var sprouts: [Sprout]
     @State private var showSignOutConfirm = false
     @State private var showPrivacyPolicy = false
+
+    private var sproutName: String { sprouts.first?.name.isEmpty == false ? sprouts.first!.name : "Sprout" }
 
     var body: some View {
         ZStack {
@@ -21,7 +25,7 @@ struct SettingsView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColor.label)
                             .padding(Spacing.sm)
                             .contentShape(Rectangle())
                     }
@@ -29,8 +33,8 @@ struct SettingsView: View {
                     Spacer()
 
                     Text("Settings")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(AppFont.sectionTitle)
+                        .foregroundColor(AppColor.label)
 
                     Spacer()
 
@@ -42,20 +46,23 @@ struct SettingsView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
+                        SettingsActionButton(title: "Account", icon: "person.crop.circle") {
+                            modalCoordinator.present(.account)
+                        }
                         SettingsActionButton(title: "Appearance", icon: "eye") {
                             modalCoordinator.present(.themeSettings)
                         }
-                        SettingsActionButton(title: "Privacy Policy", icon: "lock.shield") {
+                        SettingsActionButton(title: "Privacy Policy", icon: "lock") {
                             showPrivacyPolicy = true
                         }
-                        
+
                         SettingsActionButton(title: "Sign Out", icon: "arrow.right.square") {
                             showSignOutConfirm = true
                         }
 
                         Text("Version 1.0.0")
-                            .font(.system(size: 14, design: .rounded))
-                            .foregroundColor(AppColor.onBackground)
+                            .font(AppFont.caption)
+                            .foregroundColor(AppColor.label)
                             .padding(.top, 10)
                     }
                     .padding(.horizontal, Spacing.screenEdge)
@@ -77,7 +84,7 @@ struct SettingsView: View {
                 env.auth.signOut()
             }
         } message: {
-            Text("You can sign back in anytime. Your trips and Sprout stay safe on this device.")
+            Text("You can sign back in anytime. Your trips and \(sproutName) stay safe on this device.")
         }
     }
 }
@@ -98,7 +105,7 @@ private struct SettingsActionButton: View {
                 }
                 
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(AppFont.button)
             }
             .padding(.horizontal, Spacing.lg)
             .frame(maxWidth: .infinity)
