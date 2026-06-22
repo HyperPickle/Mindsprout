@@ -7,6 +7,9 @@ struct SettingsView: View {
     @Environment(\.appEnvironment) private var env
     @State private var showSignOutConfirm = false
     @State private var showPrivacyPolicy = false
+    @State private var showRenameSprout = false
+    @State private var newSproutName = ""
+    @AppStorage("sproutName") private var savedSproutName = ""
 
     var body: some View {
         ZStack {
@@ -42,6 +45,10 @@ struct SettingsView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
+                        SettingsActionButton(title: "Rename Sprout", icon: "leaf") {
+                            newSproutName = savedSproutName
+                            showRenameSprout = true
+                        }
                         SettingsActionButton(title: "Appearance", icon: "eye") {
                             modalCoordinator.present(.themeSettings)
                         }
@@ -70,6 +77,14 @@ struct SettingsView: View {
                 SafariView(url: url)
                     .ignoresSafeArea()
             }
+        }
+        .alert("Rename Sprout", isPresented: $showRenameSprout) {
+            TextField("Sprout's name", text: $newSproutName)
+            Button("Save") {
+                let trimmed = newSproutName.trimmingCharacters(in: .whitespaces)
+                if !trimmed.isEmpty { savedSproutName = trimmed }
+            }
+            Button("Cancel", role: .cancel) {}
         }
         .alert("Sign Out", isPresented: $showSignOutConfirm) {
             Button("Cancel", role: .cancel) {}

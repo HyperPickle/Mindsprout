@@ -26,6 +26,10 @@ struct ReflectTab: View {
                     emptyState
                 }
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                // Forces NavigationStack content to clear the FloatingTabBar circle
+                Color.clear.frame(height: 100)
+            }
             .toolbar(.hidden, for: .navigationBar)
         }
     }

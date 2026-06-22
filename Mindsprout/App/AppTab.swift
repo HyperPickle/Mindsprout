@@ -19,9 +19,9 @@ enum AppTab: Hashable, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .adventures: return "airplane"
-        case .reflect: return "book.pages"
-        case .home: return "leaf.fill"
+        case .adventures: return "map"
+        case .reflect: return "drop.fill"   // swap for custom watering can asset when available
+        case .home: return "house.fill"
         case .profile: return "person.fill"
         }
     }

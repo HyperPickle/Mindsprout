@@ -41,18 +41,25 @@ struct RootView: View {
         return TabView(selection: $selection) {
             Tab(AppTab.adventures.title, systemImage: AppTab.adventures.systemImage, value: AppTab.adventures) {
                 AdventuresTab()
+                    .toolbar(.hidden, for: .tabBar)
             }
             Tab(AppTab.reflect.title, systemImage: AppTab.reflect.systemImage, value: AppTab.reflect) {
                 ReflectTab(selection: $selection)
+                    .toolbar(.hidden, for: .tabBar)
             }
             Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
                 HomeTab(selection: $selection)
+                    .toolbar(.hidden, for: .tabBar)
             }
             Tab(AppTab.profile.title, systemImage: AppTab.profile.systemImage, value: AppTab.profile) {
                 ProfileTab()
+                    .toolbar(.hidden, for: .tabBar)
             }
         }
         .tint(AppColor.primary)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            FloatingTabBar(selection: $selection)
+        }
         .environment(modalCoordinator)
         .sheet(item: $coordinator.presented) { modal in
             ModalContainer(modal: modal)

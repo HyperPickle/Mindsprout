@@ -1,5 +1,5 @@
 
-    import SwiftUI
+import SwiftUI
 
 struct OnboardingCoordinatorView: View {
     enum OnboardingStep {
@@ -8,10 +8,10 @@ struct OnboardingCoordinatorView: View {
         case namingSprout(userID: String)
         case transformation(userID: String)
     }
-    
-    @Environment(\.appEnvironment) private var env  // ← déclaration manquante
+
+    @Environment(\.appEnvironment) private var env
     @State private var currentStep: OnboardingStep = .welcome
-    
+
     var body: some View {
         Group {
             switch currentStep {
@@ -25,7 +25,7 @@ struct OnboardingCoordinatorView: View {
                     insertion: .move(edge: .trailing),
                     removal: .move(edge: .leading)
                 ))
-                
+
             case .profilePhoto(let userID):
                 ProfilePhotoOnboardingView {
                     withAnimation {
@@ -36,18 +36,26 @@ struct OnboardingCoordinatorView: View {
                     insertion: .move(edge: .trailing),
                     removal: .move(edge: .leading)
                 ))
-                
+
             case .namingSprout(let userID):
-                SproutNamingView(onContinue: {
-                    withAnimation {
-                        currentStep = .transformation(userID: userID)
+                SproutNamingView(
+                    isOnboarding: true,
+                    onBack: {
+                        withAnimation {
+                            currentStep = .profilePhoto(userID: userID)
+                        }
+                    },
+                    onContinue: {
+                        withAnimation {
+                            currentStep = .transformation(userID: userID)
+                        }
                     }
-                })
+                )
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing),
                     removal: .move(edge: .leading)
                 ))
-                
+
             case .transformation(let userID):
                 SproutTransformationView(onFinish: {
                     withAnimation {
@@ -62,7 +70,8 @@ struct OnboardingCoordinatorView: View {
         }
     }
 }
-    #Preview {
-        OnboardingCoordinatorView()
-            .environment(\.appEnvironment, .preview)
-    }
+
+#Preview {
+    OnboardingCoordinatorView()
+        .environment(\.appEnvironment, .preview)
+}
