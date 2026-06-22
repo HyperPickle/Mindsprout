@@ -8,3 +8,20 @@ struct LevelUpPresentation: Identifiable, Sendable, Equatable {
     var insight: GrowthInsight
     var postcard: Postcard
 }
+
+extension LevelUpPresentation {
+    static func fallback(
+        destination: String,
+        previousLevel: Int,
+        newLevel: Int,
+        context: ReflectionContext
+    ) -> LevelUpPresentation {
+        LevelUpPresentation(
+            destination: destination,
+            previousLevel: previousLevel,
+            newLevel: newLevel,
+            insight: TemplateAIGenerationService.fallbackInsight(for: context),
+            postcard: TemplateAIGenerationService.fallbackPostcard(for: context)
+        )
+    }
+}

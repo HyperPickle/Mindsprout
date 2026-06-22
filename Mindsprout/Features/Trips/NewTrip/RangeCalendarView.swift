@@ -8,10 +8,6 @@ struct RangeCalendarView: View {
     private let calendar = Calendar.current
     private let weekdaySymbols = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
-    // Couleurs cohérentes avec DestinationPickerView
-    private let accent = Color(hex: 0x5C6A6E)
-    private let accentLight = Color(hex: 0x5C6A6E).opacity(0.18)
-
     var body: some View {
         VStack(spacing: Spacing.sm) {
             monthHeader
@@ -19,7 +15,7 @@ struct RangeCalendarView: View {
                 ForEach(weekdaySymbols, id: \.self) { symbol in
                     Text(symbol)
                         .font(AppFont.caption)
-                        .foregroundStyle(Color(hex: 0x5C6A6E).opacity(0.6))
+                        .foregroundStyle(AppColor.secondaryLabel)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -30,11 +26,7 @@ struct RangeCalendarView: View {
 
     private var monthHeader: some View {
         HStack {
-            Button { shiftMonth(-1) } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(accent)
-            }
+            calendarControlButton(systemName: "chevron.left") { shiftMonth(-1) }
             Spacer()
             HStack(spacing: Spacing.sm) {
                 Menu {
@@ -49,12 +41,9 @@ struct RangeCalendarView: View {
                 } label: { dropdown(String(calendar.component(.year, from: displayedMonth))) }
             }
             Spacer()
-            Button { shiftMonth(1) } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(accent)
-            }
+            calendarControlButton(systemName: "chevron.right") { shiftMonth(1) }
         }
+        .foregroundStyle(AppColor.label)
         .padding(.horizontal, Spacing.xs)
     }
 
@@ -63,29 +52,41 @@ struct RangeCalendarView: View {
             Text(text).font(AppFont.bodyEmphasized)
             Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
         }
-        .foregroundStyle(accent)
+        .foregroundStyle(AppColor.label)
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.small)
-                .fill(Color(hex: 0x5C6A6E).opacity(0.12))
-        )
+        .background {
+            Color.clear.tripGlassSurface(
+                style: .neutral,
+                in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
+            )
+        }
+    }
+
+    private func calendarControlButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(AppColor.label)
+                .frame(width: 36, height: 36)
+                .background {
+                    Color.clear.tripGlassSurface(
+                        style: .neutral,
+                        in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
+                    )
+                }
+        }
     }
 
     private var grid: some View {
         let days = monthDays
-        return LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7),
-            spacing: 6
-        ) {
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 6) {
             ForEach(Array(days.enumerated()), id: \.offset) { _, day in
                 if let day {
                     DayCell(
                         day: calendar.component(.day, from: day),
                         state: state(for: day),
-                        isSingleSelection: calendar.startOfDay(for: startDate) == calendar.startOfDay(for: endDate),
-                        accent: accent,
-                        accentLight: accentLight
+                        isSingleSelection: calendar.startOfDay(for: startDate) == calendar.startOfDay(for: endDate)
                     )
                     .onTapGesture { select(day) }
                 } else {
@@ -159,18 +160,18 @@ struct RangeCalendarView: View {
     }
 }
 
-// MARK: - Day Cell
-
 private struct DayCell: View {
     let day: Int
     let state: RangeCalendarView.DayState
     var isSingleSelection: Bool = false
-    let accent: Color
-    let accentLight: Color
+
+    private static let selectionLineWidth: CGFloat = 2
+
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Text("\(day)")
-            .font(.system(size: 16, weight: isEndpoint ? .bold : .medium, design: .rounded))
+            .font(isEndpoint ? AppFont.bodyEmphasized : AppFont.body)
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity)
             .frame(height: 38)
@@ -181,52 +182,105 @@ private struct DayCell: View {
 
     private var foreground: Color {
         switch state {
-        case .start, .end: return .white
-        case .inRange: return accent
-        case .normal: return Color(hex: 0x5C6A6E)
+        case .start, .end:
+            return .white
+        case .inRange, .normal:
+            return AppColor.label
         }
+    }
+
+    private var outlineColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.72) : AppColor.graphite
     }
 
     @ViewBuilder private var background: some View {
         switch state {
         case .start:
-            UnevenRoundedRectangle(
-                topLeadingRadius: CornerRadius.small,
-                bottomLeadingRadius: CornerRadius.small,
-                bottomTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
-                topTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
-                style: .continuous
-            ).fill(AppColor.primary)
+            outlinedRangeSegment(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: CornerRadius.small,
+                    bottomLeadingRadius: CornerRadius.small,
+                    bottomTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
+                    topTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
+                    style: .continuous
+                ),
+                showsLeadingCap: true,
+                showsTrailingCap: isSingleSelection
+            )
         case .end:
-            UnevenRoundedRectangle(
-                topLeadingRadius: 0,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: CornerRadius.small,
-                topTrailingRadius: CornerRadius.small,
-                style: .continuous
-            ).fill(AppColor.primary)
+            outlinedRangeSegment(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 0,
+                    bottomLeadingRadius: 0,
+                    bottomTrailingRadius: CornerRadius.small,
+                    topTrailingRadius: CornerRadius.small,
+                    style: .continuous
+                ),
+                showsLeadingCap: false,
+                showsTrailingCap: true
+            )
         case .inRange:
-            Rectangle().fill(AppColor.primary.opacity(0.22))
+            outlinedRangeSegment(
+                Rectangle(),
+                showsLeadingCap: false,
+                showsTrailingCap: false
+            )
         case .normal:
             Color.clear
         }
     }
+
+    private func outlinedRangeSegment<S: InsettableShape>(
+        _ shape: S,
+        showsLeadingCap: Bool,
+        showsTrailingCap: Bool
+    ) -> some View {
+        shape
+            .strokeBorder(outlineColor, lineWidth: Self.selectionLineWidth)
+            .mask {
+                RangeSelectionOutlineMask(
+                    showsLeadingCap: showsLeadingCap,
+                    showsTrailingCap: showsTrailingCap,
+                    lineWidth: Self.selectionLineWidth,
+                    cornerRadius: CornerRadius.small
+                )
+            }
+    }
 }
 
-// MARK: - Preview
+private struct RangeSelectionOutlineMask: View {
+    let showsLeadingCap: Bool
+    let showsTrailingCap: Bool
+    let lineWidth: CGFloat
+    let cornerRadius: CGFloat
 
-#Preview {
-    @Previewable @State var start = Date()
-    @Previewable @State var end = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+    var body: some View {
+        GeometryReader { proxy in
+            let capWidth = min(proxy.size.width, cornerRadius + lineWidth)
 
-    ZStack {
-        BackgroundSky()
-        VStack {
-            RangeCalendarView(startDate: $start, endDate: $end)
-                .padding(Spacing.md)
-                .background(Color.white.opacity(0.8), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-                .padding()
-            Spacer()
+            ZStack {
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .frame(height: lineWidth)
+                    Spacer(minLength: 0)
+                    Rectangle()
+                        .frame(height: lineWidth)
+                }
+
+                if showsLeadingCap {
+                    Rectangle()
+                        .frame(width: capWidth)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if showsTrailingCap {
+                    Rectangle()
+                        .frame(width: capWidth)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
         }
+        .foregroundStyle(.white)
+        .compositingGroup()
     }
 }

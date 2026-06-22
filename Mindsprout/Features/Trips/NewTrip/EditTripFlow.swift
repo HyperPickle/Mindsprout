@@ -44,7 +44,7 @@ struct EditTripFlow: View {
                             viewModel.save(context: context)
                             dismiss()
                         }
-                        .buttonStyle(.primary)
+                        .buttonStyle(.tripGlassCTA)
                         .disabled(!viewModel.canSave)
                         Spacer()
                     }
@@ -88,13 +88,13 @@ struct EditTripFlow: View {
     private var header: some View {
         ZStack {
             Text("Edit Trip")
-                .font(AppFont.headline)
-                .foregroundStyle(.white)
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
             HStack {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColor.label)
                         .frame(width: 36, height: 36)
                 }
                 Spacer()
@@ -102,10 +102,11 @@ struct EditTripFlow: View {
         }
         .padding(.horizontal, Spacing.sm)
         .frame(height: 52)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+        .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         .padding(.horizontal, Spacing.sm)
         .padding(.top, Spacing.xs + 20)
         .padding(.bottom, Spacing.xs)
+        .transaction { $0.animation = nil }
     }
 
     // MARK: - Sections
@@ -131,14 +132,17 @@ struct EditTripFlow: View {
                 Spacer()
                 Text("\(viewModel.durationDays) days")
                     .font(AppFont.callout)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(AppColor.label)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, 6)
-                    .glassEffect(.regular.tint(.white), in: Capsule())
+                    .tripGlassSurface(style: .neutral, in: Capsule())
             }
             RangeCalendarView(startDate: $viewModel.startDate, endDate: $viewModel.endDate)
                 .padding(Spacing.md)
-                .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .tripGlassSurface(
+                    style: .neutral,
+                    in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                )
         }
     }
 
@@ -164,11 +168,19 @@ struct EditTripFlow: View {
                     viewModel.toggle(preset)
                 }
             }
-            TextField("Write your own…", text: $viewModel.customExpectation)
+            TextField(
+                text: $viewModel.customExpectation,
+                prompt: Text("Write your own…").foregroundStyle(AppColor.placeholder)
+            ) {}
                 .font(AppFont.body)
                 .multilineTextAlignment(.center)
                 .padding(Spacing.md)
-                .background(RoundedRectangle(cornerRadius: CornerRadius.pill).fill(.white.opacity(0.7)))
+                .foregroundStyle(AppColor.label)
+                .tint(AppColor.label)
+                .tripGlassSurface(
+                    style: .neutral,
+                    in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
+                )
         }
     }
 
@@ -178,10 +190,13 @@ struct EditTripFlow: View {
             if viewModel.reflections.isEmpty {
                 Text("Reflections you log will appear here to feature one on the trip.")
                     .font(AppFont.callout)
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(AppColor.label.opacity(0.85))
                     .padding(Spacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .glassEffect(.regular.tint(.white.opacity(0.15)), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                    .tripGlassSurface(
+                        style: .neutral,
+                        in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    )
             } else {
                 ForEach(viewModel.reflections) { reflection in
                     FeaturedReflectionRow(
@@ -194,59 +209,80 @@ struct EditTripFlow: View {
             }
         }
         .padding(Spacing.md)
-        .glassEffect(.regular.tint(.white.opacity(0.15)), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        .tripGlassSurface(
+            style: .neutral,
+            in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+        )
     }
 
     private var activeToggle: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             sectionLabel("Trip Status")
-            HStack(alignment: .center, spacing: Spacing.md) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Set as active trip")
-                        .font(AppFont.bodyEmphasized)
-                        .foregroundStyle(AppColor.ink)
-                    Text("Your reflections feed into the active trip.")
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.inkSecondary)
-                }
-                Spacer()
-                Toggle("Set as active trip", isOn: activeBinding)
-                    .labelsHidden()
-                    .tint(AppColor.primary)
-            }
-            .padding(Spacing.md)
-            .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-        }
-    }
-
-    private var deleteSection: some View {
-        VStack(spacing: Spacing.sm) {
-            SectionDivider(title: "DANGER ZONE", color: .white.opacity(0.7))
-            Button(role: .destructive) {
-                showDeleteConfirm = true
+            Button {
+                activeBinding.wrappedValue.toggle()
             } label: {
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "trash")
-                    Text("Delete Trip")
+                HStack(alignment: .center, spacing: Spacing.md) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Set as active trip")
+                            .font(AppFont.bodyEmphasized)
+                            .foregroundStyle(AppColor.label)
+                        Text("Your reflections feed into the active trip.")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.secondaryLabel)
+                    }
+                    Spacer()
+                    HStack(spacing: 8) {
+                        if viewModel.makeActive {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+                        Text(viewModel.makeActive ? "Active" : "Inactive")
+                            .font(AppFont.caption)
+                    }
+                    .foregroundStyle(AppColor.label)
                 }
-                .font(AppFont.bodyEmphasized)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                        .fill(Color.red.opacity(0.85))
+                .padding(Spacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .tripGlassSurface(
+                    style: viewModel.makeActive ? .selected : .neutral,
+                    in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                 )
             }
             .buttonStyle(.plain)
         }
-        .padding(.top, Spacing.xs)
+    }
+
+    private var deleteSection: some View {
+        Button(role: .destructive) {
+            showDeleteConfirm = true
+        } label: {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "trash")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.label)
+                    .frame(width: 28, height: 28)
+                Text("Delete Trip")
+                    .font(AppFont.bodyEmphasized)
+                    .foregroundStyle(AppColor.label)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(AppColor.secondaryLabel)
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .tripGlassSurface(
+                style: .danger,
+                in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private func sectionLabel(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .font(AppFont.bodyEmphasized)
-            .foregroundStyle(.white)
+            .foregroundStyle(AppColor.label)
     }
 
     private var activeBinding: Binding<Bool> {
@@ -277,29 +313,25 @@ private struct FeaturedReflectionRow: View {
         Button(action: action) {
             HStack(spacing: Spacing.sm) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Day \(reflection.dayIndex)")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.primary)
                     Text(snippet)
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.ink)
+                        .font(AppFont.bodyEmphasized)
+                        .foregroundStyle(AppColor.label)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
+                    Text("Day \(reflection.dayIndex)")
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.secondaryLabel)
                 }
                 Spacer(minLength: Spacing.sm)
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(isSelected ? AppColor.primary : AppColor.inkMuted)
+                    .foregroundStyle(AppColor.label)
             }
             .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                    .fill(.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                    .stroke(isSelected ? AppColor.primary : .clear, lineWidth: 2)
+            .tripGlassSurface(
+                style: isSelected ? .selected : .neutral,
+                in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
             )
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }

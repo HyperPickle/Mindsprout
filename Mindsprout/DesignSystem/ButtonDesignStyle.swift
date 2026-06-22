@@ -13,7 +13,7 @@ struct DepthButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 20, weight: .bold, design: .rounded))
+            .font(AppFont.sectionTitle)
             .foregroundColor(textColor)
             .frame(width: 320, height: 30)
             .padding(.vertical, 10)

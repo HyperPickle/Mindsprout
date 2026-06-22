@@ -75,4 +75,24 @@ struct AuthTests {
         #expect(users.first?.displayName == "Ada Lovelace")
         #expect(users.first?.email == "ada@example.com")
     }
+
+    @Test func cachedProfilePersistsAcrossSubsequentAuthorizations() {
+        let service = AppleAuthService(keychain: InMemoryKeychain(), defaults: makeDefaults())
+
+        service.updateCachedProfile(for: "u1", displayName: "Ada Lovelace", email: "ada@example.com")
+        service.updateCachedProfile(for: "u1", displayName: nil, email: nil)
+
+        #expect(service.cachedProfile(for: "u1")?.displayName == "Ada Lovelace")
+        #expect(service.cachedProfile(for: "u1")?.email == "ada@example.com")
+    }
+
+    @Test func currentUserPrefersSignedInAppleUserID() {
+        let first = User(appleUserID: "u1", displayName: "First")
+        let second = User(appleUserID: "u2", displayName: "Second")
+
+        let current = User.current(in: [first, second], userID: "u2")
+
+        #expect(current?.appleUserID == "u2")
+        #expect(current?.displayName == "Second")
+    }
 }

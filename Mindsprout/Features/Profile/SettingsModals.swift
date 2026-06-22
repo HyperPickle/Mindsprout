@@ -1,7 +1,5 @@
 import SwiftUI
 import UIKit
-import PhotosUI
-import AVFoundation
 import SwiftData
 
 enum AppThemePreference: String, CaseIterable, Identifiable {
@@ -41,22 +39,61 @@ enum AppIconManager {
 }
 
 private struct ModalScaffold<Content: View>: View {
+    enum Style {
+        case sheet
+        case centered
+    }
+
     let title: String
+    var style: Style = .sheet
+    var onClose: (() -> Void)? = nil
     @ViewBuilder var content: Content
     @Environment(\.dismiss) private var dismiss
 
+    private func close() {
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
+        }
+    }
+
+    @ViewBuilder
     var body: some View {
-        VStack(spacing: 20) {
-            HStack {
+        let scaffold = VStack(spacing: Spacing.lg) {
+            HStack(spacing: 0) {
+                Button { close() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(AppColor.label)
+                        .frame(width: 36, height: 36)
+                }
+                .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .buttonStyle(.plain)
+                .accessibilityLabel("Back")
+
+                Spacer(minLength: 0)
+
                 Text(title)
-                    .font(.headline)
-                Spacer()
-                Button("Close") { dismiss() }
+                    .font(AppFont.sectionTitle)
+                    .foregroundStyle(AppColor.label)
+
+                Spacer(minLength: 0)
+
+                Color.clear.frame(width: 36, height: 36)
             }
             content
         }
-        .padding(20)
-        .selfSizingSheet()
+        .padding(Spacing.lg)
+
+        switch style {
+        case .sheet:
+            scaffold.selfSizingSheet()
+        case .centered:
+            scaffold
+                .frame(maxWidth: 420)
+                .liquidGlass(cornerRadius: CornerRadius.large)
+        }
     }
 }
 
@@ -89,10 +126,13 @@ struct ThemeSettingsModal: View {
             VStack(spacing: 0) {
                 ForEach(AppThemePreference.allCases) { theme in
                     Button {
-                        themePreference = theme
+                        withAnimation(.easeInOut(duration: 0.4)) {
+                            themePreference = theme
+                        }
                     } label: {
                         HStack {
                             Text(theme.rawValue)
+                                .font(AppFont.button)
                                 .foregroundStyle(.primary)
                             Spacer()
                             if themePreference == theme {
@@ -120,36 +160,12 @@ struct ShopComingSoonModal: View {
                     .font(.system(size: 64))
                     .foregroundColor(.secondary)
                 Text("Shop Coming Soon")
-                    .font(.headline)
+                    .font(AppFont.sectionTitle)
                 Text("We're working on bringing you the shop in a future update.")
-                    .font(.subheadline)
+                    .font(AppFont.callout)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
-        }
-    }
-}
-
-struct HelpSupportModal: View {
-    var body: some View {
-        ModalScaffold(title: "Help & Support") {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Contact Us")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.secondary)
-                    Button("Email Support") { }
-                    Button("Report a Bug") { }
-                }
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("FAQ")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.secondary)
-                    Text("How do I earn XP?")
-                    Text("Can I change my avatar?")
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -163,9 +179,10 @@ struct AboutSettingsModal: View {
                     .foregroundColor(.green)
 
                 Text("Mindsprout")
-                    .font(.largeTitle.bold())
+                    .font(AppFont.display)
 
                 Text("Grow your mind, one reflection at a time.")
+                    .font(AppFont.callout)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
 
@@ -174,7 +191,7 @@ struct AboutSettingsModal: View {
 
                 VStack(spacing: 6) {
                     Text("Developed by")
-                        .font(.footnote.weight(.semibold))
+                        .font(AppFont.eyebrow)
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
                         .tracking(1)
@@ -186,11 +203,11 @@ struct AboutSettingsModal: View {
                         Text("Nam Ng. (Louis)")
                         Text("Arshiya Banu Varada")
                     }
-                    .font(.subheadline)
+                    .font(AppFont.callout)
                 }
 
                 Text("© 2026 Mindsprout")
-                    .font(.footnote)
+                    .font(AppFont.caption)
                     .foregroundStyle(.secondary)
                     .padding(.top, 4)
             }
@@ -198,96 +215,71 @@ struct AboutSettingsModal: View {
     }
 }
 
-struct ProfilePhotoModal: View {
+struct AccountModal: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appEnvironment) private var env
+    @Environment(ModalCoordinator.self) private var modalCoordinator
     @Query private var users: [User]
 
-    @State private var photoPickerItem: PhotosPickerItem?
-    @State private var showCamera = false
-    @State private var showCameraPermissionAlert = false
+    @State private var showPhotoOptions = false
+    @State private var isEditingName = false
+    @State private var editedName = ""
 
-    private var user: User? { users.first }
+    private var user: User? { User.current(in: users, userID: env.auth.state.userID) }
+
+    private var displayName: String {
+        user?.resolvedDisplayName ?? "Traveler"
+    }
 
     var body: some View {
-        ModalScaffold(title: "Profile Photo") {
+        ModalScaffold(
+            title: "Account",
+            style: .centered,
+            onClose: { modalCoordinator.dismiss() }
+        ) {
             VStack(spacing: 24) {
-                avatarPreview
+                Button {
+                    showPhotoOptions = true
+                } label: {
+                    avatar
+                }
+                .buttonStyle(.plain)
+                .contentShape(Circle())
 
                 VStack(spacing: 0) {
-                    Button {
-                        Task { await requestCameraAndShow() }
-                    } label: {
-                        HStack {
-                            Text("Take Photo")
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Image(systemName: "camera")
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 12)
-                        .contentShape(Rectangle())
-                    }
-
-                    Divider()
-
-                    PhotosPicker(
-                        selection: $photoPickerItem,
-                        matching: .images
-                    ) {
-                        HStack {
-                            Text("Choose from Library")
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Image(systemName: "photo.on.rectangle")
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 12)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-
-                    if user?.profilePhotoPath != nil {
-                        Divider()
-
-                        Button(role: .destructive) {
-                            removePhoto()
-                        } label: {
-                            HStack {
-                                Text("Remove Photo")
-                                    .foregroundStyle(.red)
-                                Spacer()
-                            }
-                            .padding(.vertical, 12)
-                            .contentShape(Rectangle())
-                        }
+                    AccountInfoRow(label: "Name", value: displayName) {
+                        editedName = user?.displayName ?? ""
+                        isEditingName = true
                     }
                 }
+
+                Text("Click to edit.")
+                    .font(AppFont.bodyEmphasized)
+                    .foregroundStyle(AppColor.label.opacity(0.8))
+                    .multilineTextAlignment(.center)
             }
         }
-        .sheet(isPresented: $showCamera) {
-            ProfileCameraPickerView { image in
-                Task { await saveImage(image) }
-            }
+        .sheet(isPresented: $showPhotoOptions) {
+            ProfilePhotoModal()
         }
-        .alert("Camera Access Required", isPresented: $showCameraPermissionAlert) {
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
+        .alert("Edit Name", isPresented: $isEditingName) {
+            TextField("Your name", text: $editedName)
+            Button("Save") {
+                let trimmed = editedName.trimmingCharacters(in: .whitespaces)
+                if !trimmed.isEmpty {
+                    user?.displayName = trimmed
+                    if let appleUserID = user?.appleUserID, !appleUserID.isEmpty {
+                        env.auth.updateCachedProfile(for: appleUserID, displayName: trimmed, email: nil)
+                    }
+                    try? modelContext.save()
                 }
             }
             Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Please allow camera access in Settings to take photos.")
-        }
-        .onChange(of: photoPickerItem) { _, item in
-            guard let item else { return }
-            Task { await handlePickedItem(item) }
         }
     }
 
     @ViewBuilder
-    private var avatarPreview: some View {
+    private var avatar: some View {
         if let path = user?.profilePhotoPath {
             AsyncImage(url: env.mediaStore.url(for: path)) { image in
                 image.resizable().scaledToFill()
@@ -309,78 +301,43 @@ struct ProfilePhotoModal: View {
                 .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
         }
     }
+}
 
-    private func requestCameraAndShow() async {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        switch status {
-        case .authorized:
-            showCamera = true
-        case .notDetermined:
-            let granted = await AVCaptureDevice.requestAccess(for: .video)
-            if granted { showCamera = true } else { showCameraPermissionAlert = true }
-        default:
-            showCameraPermissionAlert = true
+private struct AccountInfoRow: View {
+    let label: String
+    let value: String
+    var action: (() -> Void)? = nil
+
+    @ViewBuilder
+    var body: some View {
+        let row = HStack {
+            Text(label)
+                .font(AppFont.callout)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(AppFont.body)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.trailing)
         }
-    }
+        .padding(.vertical, 12)
 
-    private func handlePickedItem(_ item: PhotosPickerItem) async {
-        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
-        await savePhotoData(data)
-        photoPickerItem = nil
-    }
-
-    private func saveImage(_ image: UIImage?) async {
-        guard let image, let data = image.jpegData(compressionQuality: 0.85) else { return }
-        await savePhotoData(data)
-    }
-
-    @MainActor
-    private func savePhotoData(_ data: Data) async {
-        guard let user else { return }
-        if let oldPath = user.profilePhotoPath {
-            try? env.mediaStore.delete(relativePath: oldPath)
+        if let action {
+            Button(action: action) {
+                row
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            row
         }
-        guard let path = try? env.mediaStore.write(data, kind: .photo, fileExtension: "jpg") else { return }
-        user.profilePhotoPath = path
-        try? modelContext.save()
-    }
-
-    private func removePhoto() {
-        guard let user, let path = user.profilePhotoPath else { return }
-        try? env.mediaStore.delete(relativePath: path)
-        user.profilePhotoPath = nil
-        try? modelContext.save()
     }
 }
 
-private struct ProfileCameraPickerView: UIViewControllerRepresentable {
-    let onCapture: (UIImage?) -> Void
-
-    func makeCoordinator() -> Coordinator { Coordinator(onCapture: onCapture) }
-
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.allowsEditing = true
-        picker.delegate = context.coordinator
-        return picker
-    }
-
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-
-    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let onCapture: (UIImage?) -> Void
-        init(onCapture: @escaping (UIImage?) -> Void) { self.onCapture = onCapture }
-
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            let image = (info[.editedImage] ?? info[.originalImage]) as? UIImage
-            picker.dismiss(animated: true)
-            onCapture(image)
-        }
-
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true)
-            onCapture(nil)
+struct ProfilePhotoModal: View {
+    var body: some View {
+        ModalScaffold(title: "Profile Photo") {
+            ProfilePhotoEditorContent(style: .modal, showsRemoveButton: true)
         }
     }
 }

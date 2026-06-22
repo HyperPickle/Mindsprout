@@ -4,15 +4,18 @@ import SwiftData
 struct HighlightPickerStep: View {
     @Bindable var vm: ReflectionViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var writeOwnExpanded = false
     @State private var customText = ""
+    @State private var diceSpin = 0.0
+    @State private var promptAnimationVersion = 0
     @FocusState private var writeOwnFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: Spacing.sm) {
-                    sproutHeader
+                    ReflectionStepHeader(title: "Today's highlight?")
                     promptCards
                     writeYourOwn
                     diceRow
@@ -24,21 +27,6 @@ struct HighlightPickerStep: View {
             continueButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(BackgroundSky())
-    }
-
-    private var sproutHeader: some View {
-        HStack(alignment: .center, spacing: Spacing.sm) {
-            SproutIdleView()
-                .frame(width: 95, height: 95)
-            Text("What was the highlight of your day?")
-                .font(AppFont.title)
-                .foregroundStyle(AppColor.onBackground)
-                .fixedSize(horizontal: false, vertical: true)
-                .layoutPriority(1)
-            Spacer()
-        }
-        .padding(.bottom, Spacing.sm)
     }
 
     private var promptCards: some View {
@@ -46,7 +34,8 @@ struct HighlightPickerStep: View {
             ForEach(vm.shuffledPrompts) { prompt in
                 PromptCard(
                     prompt: prompt,
-                    isSelected: vm.selectedPrompt?.id == prompt.id
+                    isSelected: vm.selectedPrompt?.id == prompt.id,
+                    animationVersion: promptAnimationVersion
                 ) {
                     vm.selectPrompt(prompt)
                     writeOwnExpanded = false
@@ -69,14 +58,14 @@ struct HighlightPickerStep: View {
                 HStack {
                     Image(systemName: "pencil")
                         .font(AppFont.callout)
-                        .foregroundStyle(AppColor.inkSecondary)
+                        .foregroundStyle(AppColor.label)
                     Text("Write your own")
-                        .font(AppFont.body)
-                        .foregroundStyle(AppColor.ink)
+                        .font(AppFont.button)
+                        .foregroundStyle(AppColor.label)
                     Spacer()
                     Image(systemName: writeOwnExpanded ? "chevron.up" : "chevron.right")
                         .font(AppFont.callout)
-                        .foregroundStyle(AppColor.inkSecondary)
+                        .foregroundStyle(AppColor.label)
                 }
                 .padding(Spacing.md)
                 .contentShape(Rectangle())
@@ -89,7 +78,7 @@ struct HighlightPickerStep: View {
                     .padding(.horizontal, Spacing.md)
                 TextField("Describe your highlight…", text: $customText, axis: .vertical)
                     .font(AppFont.body)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(AppColor.label)
                     .focused($writeOwnFocused)
                     .padding(Spacing.md)
                     .lineLimit(3...6)
@@ -100,7 +89,7 @@ struct HighlightPickerStep: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .glassEffect(.regular.tint(.white), in: UnevenRoundedRectangle(
+        .readableLiquidGlass(in: UnevenRoundedRectangle(
             topLeadingRadius: 12,
             bottomLeadingRadius: CornerRadius.large,
             bottomTrailingRadius: CornerRadius.large,
@@ -115,22 +104,27 @@ struct HighlightPickerStep: View {
                 topTrailingRadius: 12,
                 style: .continuous
             )
-            .stroke((writeOwnExpanded && vm.selectedPrompt == nil && !customText.isEmpty) ? AppColor.primary : Color.clear, lineWidth: 2)
+            .stroke((writeOwnExpanded && vm.selectedPrompt == nil && !customText.isEmpty) ? Color.white : Color.clear, lineWidth: 2)
         )
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: writeOwnExpanded)
     }
 
     private var diceRow: some View {
         Button {
+            if !reduceMotion {
+                withAnimation(.easeInOut(duration: 0.4)) { diceSpin += 360 }
+            }
             vm.reshuffle()
+            promptAnimationVersion += 1
         } label: {
             HStack(spacing: Spacing.xs) {
                 Image(systemName: "die.face.3.fill")
                     .font(AppFont.body)
-                    .foregroundStyle(AppColor.onBackground)
+                    .foregroundStyle(AppColor.label)
+                    .rotationEffect(.degrees(diceSpin))
                 Text("Refresh options")
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.onBackground)
+                    .font(AppFont.button)
+                    .foregroundStyle(AppColor.label)
             }
             .padding(.vertical, Spacing.sm)
             .contentShape(Rectangle())
@@ -139,10 +133,9 @@ struct HighlightPickerStep: View {
     }
 
     private var continueButton: some View {
-        Button("Continue") {
-            vm.step = 2
+        HomeCTAButton(title: "Continue") {
+            vm.step = .entry
         }
-        .buttonStyle(.primaryWhite)
         .disabled(!vm.canContinueStep1)
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.bottom, Spacing.md)
@@ -152,30 +145,68 @@ struct HighlightPickerStep: View {
 private struct PromptCard: View {
     let prompt: HighlightPrompt
     let isSelected: Bool
+    let animationVersion: Int
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.sm) {
-                Text(prompt.title)
-                    .font(AppFont.bodyEmphasized)
-                    .foregroundStyle(AppColor.ink)
+                TypewriterText(
+                    text: prompt.title,
+                    animate: animationVersion > 0,
+                    animationVersion: animationVersion
+                )
+                    .font(AppFont.button)
+                    .foregroundStyle(AppColor.label)
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right")
                     .font(AppFont.body)
-                    .foregroundStyle(isSelected ? AppColor.primary : AppColor.inkSecondary)
+                    .foregroundStyle(isSelected ? .white : AppColor.label)
             }
             .padding(Spacing.md)
             .frame(height: 76)
-            .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                    .stroke(isSelected ? AppColor.primary : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? Color.white : Color.clear, lineWidth: 2)
             )
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Reveals `text` one character at a time. Re-runs whenever `text` changes
+/// (e.g. when prompts are refreshed). Respects Reduce Motion by showing the
+/// full text immediately.
+private struct TypewriterText: View {
+    let text: String
+    let animate: Bool
+    let animationVersion: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = ""
+
+    var body: some View {
+        Text(shown)
+            .task(id: taskKey) { await updateText() }
+    }
+
+    private var taskKey: String {
+        "\(animationVersion)-\(text)"
+    }
+
+    private func updateText() async {
+        guard animate, !reduceMotion else {
+            shown = text
+            return
+        }
+
+        shown = ""
+        for character in text {
+            shown.append(character)
+            try? await Task.sleep(for: .milliseconds(31))
+        }
     }
 }
 
@@ -196,8 +227,9 @@ private struct PromptCard: View {
         mediaStore: MediaStore(root: FileManager.default.temporaryDirectory),
         gameConfig: .default,
         ai: TemplateAIGenerationService(),
+        transcriber: SpeechTranscriptionService(),
         tripType: .solo,
-        onDismiss: {}
+        onComplete: { _ in }
     )
     vm.shuffledPrompts = prompts
     return HighlightPickerStep(vm: vm)

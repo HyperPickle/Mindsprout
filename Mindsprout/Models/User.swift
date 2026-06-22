@@ -48,4 +48,14 @@ final class User {
         try? context.save()
         return user
     }
+
+    static func current(in users: [User], userID: String?) -> User? {
+        guard let userID, !userID.isEmpty else { return users.first }
+        return users.first(where: { $0.appleUserID == userID })
+    }
+
+    var resolvedDisplayName: String {
+        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Traveler" : trimmed
+    }
 }

@@ -5,105 +5,100 @@
 //  Created by Changrila Souksamlane on 11/6/2026.
 //
 
-import RiveRuntime
+import SpriteKit
 import SwiftUI
 import Combine
 
-// MARK: - Controller
-@MainActor
-final class SeedRiveController: ObservableObject {
-    let riveVM: RiveViewModel
-
-    init() {
-        // Chargement spécifique pour l'onboarding de la graine
-        riveVM = RiveViewModel(
-            fileName: "sprout2", // Ton fichier .riv
-            stateMachineName: "SeedStateMachine",
-            alignment: .center,
-            artboardName: "Seed"
-        )
-    }
-
-    // Déclenché uniquement lors de l'action utilisateur (validation du nom)
-    func triggerWaterAnimation() {
-        // Déclenche l'animation d'arrosage/transformation dans Rive
-        riveVM.triggerInput("triggerWater")
-    }
-}
-
-// MARK: - View
-struct SeedView: View {
-    @ObservedObject var controller: SeedRiveController
-
-    var body: some View {
-        ZStack {
-            controller.riveVM.view()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea()
-                .allowsHitTesting(false) // Laisse les interactions à la couche SwiftUI si besoin
-        }
-        .ignoresSafeArea()
-    }
-}
-
-// MARK: - Exemple d'intégration (Flow Onboarding : Naming vers Transformation)
-struct SeedOnboardingFlow: View {
-    @State private var seedName: String = ""
-    @State private var isNameConfirmed = false
+class SeedScene: SKScene {
+    var seed: SKSpriteNode?
     
-    // On instancie le contrôleur ici
-    @StateObject private var riveController = SeedRiveController()
-
-    var body: some View {
-        ZStack {
-            BackgroundSky()
-
-            // La vue Rive reçoit le contrôleur en paramètre
-            SeedView(controller: riveController)
-
-            VStack {
-                Spacer()
-
-                if !isNameConfirmed {
-                    VStack(spacing: 20) {
-                        TextField("Give a name", text: $seedName)
-                            .textFieldStyle(.roundedBorder)
-                            .padding(.horizontal, 40)
-                            .multilineTextAlignment(.center)
-
-                        Button("Confirm and water") {
-                            guard !seedName.isEmpty else { return }
-                            
-                            UserDefaults.standard.set(seedName, forKey: "sproutName")
-                            
-                            withAnimation {
-                                isNameConfirmed = true
-                            }
-                            
-                            // Déclenchement de l'animation Rive
-                            riveController.triggerWaterAnimation()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(seedName.isEmpty)
-                    }
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(16)
-                    .padding(.horizontal, 20)
-                } else {
-                    Text("Watering of \(seedName)...")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding()
-                }
-                
-                Spacer()
-                    .frame(height: 50)
-            }
+    override func didMove(to view: SKView) {
+        backgroundColor = .clear
+        scaleMode = .resizeFill
+        
+        guard UIImage(named: "Seed_idle_1") != nil else {
+            print("❌ Seed_idle_1 not found")
+            return
         }
+        
+        let texture = SKTexture(imageNamed: "Seed_idle_1")
+        let aspect = texture.size().height / texture.size().width
+        let seedHeight: CGFloat = size.height * 0.9
+        let seedWidth = seedHeight / aspect
+        
+        let seedNode = SKSpriteNode(texture: texture)
+        seedNode.size = CGSize(width: seedWidth, height: seedHeight)
+        seedNode.position = CGPoint(x: size.width/2, y: size.height/2)
+        seedNode.zPosition = 1
+        addChild(seedNode)
+        seed = seedNode
+        
+        playSeedIdle()
+    }
+    
+    // ✅ Seed idle loop — 13 frames
+    func playSeedIdle() {
+        guard let seed = seed else { return }
+        
+        let seedFrames = (1...13).map {
+            SKTexture(imageNamed: "Seed_idle_\($0)")
+        }
+        let seedIdle = SKAction.animate(
+            with: seedFrames,
+            timePerFrame: 0.15,
+            resize: false,
+            restore: false
+        )
+        seed.run(SKAction.repeatForever(seedIdle), withKey: "seedIdle")
+    }
+    
+    // ✅ Transformation seed → Sprout — 22 frames
+    func playSeedToSprout(completion: (() -> Void)? = nil) {
+        guard let seed = seed else { return }
+        seed.removeAction(forKey: "seedIdle")
+        
+        let transformFrames = (1...22).map {
+            SKTexture(imageNamed: "Seed_transform_\($0)")
+        }
+        let transform = SKAction.animate(
+            with: transformFrames,
+            timePerFrame: 0.06,
+            resize: false,
+            restore: false
+        )
+        
+        seed.run(transform) {
+            completion?()
+        }
+    }
+    
+}
+
+// ✅ Holder
+class SeedSceneHolder: ObservableObject {
+    let scene: SeedScene
+    
+    init() {
+        scene = SeedScene()
+        scene.size = CGSize(width: 300, height: 300)
+        scene.scaleMode = .resizeFill
+        scene.backgroundColor = .clear
+    }
+}
+
+// ✅ View
+struct SeedView: View {
+    @StateObject private var holder = SeedSceneHolder()
+    
+    var body: some View {
+        SpriteView(scene: holder.scene, options: [.allowsTransparency])
+            .frame(width: 300, height: 300)
     }
 }
 
 #Preview {
-    SeedOnboardingFlow()
+    ZStack {
+        BackgroundSky()
+        SeedView()
+    }
 }

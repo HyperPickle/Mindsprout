@@ -1,19 +1,19 @@
 import SwiftUI
 
-enum AdventuresRoute: Hashable {
+enum TripsRoute: Hashable {
     case tripDetail(tripID: UUID)
     case tripDayDetail(tripID: UUID, initialDayIndex: Int)
 }
 
-struct AdventuresTab: View {
+struct TripsTab: View {
     @Environment(ModalCoordinator.self) private var modalCoordinator
-    @State private var path: [AdventuresRoute] = []
+    @State private var path: [TripsRoute] = []
 
     var body: some View {
         NavigationStack(path: $path) {
             TripsOverviewView()
                 .toolbar(.hidden, for: .navigationBar)
-                .navigationDestination(for: AdventuresRoute.self) { route in
+                .navigationDestination(for: TripsRoute.self) { route in
                     switch route {
                     case .tripDetail(let tripID):
                         TripDetailView(tripID: tripID, onBack: { path.removeLast() })
@@ -26,6 +26,6 @@ struct AdventuresTab: View {
 }
 
 #Preview {
-    AdventuresTab()
+    TripsTab()
         .environment(ModalCoordinator())
 }

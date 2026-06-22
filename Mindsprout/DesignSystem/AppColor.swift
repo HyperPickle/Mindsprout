@@ -1,7 +1,9 @@
 import SwiftUI
+import UIKit
 
 enum AppColor {
     static let cardSurface = Color.white
+    static let graphite = Color(hex: 0x040E10)
     static let skyTop = Color(hex: 0xBFE3EF)
     static let skyBottom = Color(hex: 0xE9F4F2)
     static let grassTop = Color(hex: 0x9BC56A)
@@ -11,11 +13,24 @@ enum AppColor {
     static let primaryEdge = Color(hex: 0x4F7A2E)
     static let currency = Color(hex: 0xE8B84B)
 
-    static let ink = Color(hex: 0x5B4A38)
-    static let inkSecondary = Color(hex: 0x8B7B68)
-    static let inkMuted = Color(hex: 0xA89A86)
-    static let onPrimary = Color.white
-    static let onBackground = Color.white
+    static let label = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? .white
+            : UIColor(red: 4/255, green: 14/255, blue: 16/255, alpha: 1)
+    })
+
+    static let secondaryLabel = Color(UIColor.secondaryLabel)
+    static let placeholder = Color(UIColor.placeholderText)
+    static let separator = Color(UIColor.separator)
+
+    static let inverseLabel = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 4/255, green: 14/255, blue: 16/255, alpha: 1)
+            : .white
+    })
+
+
+    static let destructive = Color(hex: 0xC0392B)
 
     static let hairline = Color(hex: 0xD9CFBF)
     static let pillSelected = Color(hex: 0x6E5A48)

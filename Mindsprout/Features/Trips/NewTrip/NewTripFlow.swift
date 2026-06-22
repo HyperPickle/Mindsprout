@@ -30,7 +30,7 @@ extension TripType {
         case .solo: return "person.fill"
         case .family: return "figure.2.and.child.holdinghands"
         case .friends: return "person.2.fill"
-        case .business: return "briefcase.fill"
+        case .work: return "briefcase.fill"
         }
     }
 }
@@ -42,14 +42,14 @@ struct NewTripHeader: View {
     var body: some View {
         ZStack {
             Text(title)
-                .font(AppFont.headline)
-                .foregroundStyle(.white)
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
             HStack {
                 if let onLeading {
                     Button(action: onLeading) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColor.label)
                             .frame(width: 36, height: 36)
                     }
                 }
@@ -58,10 +58,11 @@ struct NewTripHeader: View {
         }
         .padding(.horizontal, Spacing.sm)
         .frame(height: 52)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+        .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         .padding(.horizontal, Spacing.sm)
         .padding(.top, Spacing.xs + 20)
         .padding(.bottom, Spacing.xs)
+        .transaction { $0.animation = nil }
     }
 }
 
@@ -85,7 +86,7 @@ private struct NewTripBasicsView: View {
                     .padding(Spacing.screenEdge)
                 }
                 Button("Continue", action: onContinue)
-                    .buttonStyle(.primary)
+                    .buttonStyle(.tripGlassCTA)
                     .disabled(!viewModel.canContinue)
                     .padding(.horizontal, Spacing.screenEdge)
                     .padding(.bottom, Spacing.xs)
@@ -98,7 +99,7 @@ private struct NewTripBasicsView: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text("Where are we going?")
                 .font(AppFont.bodyEmphasized)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColor.label)
             DestinationPickerView(
                 selectedCity: $viewModel.destination,
                 onCoordinateSelected: { lat, lng in
@@ -116,18 +117,21 @@ private struct NewTripBasicsView: View {
             HStack {
                 Text("Select Travel Dates")
                     .font(AppFont.bodyEmphasized)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColor.label)
                 Spacer()
                 Text("\(viewModel.durationDays) days")
                     .font(AppFont.callout)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(AppColor.label)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, 6)
-                    .glassEffect(.regular.tint(.white), in: Capsule())
+                    .tripGlassSurface(style: .neutral, in: Capsule())
             }
             RangeCalendarView(startDate: $viewModel.startDate, endDate: $viewModel.endDate)
                 .padding(Spacing.md)
-                .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .tripGlassSurface(
+                    style: .neutral,
+                    in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                )
         }
     }
 
@@ -135,7 +139,7 @@ private struct NewTripBasicsView: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Type of Travel")
                 .font(AppFont.bodyEmphasized)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColor.label)
             HStack(spacing: Spacing.sm) {
                 ForEach(TripTypeOption.allCases) { option in
                     TripTypeCell(option: option, isSelected: viewModel.type == option.type) {
@@ -168,23 +172,31 @@ struct NewTripExpectationsView: View {
                     VStack(alignment: .leading, spacing: Spacing.md) {
                         Text("What's your trip expectation?")
                             .font(AppFont.bodyEmphasized)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColor.label)
                             .padding(.top, Spacing.xs)
                         ForEach(presets, id: \.self) { preset in
                             ExpectationRow(text: preset, isSelected: viewModel.selectedExpectations.contains(preset)) {
                                 viewModel.toggle(preset)
                             }
                         }
-                        TextField("Write your own…", text: $viewModel.customExpectation)
+                        TextField(
+                            text: $viewModel.customExpectation,
+                            prompt: Text("Write your own…").foregroundStyle(AppColor.placeholder)
+                        ) {}
                             .font(AppFont.body)
                             .multilineTextAlignment(.center)
                             .padding(Spacing.md)
-                            .background(RoundedRectangle(cornerRadius: CornerRadius.pill).fill(.white.opacity(0.7)))
+                            .foregroundStyle(AppColor.label)
+                            .tint(AppColor.label)
+                            .tripGlassSurface(
+                                style: .neutral,
+                                in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
+                            )
                     }
                     .padding(Spacing.screenEdge)
                 }
                 Button("Save", action: onSave)
-                    .buttonStyle(.primary)
+                    .buttonStyle(.tripGlassCTA)
                     .padding(.horizontal, Spacing.screenEdge)
                     .padding(.bottom, Spacing.xs)
             }
@@ -202,7 +214,7 @@ struct NewTripExpectationsView: View {
         case .solo: return "Solo Trip"
         case .friends: return "Friends Trip"
         case .family: return "Family Trip"
-        case .business: return "Business Trip"
+        case .work: return "Work Trip"
         case .none: return "New Trip"
         }
     }
@@ -216,15 +228,15 @@ struct ExpectationRow: View {
     var body: some View {
         Button(action: action) {
             Text(text)
-                .font(AppFont.callout)
-                .foregroundStyle(isSelected ? .white : AppColor.ink)
+                .font(AppFont.button)
+                .foregroundStyle(AppColor.label)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.md)
                 .padding(.horizontal, Spacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
-                        .fill(isSelected ? AppColor.primary : .white)
+                .tripGlassSurface(
+                    style: isSelected ? .selected : .neutral,
+                    in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
                 )
                 .contentShape(RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
         }
@@ -233,7 +245,7 @@ struct ExpectationRow: View {
 }
 
 enum TripTypeOption: CaseIterable, Identifiable {
-    case solo, family, friends, business
+    case solo, family, friends, work
     var id: Self { self }
 
     var type: TripType {
@@ -241,7 +253,7 @@ enum TripTypeOption: CaseIterable, Identifiable {
         case .solo: return .solo
         case .family: return .family
         case .friends: return .friends
-        case .business: return .business
+        case .work: return .work
         }
     }
 
@@ -250,7 +262,7 @@ enum TripTypeOption: CaseIterable, Identifiable {
         case .solo: return "Solo"
         case .family: return "Family"
         case .friends: return "Friends"
-        case .business: return "Business"
+        case .work: return "Work"
         }
     }
 
@@ -262,28 +274,35 @@ struct TripTypeCell: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: Spacing.xs) {
                 Image(systemName: option.systemImage)
                     .font(.system(size: 22))
-                    .foregroundStyle(isSelected ? AppColor.primary : AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.label)
                 Text(option.title)
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.ink)
+                    .font(AppFont.bodyEmphasized)
+                    .foregroundStyle(AppColor.label)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, Spacing.sm)
-            .background(
+            .padding(.horizontal, 2)
+            .background {
+                Color.clear
+                    .tripGlassSurface(
+                        style: .neutral,
+                        in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    )
+            }
+            .overlay {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                    .fill(.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                    .stroke(isSelected ? AppColor.primary : .clear, lineWidth: 2)
-            )
+                    .strokeBorder(isSelected ? (colorScheme == .dark ? Color.white.opacity(0.72) : AppColor.graphite) : .clear, lineWidth: 2)
+            }
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
+        .aspectRatio(1, contentMode: .fit)
         .buttonStyle(.plain)
     }
 }
@@ -309,7 +328,7 @@ struct TripTypeCell: View {
         TripTypeCell(option: .solo, isSelected: true, action: {})
         TripTypeCell(option: .friends, isSelected: false, action: {})
         TripTypeCell(option: .family, isSelected: false, action: {})
-        TripTypeCell(option: .business, isSelected: false, action: {})
+        TripTypeCell(option: .work, isSelected: false, action: {})
     }
     .padding()
     .background(Color.blue)
