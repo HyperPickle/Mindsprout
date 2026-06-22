@@ -7,6 +7,8 @@ struct HomeTab: View {
     }
 
     @Binding var selection: AppTab
+    
+    @Environment(\.colorScheme) private var colorScheme
 
     @Environment(\.modelContext) private var context
     @Environment(ModalCoordinator.self) private var modalCoordinator
@@ -85,12 +87,12 @@ struct HomeTab: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(activeTrip?.destination ?? "No trip yet")
                     .font(.system(size: 25, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(hex: 0x705A4D))
+                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
                 Text(activeTrip?.country ?? "Start an adventure")
                     .font(.system(size: 15, weight: .regular, design: .rounded))
-                    .foregroundStyle(Color(hex: 0x705A4D))
+                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x705A4D))
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
             }
@@ -129,19 +131,13 @@ struct HomeTab: View {
                 Text("\(day) / \(totalDays)")
                     .font(.system(size: 12, weight: .black, design: .rounded))
                     .foregroundStyle(Color(hex: 0x705A4D))
-//                    .foregroundStyle(
-//                        LinearGradient(
-//                            colors: [.yellow, .orange],
-//                            startPoint: .leading,
-//                            endPoint: .trailing
-//                        )
-//                        )
+
 
                     .monospacedDigit()
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            //        .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))}
+
         }
 
     }
@@ -159,7 +155,7 @@ struct HomeTab: View {
                 
                        Text("\(displaySprout.currency)")
                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                           .foregroundStyle(Color(hex: 0x6B4C2A))
+                           .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
                            .monospacedDigit()
                            .lineLimit(1)
                         }

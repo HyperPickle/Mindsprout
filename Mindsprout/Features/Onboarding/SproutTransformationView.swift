@@ -16,10 +16,10 @@ import SwiftUI
 import RiveRuntime
 
 struct SproutTransformationView: View {
-    @AppStorage("sproutName") var sproutName = ""
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
-    
-    // On instancie un nouveau contrôleur Rive propre pour cet écran (ou on le configure pour afficher la Graine/Sprout au repos)
+    @AppStorage("sproutName") var sproutName = ""
+
     @StateObject private var riveController = SeedRiveController()
     
     @State private var showText = false
@@ -28,7 +28,6 @@ struct SproutTransformationView: View {
     
     var body: some View {
         ZStack {
-            // ✅ Fond
             BackgroundSky()
                 .ignoresSafeArea()
             
@@ -60,6 +59,7 @@ struct SproutTransformationView: View {
                 if showButton {
                     Button {
                         hasCompletedOnboarding = true
+                        isLoggedIn = true
                         onFinish()
                     } label: {
                         Text("Start my journey!")

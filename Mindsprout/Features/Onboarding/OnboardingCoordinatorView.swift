@@ -1,21 +1,33 @@
-import SwiftUI
+
+    import SwiftUI
 
 struct OnboardingCoordinatorView: View {
     enum OnboardingStep {
         case welcome
+        case profilePhoto(userID: String)
         case namingSprout(userID: String)
         case transformation(userID: String)
-        case profilePhoto(userID: String)
     }
-
-    @Environment(\.appEnvironment) private var env
+    
+    @Environment(\.appEnvironment) private var env  // ← déclaration manquante
     @State private var currentStep: OnboardingStep = .welcome
-
+    
     var body: some View {
         Group {
             switch currentStep {
             case .welcome:
                 WelcomeView { userID in
+                    withAnimation {
+                        currentStep = .profilePhoto(userID: userID)
+                    }
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .leading)
+                ))
+                
+            case .profilePhoto(let userID):
+                ProfilePhotoOnboardingView {
                     withAnimation {
                         currentStep = .namingSprout(userID: userID)
                     }
@@ -24,7 +36,7 @@ struct OnboardingCoordinatorView: View {
                     insertion: .move(edge: .trailing),
                     removal: .move(edge: .leading)
                 ))
-
+                
             case .namingSprout(let userID):
                 SproutNamingView(onContinue: {
                     withAnimation {
@@ -35,24 +47,13 @@ struct OnboardingCoordinatorView: View {
                     insertion: .move(edge: .trailing),
                     removal: .move(edge: .leading)
                 ))
-
+                
             case .transformation(let userID):
                 SproutTransformationView(onFinish: {
                     withAnimation {
-                        currentStep = .profilePhoto(userID: userID)
+                        env.auth.handleAuthorization(userID: userID)
                     }
                 })
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing),
-                    removal: .move(edge: .leading)
-                ))
-
-            case .profilePhoto(let userID):
-                ProfilePhotoOnboardingView {
-                    withAnimation {
-                        env.auth.handleAuthorization(userID: userID) 
-                    }
-                }
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing),
                     removal: .move(edge: .leading)
@@ -61,8 +62,7 @@ struct OnboardingCoordinatorView: View {
         }
     }
 }
-
-#Preview {
-    OnboardingCoordinatorView()
-        .environment(\.appEnvironment, .preview)
-}
+    #Preview {
+        OnboardingCoordinatorView()
+            .environment(\.appEnvironment, .preview)
+    }
