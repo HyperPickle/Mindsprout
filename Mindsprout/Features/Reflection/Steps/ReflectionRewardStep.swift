@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import SwiftData
 import SpriteKit
+import RiveRuntime
 
 struct ReflectionRewardAnimationPlan: Equatable {
     var initialXP: Int
@@ -28,7 +29,7 @@ struct ReflectionRewardStep: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var sprouts: [Sprout]
-    @StateObject private var sproutHolder = SproutSceneHolder()
+    @StateObject private var controller = SproutRiveController()
     @State private var displayedXP = 0
     @State private var lastRewardXP: Int?
     @State private var didPlayHaptic = false
@@ -88,9 +89,9 @@ struct ReflectionRewardStep: View {
     @ViewBuilder
     private var sproutSection: some View {
         if animationPlan.shouldAnimateSprout {
-            SpriteView(scene: sproutHolder.scene, options: [.allowsTransparency])
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+            controller.riveVM.view()
+                           .frame(maxWidth: .infinity, maxHeight: .infinity)
+                           .allowsHitTesting(false)
         } else {
             Image("sprout_stage0_idle")
                 .resizable()
@@ -120,10 +121,9 @@ struct ReflectionRewardStep: View {
             didPlayHaptic = true
         }
 
-        sproutHolder.scene.updateState(.idle)
-
+        controller.updateState(.idle)
         if animationPlan.shouldAnimateSprout {
-            sproutHolder.scene.playLevelUp()
+            controller.playLevelUp(willEvolve: false)
         }
 
         guard animationPlan.shouldAnimateXP else {

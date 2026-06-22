@@ -43,7 +43,7 @@ struct RootView: View {
                 TripsTab()
             }
             Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
-                HomeTab()
+                HomeTab(selection: .constant(.home))
             }
             Tab(AppTab.profile.title, systemImage: AppTab.profile.systemImage, value: AppTab.profile) {
                 ProfileTab()

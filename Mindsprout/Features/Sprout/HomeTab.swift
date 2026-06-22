@@ -7,6 +7,9 @@ struct HomeTab: View {
     private let homeCTAHorizontalPadding: CGFloat = Spacing.screenEdge
     private let progressionEngine = SproutProgressionEngine()
 
+    @Binding var selection: AppTab
+
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var context
     @Environment(ModalCoordinator.self) private var modalCoordinator
     @Environment(\.appEnvironment) private var env
@@ -15,16 +18,12 @@ struct HomeTab: View {
     @Query(sort: \Reflection.date, order: .reverse) private var reflections: [Reflection]
     @Query(sort: \Sprout.createdAt) private var sprouts: [Sprout]
 
-    private var pillTextColor: Color {
-        AppColor.label
-    }
+    @State private var bubbleOffset: CGFloat = 0
 
-    private var activeTrip: Trip? {
-        TripResolver.active(in: trips)
-    }
+    private var pillTextColor: Color { AppColor.label }
 
+    private var activeTrip: Trip? { TripResolver.active(in: trips) }
     private var sprout: Sprout? { sprouts.first }
-
     private var displaySprout: Sprout { sprout ?? Sprout() }
 
     private var todayCompletedReflection: Reflection? {
@@ -37,6 +36,10 @@ struct HomeTab: View {
             hasActiveTrip: activeTrip != nil,
             completedTodayReflectionID: todayCompletedReflection?.id
         ).ctaAction
+    }
+
+    private var tripPillWidth: CGFloat {
+        activeTrip == nil ? 200 : 150
     }
 
     // MARK: - Hungry State
@@ -69,10 +72,8 @@ struct HomeTab: View {
             }
             .task {
                 ensureSproutExists()
-                // Vérifie toutes les heures si le state hungry doit s'activer
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .seconds(3600))
-                    // sproutDisplayState est computed → SwiftUI re-render auto
                 }
             }
             .background(dashboardBackground)
@@ -97,26 +98,10 @@ struct HomeTab: View {
             let layout = HomeDashboardLayout(size: proxy.size)
 
             ZStack {
+                // Sprout
                 sproutStage(layout: layout)
 
-                if sproutDisplayState == .hungry {
-                    Button {
-                        selection = .reflect
-                    } label: {
-                        Image("DropBubble")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 60, height: 60)
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
-                    .position(
-                        x: proxy.size.width / 2,
-                        y: proxy.size.height / 2 - 100  
-                    )
-                    .transition(.scale.combined(with: .opacity))
-                    .animation(.spring(response: 0.4, dampingFraction: 0.6), value: sproutDisplayState == .hungry)
-                }
-
+                // Top row: trip pill + day badge + currency
                 tripPill
                     .frame(width: layout.tripGroupWidth, height: layout.tripPillHeight)
                     .position(x: layout.tripGroupCenterX, y: layout.topRowCenterY)
@@ -124,82 +109,141 @@ struct HomeTab: View {
                 currencyButton
                     .frame(height: layout.currencyPillHeight)
                     .position(x: layout.currencyPillCenterX, y: layout.topRowCenterY)
+
+                // ✅ DropBubble uniquement si hungry
+                if sproutDisplayState == .hungry {
+                    Button {
+                        if let activeTrip {
+                            modalCoordinator.present(.reflection(tripID: activeTrip.id))
+                        }
+                    } label: {
+                        Image("DropBubble")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 60, height: 60)
+                            .offset(y: bubbleOffset)
+                            .onAppear {
+                                withAnimation(
+                                    .easeInOut(duration: 0.8)
+                                    .repeatForever(autoreverses: true)
+                                ) {
+                                    bubbleOffset = -8
+                                }
+                            }
+                            .onDisappear {
+                                bubbleOffset = 0
+                            }
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
+                    .position(
+                        x: proxy.size.width / 2,
+                        y: proxy.size.height / 2 - 160
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                    .animation(
+                        .spring(response: 0.4, dampingFraction: 0.6),
+                        value: sproutDisplayState == .hungry
+                    )
+                }
             }
         }
     }
 
-    private func topRow(layout: HomeDashboardLayout) -> some View {
-        HStack(alignment: .top, spacing: layout.topRowSpacing) {
-            tripCard(layout: layout)
-                .frame(width: tripCardWidth(in: layout), alignment: .topLeading)
+    // MARK: - Trip Pill
 
-            xpProgressButton(layout: layout)
-                .frame(width: progressCardWidth(in: layout), alignment: .topLeading)
+    private var tripPill: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(activeTrip?.destination ?? "No trip yet")
+                    .font(.system(size: 25, weight: .bold, design: .rounded))
+                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+                Text(activeTrip?.country ?? "Start an adventure")
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x705A4D))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+            }
+            Spacer()
         }
-        .padding(.horizontal, layout.topRowHorizontalInset)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, 16)
+        .padding(.trailing, activeTrip == nil ? 16 : 0)
+        .frame(width: tripPillWidth, height: 48)
+        .background(alignment: .leading) {
+            Color.clear
+                .frame(width: activeTrip == nil ? tripPillWidth : tripPillWidth * 1.3, height: 60)
+                .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .overlay(alignment: .trailing) {
+            if let activeTrip {
+                dayBadge(
+                    day: displayedDayIndex(for: activeTrip),
+                    totalDays: tripDuration(for: activeTrip)
+                )
+                .scaleEffect(1.35)
+                .offset(x: 46, y: 18)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
-    private func tripCard(layout: HomeDashboardLayout) -> some View {
-        VStack(alignment: .leading, spacing: layout.topCardTextSpacing) {
-            Text(activeTripDestinationText)
-                .font(AppFont.sectionTitle)
+    private func dayBadge(day: Int, totalDays: Int) -> some View {
+        ZStack {
+            Image("Cloud")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 60, height: 60)
                 .foregroundStyle(pillTextColor)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(activeTripCountryText)
-                .font(AppFont.callout)
-                .foregroundStyle(pillTextColor.opacity(0.92))
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 0) {
+                Text("day")
+                    .font(.system(size: 8, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Color(hex: 0x705A4D))
+                    .textCase(.uppercase)
+                Text("\(day) / \(totalDays)")
+                    .font(.system(size: 12, weight: .black, design: .rounded))
+                    .foregroundStyle(Color(hex: 0x705A4D))
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal, layout.topCardHorizontalPadding)
-        .padding(.vertical, layout.topCardVerticalPadding)
-        .frame(
-            minWidth: 0,
-            maxWidth: .infinity,
-            minHeight: layout.topCardMinHeight,
-            alignment: .topLeading
-        )
-        .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 
-    private func xpProgressButton(layout: HomeDashboardLayout) -> some View {
+    // MARK: - Currency Button
+
+    private var currencyButton: some View {
         Button {
-            modalCoordinator.present(.xpDetail)
+            modalCoordinator.present(.shop)
         } label: {
-            VStack(alignment: .leading, spacing: layout.topCardTextSpacing) {
-                Text(xpProgressValueText)
-                    .font(AppFont.metric)
-                    .foregroundStyle(pillTextColor)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 4) {
+                Image("Points")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+                    .offset(x: -4, y: -4)
+                Text("\(displaySprout.currency)")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
+                    .monospacedDigit()
+                    .lineLimit(1)
             }
-            .padding(.horizontal, layout.topCardHorizontalPadding)
-            .padding(.vertical, layout.topCardVerticalPadding)
-            .frame(
-                minWidth: 0,
-                maxWidth: .infinity,
-                minHeight: layout.topCardMinHeight,
-                alignment: .topLeading
-            )
-            .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-            .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            .frame(height: 36)
+            .padding(.trailing, 13)
+            .glassEffect(in: Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("View experience details")
+        .accessibilityLabel("Open shop")
     }
 
     // MARK: - Sprout Stage
 
     private func sproutStage(layout: HomeDashboardLayout) -> some View {
         SproutView(
-            state: displaySprout.state.homeDisplayState,
-            restingVerticalOffset: layout.sproutVerticalOffset
+            state: sproutDisplayState,
         )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilityHidden(true)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Bottom Panel
@@ -253,53 +297,44 @@ struct HomeTab: View {
         return max(progress.span - progress.within, 0)
     }
 
-    private var activeTripDestinationText: String {
-        activeTrip?.destination ?? "No trip yet"
+    private func tripDuration(for trip: Trip) -> Int {
+        let components = Calendar.current.dateComponents([.day], from: trip.startDate, to: trip.endDate)
+        return max(1, (components.day ?? 0) + 1)
     }
 
-    private var activeTripCountryText: String {
-        activeTrip?.country ?? "Start a trip"
-    }
-
-    private func tripCardWidth(in layout: HomeDashboardLayout) -> CGFloat {
-        let estimatedWidth = max(
-            measuredTextWidth(activeTripDestinationText, font: .preferredFont(forTextStyle: .title3)),
-            measuredTextWidth(activeTripCountryText, font: .preferredFont(forTextStyle: .callout))
-        ) + (layout.topCardHorizontalPadding * 2)
-
-        return min(max(estimatedWidth, layout.tripCardMinWidth), layout.tripCardMaxWidth)
-    }
-
-    private func progressCardWidth(in layout: HomeDashboardLayout) -> CGFloat {
-        let estimatedWidth = measuredTextWidth(
-            xpProgressValueText,
-            font: .preferredFont(forTextStyle: .headline)
-        ) + (layout.topCardHorizontalPadding * 2)
-
-        return min(max(estimatedWidth, layout.progressCardMinWidth), layout.progressCardMaxWidth)
-    }
-
-    private func measuredTextWidth(_ text: String, font: UIFont) -> CGFloat {
-        ceil((text as NSString).size(withAttributes: [.font: font]).width)
+    private func displayedDayIndex(for trip: Trip) -> Int {
+        min(dayIndex(for: trip), tripDuration(for: trip))
     }
 
     private func abbreviatedXP(_ value: Int) -> String {
         guard value >= 1_000 else { return "\(value)" }
-
         let abbreviated = Double(value) / 1_000
-        if value.isMultiple(of: 1_000) {
-            return "\(Int(abbreviated))K"
-        }
-
+        if value.isMultiple(of: 1_000) { return "\(Int(abbreviated))K" }
         return String(format: "%.1fK", abbreviated)
     }
 }
+
+// MARK: - Layout
 
 struct HomeDashboardLayout {
     static let sproutAspectRatio: CGFloat = 507.0 / 800.0
     static let referenceCTAHeight: CGFloat = HomeCTAButton.referenceHeight
     static let ctaScale: CGFloat = HomeCTAButton.widthScale
 
+    let topRowCenterY: CGFloat
+    let tripGroupCenterX: CGFloat
+    let tripGroupWidth: CGFloat
+    let tripPillHeight: CGFloat
+    let currencyPillCenterX: CGFloat
+    let currencyPillHeight: CGFloat
+    let sproutVerticalOffset: CGFloat
+    let sproutViewportSize: CGSize
+    let sproutWidth: CGFloat
+    let sproutHeight: CGFloat
+    let ctaWidth: CGFloat
+    let ctaHeight: CGFloat
+
+    // Propriétés pour topRow (version 1)
     let topRowTopInset: CGFloat
     let topRowHorizontalInset: CGFloat
     let topRowSpacing: CGFloat
@@ -311,12 +346,6 @@ struct HomeDashboardLayout {
     let tripCardMaxWidth: CGFloat
     let progressCardMinWidth: CGFloat
     let progressCardMaxWidth: CGFloat
-    let sproutWidth: CGFloat
-    let sproutHeight: CGFloat
-    let sproutVerticalOffset: CGFloat
-    let sproutViewportSize: CGSize
-    let ctaWidth: CGFloat
-    let ctaHeight: CGFloat
 
     init(size: CGSize) {
         let referenceWidth: CGFloat = 402
@@ -324,6 +353,27 @@ struct HomeDashboardLayout {
         let scaleX = size.width / referenceWidth
         let scaleY = size.height / referenceHeight
 
+        // Trip pill + currency
+        topRowCenterY = 50 * scaleY
+        tripGroupCenterX = (220 * scaleX / 2) + (8 * scaleX)
+        tripGroupWidth = 250 * scaleX
+        tripPillHeight = 60 * scaleY
+        currencyPillCenterX = 338 * scaleX
+        currencyPillHeight = 42 * scaleY
+
+        // Sprout
+        let sproutCenterY = 455 * scaleY
+        sproutHeight = 400 * scaleY
+        sproutWidth = sproutHeight * Self.sproutAspectRatio
+        sproutVerticalOffset = (size.height / 2) - sproutCenterY
+        sproutViewportSize = size
+
+        // CTA
+        let currentCTAWidth = max(0, size.width - (Spacing.screenEdge * 2))
+        ctaWidth = currentCTAWidth * Self.ctaScale
+        ctaHeight = Self.referenceCTAHeight * Self.ctaScale
+
+        // Top row cards
         topRowTopInset = max(18, 26 * scaleY)
         topRowHorizontalInset = max(14, Spacing.screenEdge * scaleX)
         topRowSpacing = max(8, 10 * scaleX)
@@ -337,16 +387,6 @@ struct HomeDashboardLayout {
         tripCardMaxWidth = availableWidth * 0.55
         progressCardMinWidth = min(max(132, 144 * scaleX), availableWidth)
         progressCardMaxWidth = availableWidth - tripCardMaxWidth
-
-        let sproutCenterY = 455 * scaleY
-        sproutHeight = 400 * scaleY
-        sproutWidth = sproutHeight * Self.sproutAspectRatio
-        sproutVerticalOffset = (size.height / 2) - sproutCenterY
-        sproutViewportSize = size
-
-        let currentCTAWidth = max(0, size.width - (Spacing.screenEdge * 2))
-        ctaWidth = currentCTAWidth * Self.ctaScale
-        ctaHeight = Self.referenceCTAHeight * Self.ctaScale
     }
 }
 
@@ -392,7 +432,7 @@ private enum HomeTabPreviewData {
 // MARK: - Previews
 
 #Preview("Home - Active Trip") {
-    HomeTab()
+    HomeTab(selection: .constant(.home))
         .environment(ModalCoordinator())
         .environment(\.appEnvironment, .preview)
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: true, fedToday: false))
@@ -400,7 +440,7 @@ private enum HomeTabPreviewData {
 }
 
 #Preview("Home - Today's Reflection") {
-    HomeTab()
+    HomeTab(selection: .constant(.home))
         .environment(ModalCoordinator())
         .environment(\.appEnvironment, .preview)
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: true, fedToday: true))
@@ -408,7 +448,7 @@ private enum HomeTabPreviewData {
 }
 
 #Preview("Home - No Trip Small") {
-    HomeTab()
+    HomeTab(selection: .constant(.home))
         .environment(ModalCoordinator())
         .environment(\.appEnvironment, .preview)
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: false, fedToday: false))
@@ -419,7 +459,6 @@ private enum HomeTabPreviewData {
     HomeTab(selection: .constant(.home))
         .environment(ModalCoordinator())
         .environment(\.appEnvironment, .preview)
-        // fedToday: false + heure >= 20 → hungry
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: true, fedToday: false))
         .frame(width: 402, height: 874)
 }

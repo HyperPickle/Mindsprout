@@ -6,88 +6,85 @@
 //
 
 import SwiftUI
-import SpriteKit
-import SwiftData
+import RiveRuntime
 
 struct SproutTransformationView: View {
-    @Query private var sprouts: [Sprout]
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    @AppStorage("sproutName") var sproutName = ""
 
-    private var sproutName: String { sprouts.first?.name ?? "" }
-    @StateObject private var seedHolder = SeedSceneHolder()
-    @State private var showSprout = false
+    @StateObject private var riveController = SeedRiveController()
+
     @State private var showText = false
     @State private var showButton = false
     var onFinish: () -> Void
-    
+
+    private let waterAnimationDuration: Double = 17.0
+
     var body: some View {
         ZStack {
-            // ✅ Fond
             BackgroundSky()
-            .ignoresSafeArea()
-            
+                .ignoresSafeArea()
+
+            SeedView(controller: riveController)
+
             VStack(spacing: 32) {
                 Spacer()
-                
-                // ✅ Seed/Sprout animation
-                ZStack {
-                    // Seed qui se transforme
-                    SpriteView(scene: seedHolder.scene, options: [.allowsTransparency])
-                        .frame(width: 250, height: 250)
-                }
-                
-                // ✅ Texte qui apparaît après la transformation
+
                 if showText {
                     VStack(spacing: 8) {
                         Text("Meet \(sproutName)!")
-                            .font(AppFont.screenTitle)
-                            .foregroundColor(AppColor.label)
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
 
-                        Text("Your travel companion is ready\nto explore the world with you ")
-                            .font(AppFont.callout)
-                            .foregroundColor(AppColor.label.opacity(0.9))
+                        Text("Your travel companion is ready\nto explore the world with you")
+                            .font(.system(size: 16, design: .rounded))
+                            .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
                     }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
-                
-                Spacer()
-                
-                // ✅ Bouton qui apparaît après
+
+                Spacer().frame(height: 20)
+
                 if showButton {
                     Button {
                         hasCompletedOnboarding = true
+                        isLoggedIn = true
                         onFinish()
                     } label: {
                         Text("Start my journey!")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(hex: 0x4CAF50))
+                            .clipShape(RoundedRectangle(cornerRadius: 30))
                     }
-                    .buttonStyle(.primaryWhite)
                     .padding(.horizontal, 24)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    
+
                     Spacer().frame(height: 40)
                 }
             }
         }
         .onAppear {
-            startTransformation()
+            startTransformationFlow()
         }
     }
-    
-    func startTransformation() {
-        // ✅ Lance la transformation dès l'apparition
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            seedHolder.scene.playSeedToSprout {
-                // ✅ Texte apparaît après la transformation
-                withAnimation(.easeOut(duration: 0.6)) {
-                    showText = true
-                }
-                
-                // ✅ Bouton apparaît un peu après
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    withAnimation(.easeOut(duration: 0.5)) {
-                        showButton = true
-                    }
+
+    func startTransformationFlow() {
+        // 1. Lance l'animation water dès l'apparition
+        riveController.triggerWaterAnimation()
+
+        // 2. Après la fin de l'animation → affiche le texte et le bouton
+        DispatchQueue.main.asyncAfter(deadline: .now() + waterAnimationDuration) {
+            withAnimation(.easeOut(duration: 0.6)) {
+                showText = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    showButton = true
                 }
             }
         }
@@ -95,5 +92,5 @@ struct SproutTransformationView: View {
 }
 
 #Preview {
-    SproutTransformationView(onFinish:{})
+    SproutTransformationView(onFinish: {})
 }
