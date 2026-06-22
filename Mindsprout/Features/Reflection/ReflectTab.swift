@@ -7,6 +7,7 @@ struct ReflectTab: View {
     @Environment(ModalCoordinator.self) private var modalCoordinator
 
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
+    
 
     private var activeTrip: Trip? {
         TripResolver.active(in: trips)
@@ -27,7 +28,6 @@ struct ReflectTab: View {
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                // Forces NavigationStack content to clear the FloatingTabBar circle
                 Color.clear.frame(height: 100)
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -54,13 +54,9 @@ struct ReflectTab: View {
 }
 
 #Preview {
-    // Create an in-memory ModelContainer for SwiftData previews
     let schema = Schema([Trip.self])
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: schema, configurations: [config])
-
-    // Optionally insert mock data here if needed
-    // let context = container.mainContext
 
     return ReflectTab(selection: .constant(.reflect))
         .environment(\.modelContext, container.mainContext)

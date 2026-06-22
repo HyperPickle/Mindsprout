@@ -49,6 +49,24 @@ final class SproutRiveController: ObservableObject {
             updateState(pending)
         }
     }
+    
+    func checkAndApplyHungryState() {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let hasReflectedToday = UserDefaults.standard.bool(forKey: todayReflectionKey)
+        
+        if !hasReflectedToday && hour >= 20 {
+            updateState(.hungry)
+        } else if currentState == .hungry {
+            // Reset si l'utilisateur a reflété entre temps
+            updateState(.idle)
+        }
+    }
+
+    private var todayReflectionKey: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return "reflected_\(formatter.string(from: Date()))"
+    }
 
     // MARK: - App State
 
@@ -321,7 +339,10 @@ struct SproutView: View {
                         y: baseY + totalOffset.height
                     )
                     .gesture(dragGesture)
-                    .onTapGesture { controller.onTap() }
+                    .onTapGesture {
+                            controller.onTap()
+                    }
+                
             }
         }
         .ignoresSafeArea()

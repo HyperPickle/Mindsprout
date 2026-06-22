@@ -9,7 +9,6 @@ struct HomeTab: View {
     @Binding var selection: AppTab
     
     @Environment(\.colorScheme) private var colorScheme
-
     @Environment(\.modelContext) private var context
     @Environment(ModalCoordinator.self) private var modalCoordinator
     @Environment(\.appEnvironment) private var env
@@ -18,25 +17,39 @@ struct HomeTab: View {
     @Query(sort: \Reflection.date, order: .reverse) private var reflections: [Reflection]
     @Query(sort: \Sprout.createdAt) private var sprouts: [Sprout]
 
-    private var pillTextColor: Color {
-        .white
-    }
+    private var pillTextColor: Color { .white }
 
     private var activeTrip: Trip? {
         TripResolver.active(in: trips)
     }
 
-    private var sprout: Sprout? {
-        sprouts.first
-    }
+    private var sprout: Sprout? { sprouts.first }
 
-    private var displaySprout: Sprout {
-        sprout ?? Sprout()
-    }
+    private var displaySprout: Sprout { sprout ?? Sprout() }
 
     private var ctaAction: HomeDashboardCTAAction {
         HomeDashboardState(hasActiveTrip: activeTrip != nil).ctaAction
     }
+
+    // MARK: - Hungry State
+
+    private var sproutDisplayState: SproutState {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if !reflectedToday() && hour >= 20 {
+            return .hungry
+        }
+        return displaySprout.state.homeDisplayState
+    }
+
+    private func reflectedToday() -> Bool {
+        let today = Calendar.current.startOfDay(for: Date())
+        return reflections.contains { reflection in
+            Calendar.current.startOfDay(for: reflection.date) == today
+            && !reflection.isDraft
+        }
+    }
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -48,12 +61,17 @@ struct HomeTab: View {
             }
             .task {
                 ensureSproutExists()
+                // Vérifie toutes les heures si le state hungry doit s'activer
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(3600))
+                    // sproutDisplayState est computed → SwiftUI re-render auto
+                }
             }
-            .background(
-                dashboardBackground
-            )
+            .background(dashboardBackground)
         }
     }
+
+    // MARK: - Background
 
     private var dashboardBackground: some View {
         Image("HomeBackground")
@@ -61,6 +79,8 @@ struct HomeTab: View {
             .scaledToFill()
             .ignoresSafeArea()
     }
+
+    // MARK: - Dashboard Content
 
     private var dashboardContent: some View {
         GeometryReader { proxy in
@@ -70,6 +90,24 @@ struct HomeTab: View {
                 sproutStage(layout: layout)
                     .frame(width: proxy.size.width, height: proxy.size.height)
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+
+                if sproutDisplayState == .hungry {
+                    Button {
+                        selection = .reflect
+                    } label: {
+                        Image("DropBubble")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 60, height: 60)
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
+                    .position(
+                        x: proxy.size.width / 2,
+                        y: proxy.size.height / 2 - 100  
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                    .animation(.spring(response: 0.4, dampingFraction: 0.6), value: sproutDisplayState == .hungry)
+                }
 
                 tripPill
                     .frame(width: layout.tripGroupWidth, height: layout.tripPillHeight)
@@ -81,6 +119,8 @@ struct HomeTab: View {
             }
         }
     }
+
+    // MARK: - Trip Pill
 
     private var tripPill: some View {
         HStack {
@@ -108,21 +148,24 @@ struct HomeTab: View {
         }
         .overlay(alignment: .trailing) {
             if let activeTrip {
-                dayBadge(day: displayedDayIndex(for: activeTrip), totalDays: tripDuration(for: activeTrip))
-                    .scaleEffect(1.35)
-                    .offset(x: 46, y: 18)
+                dayBadge(
+                    day: displayedDayIndex(for: activeTrip),
+                    totalDays: tripDuration(for: activeTrip)
+                )
+                .scaleEffect(1.35)
+                .offset(x: 46, y: 18)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
     private func dayBadge(day: Int, totalDays: Int) -> some View {
-        ZStack{
+        ZStack {
             Image("Cloud")
                 .resizable()
-                    .scaledToFit()
-                    .frame(width: 60, height: 60)  // ← ajuste la taille
-                    .foregroundStyle(pillTextColor)
+                .scaledToFit()
+                .frame(width: 60, height: 60)
+                .foregroundStyle(pillTextColor)
             VStack(spacing: 0) {
                 Text("day")
                     .font(.system(size: 8, weight: .heavy, design: .rounded))
@@ -131,49 +174,50 @@ struct HomeTab: View {
                 Text("\(day) / \(totalDays)")
                     .font(.system(size: 12, weight: .black, design: .rounded))
                     .foregroundStyle(Color(hex: 0x705A4D))
-
-
                     .monospacedDigit()
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-
         }
-
     }
+
+    // MARK: - Currency Button
 
     private var currencyButton: some View {
         Button {
             modalCoordinator.present(.shop)
         } label: {
             HStack(spacing: 4) {
-                       Image("Points")
-                           .resizable()
-                           .scaledToFit()
-                           .frame(width: 44, height: 44)
-                           .offset(x: -4, y: -4)
-                
-                       Text("\(displaySprout.currency)")
-                           .font(.system(size: 18, weight: .bold, design: .rounded))
-                           .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
-                           .monospacedDigit()
-                           .lineLimit(1)
-                        }
-                   .frame(height: 36)
-                   .padding(.trailing, 13)
-                   .glassEffect(in: Capsule())
-                   
-               }
-               .buttonStyle(.plain)
-               .accessibilityLabel("Open shop")
-
+                Image("Points")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+                    .offset(x: -4, y: -4)
+                Text("\(displaySprout.currency)")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
+            .frame(height: 36)
+            .padding(.trailing, 13)
+            .glassEffect(in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open shop")
     }
+
+    // MARK: - Sprout Stage
 
     private func sproutStage(layout: HomeDashboardLayout) -> some View {
-        SproutView(state: displaySprout.state.homeDisplayState)
-            .frame(width: 300, height: 300)
-            .accessibilityHidden(true)
+        SproutView(
+            state: sproutDisplayState,
+        )
+        .frame(width: 300, height: 300)
+        .accessibilityHidden(true)
     }
+
+    // MARK: - Bottom Panel
 
     private var bottomPanel: some View {
         VStack(spacing: Spacing.sm) {
@@ -209,6 +253,8 @@ struct HomeTab: View {
         }
     }
 
+    // MARK: - Helpers
+
     private func ensureSproutExists() {
         guard sprouts.isEmpty else { return }
         context.insert(Sprout())
@@ -224,6 +270,8 @@ struct HomeTab: View {
         min(dayIndex(for: trip), tripDuration(for: trip))
     }
 }
+
+// MARK: - Layout
 
 private struct HomeDashboardLayout {
     let topRowCenterY: CGFloat
@@ -247,16 +295,16 @@ private struct HomeDashboardLayout {
         tripGroupCenterX = (220 * scaleX / 2) + (8 * scaleX)
         tripGroupWidth = 250 * scaleX
         tripPillHeight = 60 * scaleY
-
         currencyPillCenterX = 338 * scaleX
         currencyPillHeight = 42 * scaleY
-
         sproutCenterX = 201 * scaleX
         sproutCenterY = 455 * scaleY
         sproutWidth = 260 * scaleX
         sproutHeight = 360 * scaleY
     }
 }
+
+// MARK: - Preview Data
 
 private enum HomeTabPreviewData {
     static func makeContainer(activeTrip: Bool, fedToday: Bool) -> ModelContainer {
@@ -295,6 +343,8 @@ private enum HomeTabPreviewData {
     }
 }
 
+// MARK: - Previews
+
 #Preview("Home - Active Trip") {
     HomeTab(selection: .constant(.home))
         .environment(ModalCoordinator())
@@ -317,4 +367,13 @@ private enum HomeTabPreviewData {
         .environment(\.appEnvironment, .preview)
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: false, fedToday: false))
         .frame(width: 320, height: 568)
+}
+
+#Preview("Home - Hungry") {
+    HomeTab(selection: .constant(.home))
+        .environment(ModalCoordinator())
+        .environment(\.appEnvironment, .preview)
+        // fedToday: false + heure >= 20 → hungry
+        .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: true, fedToday: false))
+        .frame(width: 402, height: 874)
 }
