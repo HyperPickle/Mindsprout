@@ -4,10 +4,11 @@ import MapKit
 
 struct NewTripFlow: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = NewTripViewModel()
     @State private var showExpectations = false
-
+    
     var body: some View {
         NavigationStack {
             NewTripBasicsView(viewModel: viewModel) { showExpectations = true }

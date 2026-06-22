@@ -4,11 +4,15 @@ import SwiftData
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Environment(ModalCoordinator.self) private var modalCoordinator
     @Environment(\.appEnvironment) private var env
     @Query private var sprouts: [Sprout]
     @State private var showSignOutConfirm = false
     @State private var showPrivacyPolicy = false
+    @State private var showRenameSprout = false
+    @State private var newSproutName = ""
+    @AppStorage("sproutName") private var savedSproutName = ""
 
     private var sproutName: String { sprouts.first?.name.isEmpty == false ? sprouts.first!.name : "Sprout" }
 
@@ -49,6 +53,10 @@ struct SettingsView: View {
                         SettingsActionButton(title: "Account", icon: "person.crop.circle") {
                             modalCoordinator.present(.account)
                         }
+                        SettingsActionButton(title: "Rename Sprout", icon: "leaf") {
+                            newSproutName = sproutName
+                            showRenameSprout = true
+                        }
                         SettingsActionButton(title: "Appearance", icon: "eye") {
                             modalCoordinator.present(.themeSettings)
                         }
@@ -78,6 +86,13 @@ struct SettingsView: View {
                     .ignoresSafeArea()
             }
         }
+        .alert("Rename Sprout", isPresented: $showRenameSprout) {
+            TextField("Sprout's name", text: $newSproutName)
+            Button("Save") {
+                saveSproutName()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
         .alert("Sign Out", isPresented: $showSignOutConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Sign Out", role: .destructive) {
@@ -86,6 +101,23 @@ struct SettingsView: View {
         } message: {
             Text("You can sign back in anytime. Your trips and \(sproutName) stay safe on this device.")
         }
+    }
+
+    private func saveSproutName() {
+        let trimmed = newSproutName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        savedSproutName = trimmed
+
+        if let sprout = sprouts.first {
+            sprout.name = trimmed
+        } else {
+            let sprout = Sprout()
+            sprout.name = trimmed
+            modelContext.insert(sprout)
+        }
+
+        try? modelContext.save()
     }
 }
 

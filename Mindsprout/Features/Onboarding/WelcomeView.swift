@@ -99,8 +99,8 @@ struct WelcomeView: View {
 struct TitleView: View {
     var body: some View {
         VStack(spacing: 8) {
-            BlinkingSproutView()
-                .frame(width: 228, height: 228)
+            SproutIdleView()
+                .frame(width: 200, height: 200)
 
             Text("mindsprout")
                 .font(AppFont.display)
@@ -115,35 +115,6 @@ struct TitleView: View {
     }
 }
 
-struct BlinkingSproutView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var frame = 1
-
-    // Mirrors SproutScene.playBlink: frames Sprout_blink_[1,2,3,2,1] at 0.08s/frame.
-    private let blinkFrames = [1, 2, 3, 2, 1]
-    private let frameDuration = 0.08
-
-    var body: some View {
-        Image("Sprout_blink_\(frame)")
-            .resizable()
-            .scaledToFit()
-            .task {
-                guard !reduceMotion else { return }
-                await blinkLoop()
-            }
-    }
-
-    private func blinkLoop() async {
-        while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(5))
-            for next in blinkFrames {
-                frame = next
-                try? await Task.sleep(for: .seconds(frameDuration))
-            }
-            frame = 1
-        }
-    }
-}
 
 #Preview {
     WelcomeView()

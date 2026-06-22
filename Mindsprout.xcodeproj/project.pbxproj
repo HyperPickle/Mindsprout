@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D593DDE22FE801CA00F1835E /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = D593DDE12FE801CA00F1835E /* RiveRuntime */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AA0100000000000000000008 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,9 +25,26 @@
 		AA0100000000000000000002 /* MindsproutTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindsproutTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D593DDE62FE80C6800F1835E /* Exceptions for "Mindsprout" folder in "MindsproutTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/sprout.riv,
+				Resources/sprout1.riv,
+				Resources/sprout2.riv,
+				Resources/sprout3.riv,
+				Resources/sprouttest.riv,
+			);
+			target = AA0100000000000000000001 /* MindsproutTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		76597E992FCFA23400C4ADE5 /* Mindsprout */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D593DDE62FE80C6800F1835E /* Exceptions for "Mindsprout" folder in "MindsproutTests" target */,
+			);
 			path = Mindsprout;
 			sourceTree = "<group>";
 		};
@@ -39,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D593DDE22FE801CA00F1835E /* RiveRuntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +112,7 @@
 			);
 			name = Mindsprout;
 			packageProductDependencies = (
+				D593DDE12FE801CA00F1835E /* RiveRuntime */,
 			);
 			productName = Mindsprout;
 			productReference = 76597E972FCFA23400C4ADE5 /* Mindsprout.app */;
@@ -146,6 +169,9 @@
 			);
 			mainGroup = 76597E8E2FCFA23400C4ADE5;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D593DDE02FE801CA00F1835E /* XCRemoteSwiftPackageReference "rive-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 76597E982FCFA23400C4ADE5 /* Products */;
 			projectDirPath = "";
@@ -468,6 +494,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D593DDE02FE801CA00F1835E /* XCRemoteSwiftPackageReference "rive-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rive-app/rive-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.20.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D593DDE12FE801CA00F1835E /* RiveRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D593DDE02FE801CA00F1835E /* XCRemoteSwiftPackageReference "rive-ios" */;
+			productName = RiveRuntime;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 76597E8F2FCFA23400C4ADE5 /* Project object */;
 }
