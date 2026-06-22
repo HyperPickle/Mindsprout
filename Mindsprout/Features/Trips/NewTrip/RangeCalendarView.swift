@@ -165,14 +165,12 @@ private struct DayCell: View {
     let state: RangeCalendarView.DayState
     var isSingleSelection: Bool = false
 
-    private static let selectionLineWidth: CGFloat = 2
-
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Text("\(day)")
             .font(isEndpoint ? AppFont.bodyEmphasized : AppFont.body)
-            .foregroundStyle(foreground)
+            .foregroundStyle(AppColor.label)
             .frame(maxWidth: .infinity)
             .frame(height: 38)
             .background(background)
@@ -180,107 +178,60 @@ private struct DayCell: View {
 
     private var isEndpoint: Bool { state == .start || state == .end }
 
-    private var foreground: Color {
-        switch state {
-        case .start, .end:
-            return .white
-        case .inRange, .normal:
-            return AppColor.label
-        }
+    // Soft frosted-glass band that fills the in-range days and connects to the
+    // brighter endpoint caps. Translucent whites let the glass material show
+    // through rather than reading as a solid inverted box.
+    private var rangeFill: Color {
+        colorScheme == .dark ? .white.opacity(0.10) : .white.opacity(0.18)
     }
 
-    private var outlineColor: Color {
-        colorScheme == .dark ? Color.white.opacity(0.72) : AppColor.graphite
+    private var endpointFill: Color {
+        colorScheme == .dark ? .white.opacity(0.24) : .white.opacity(0.34)
+    }
+
+    private var endpointHighlight: Color {
+        .white.opacity(colorScheme == .dark ? 0.40 : 0.60)
     }
 
     @ViewBuilder private var background: some View {
         switch state {
         case .start:
-            outlinedRangeSegment(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: CornerRadius.small,
-                    bottomLeadingRadius: CornerRadius.small,
-                    bottomTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
-                    topTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
-                    style: .continuous
-                ),
-                showsLeadingCap: true,
-                showsTrailingCap: isSingleSelection
+            endpointCap(
+                topLeadingRadius: CornerRadius.small,
+                bottomLeadingRadius: CornerRadius.small,
+                bottomTrailingRadius: isSingleSelection ? CornerRadius.small : 0,
+                topTrailingRadius: isSingleSelection ? CornerRadius.small : 0
             )
         case .end:
-            outlinedRangeSegment(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 0,
-                    bottomLeadingRadius: 0,
-                    bottomTrailingRadius: CornerRadius.small,
-                    topTrailingRadius: CornerRadius.small,
-                    style: .continuous
-                ),
-                showsLeadingCap: false,
-                showsTrailingCap: true
+            endpointCap(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: CornerRadius.small,
+                topTrailingRadius: CornerRadius.small
             )
         case .inRange:
-            outlinedRangeSegment(
-                Rectangle(),
-                showsLeadingCap: false,
-                showsTrailingCap: false
-            )
+            Rectangle().fill(rangeFill)
         case .normal:
             Color.clear
         }
     }
 
-    private func outlinedRangeSegment<S: InsettableShape>(
-        _ shape: S,
-        showsLeadingCap: Bool,
-        showsTrailingCap: Bool
+    private func endpointCap(
+        topLeadingRadius: CGFloat,
+        bottomLeadingRadius: CGFloat,
+        bottomTrailingRadius: CGFloat,
+        topTrailingRadius: CGFloat
     ) -> some View {
-        shape
-            .strokeBorder(outlineColor, lineWidth: Self.selectionLineWidth)
-            .mask {
-                RangeSelectionOutlineMask(
-                    showsLeadingCap: showsLeadingCap,
-                    showsTrailingCap: showsTrailingCap,
-                    lineWidth: Self.selectionLineWidth,
-                    cornerRadius: CornerRadius.small
-                )
-            }
-    }
-}
-
-private struct RangeSelectionOutlineMask: View {
-    let showsLeadingCap: Bool
-    let showsTrailingCap: Bool
-    let lineWidth: CGFloat
-    let cornerRadius: CGFloat
-
-    var body: some View {
-        GeometryReader { proxy in
-            let capWidth = min(proxy.size.width, cornerRadius + lineWidth)
-
-            ZStack {
-                VStack(spacing: 0) {
-                    Rectangle()
-                        .frame(height: lineWidth)
-                    Spacer(minLength: 0)
-                    Rectangle()
-                        .frame(height: lineWidth)
-                }
-
-                if showsLeadingCap {
-                    Rectangle()
-                        .frame(width: capWidth)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                if showsTrailingCap {
-                    Rectangle()
-                        .frame(width: capWidth)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                }
-            }
-        }
-        .foregroundStyle(.white)
-        .compositingGroup()
+        let shape = UnevenRoundedRectangle(
+            topLeadingRadius: topLeadingRadius,
+            bottomLeadingRadius: bottomLeadingRadius,
+            bottomTrailingRadius: bottomTrailingRadius,
+            topTrailingRadius: topTrailingRadius,
+            style: .continuous
+        )
+        return shape
+            .fill(endpointFill)
+            .overlay { shape.strokeBorder(endpointHighlight, lineWidth: 1) }
+            .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
     }
 }

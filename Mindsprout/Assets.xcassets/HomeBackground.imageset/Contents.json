@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "HomeBackground.jpg",
+      "filename" : "HomeBackgroundLight.jpg",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -12,7 +12,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "3night 2.png",
+      "filename" : "HomeBackgroundDark.jpg",
       "idiom" : "universal",
       "scale" : "1x"
     },

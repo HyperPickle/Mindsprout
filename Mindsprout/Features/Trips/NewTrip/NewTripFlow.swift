@@ -128,8 +128,7 @@ private struct NewTripBasicsView: View {
             }
             RangeCalendarView(startDate: $viewModel.startDate, endDate: $viewModel.endDate)
                 .padding(Spacing.md)
-                .tripGlassSurface(
-                    style: .neutral,
+                .readableLiquidGlass(
                     in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                 )
         }

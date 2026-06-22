@@ -171,12 +171,22 @@ struct ShopComingSoonModal: View {
 }
 
 struct AboutSettingsModal: View {
+    private let heroLogoSize: CGFloat = 92
+    private var heroLogoCornerRadius: CGFloat { heroLogoSize * 0.224 }
+
     var body: some View {
         ModalScaffold(title: "About") {
             VStack(spacing: 20) {
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 64))
-                    .foregroundColor(.green)
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: heroLogoSize, height: heroLogoSize)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: heroLogoCornerRadius,
+                            style: .continuous
+                        )
+                    )
 
                 Text("Mindsprout")
                     .font(AppFont.display)

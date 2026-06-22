@@ -421,6 +421,23 @@ struct ReflectionViewModelTests {
         #expect(vm.photoAssetIDs.isEmpty)
     }
 
+    @Test func discardDraftBlocksLateAudioWrites() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let trip = try makeTrip(in: context)
+
+        let mediaRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = MediaStore(root: mediaRoot)
+        let vm = makeViewModel(context: context, mediaStore: store, tripID: trip.id)
+
+        vm.onAppear()
+        vm.discardDraft()
+        vm.replaceAudio(with: Data("audio".utf8))
+
+        #expect(vm.audioAssetID == nil)
+        #expect(try context.fetch(FetchDescriptor<MediaAsset>()).isEmpty)
+    }
+
     @Test func discardDraftDoesNotDeleteSubmittedReflection() throws {
         let container = PersistenceController.makeInMemoryContainer()
         let context = ModelContext(container)

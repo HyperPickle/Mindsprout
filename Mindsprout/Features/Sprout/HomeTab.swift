@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct HomeTab: View {
     private let homeCTAHorizontalPadding: CGFloat = Spacing.screenEdge
@@ -53,10 +54,10 @@ struct HomeTab: View {
             .task {
                 ensureSproutExists()
             }
-            .background(
-                dashboardBackground
-            )
+            .background(dashboardBackground)
         }
+        .ignoresSafeArea()
+        .toolbarBackground(.hidden, for: .tabBar)
     }
 
     private var dashboardBackground: some View {
@@ -84,48 +85,60 @@ struct HomeTab: View {
 
     private func topRow(layout: HomeDashboardLayout) -> some View {
         HStack(alignment: .top, spacing: layout.topRowSpacing) {
-            tripCard
-                .frame(width: layout.tripCardWidth, height: layout.topCardHeight, alignment: .topLeading)
+            tripCard(layout: layout)
+                .frame(width: tripCardWidth(in: layout), alignment: .topLeading)
 
-            xpProgressButton
-                .frame(width: layout.progressCardWidth, alignment: .topLeading)
+            xpProgressButton(layout: layout)
+                .frame(width: progressCardWidth(in: layout), alignment: .topLeading)
         }
         .padding(.horizontal, layout.topRowHorizontalInset)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var tripCard: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(activeTrip?.destination ?? "No trip yet")
+    private func tripCard(layout: HomeDashboardLayout) -> some View {
+        VStack(alignment: .leading, spacing: layout.topCardTextSpacing) {
+            Text(activeTripDestinationText)
                 .font(AppFont.sectionTitle)
                 .foregroundStyle(pillTextColor)
-                .lineLimit(1)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Text(activeTrip?.country ?? "Start a trip")
+            Text(activeTripCountryText)
                 .font(AppFont.callout)
                 .foregroundStyle(pillTextColor.opacity(0.92))
-                .lineLimit(1)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.md)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(.horizontal, layout.topCardHorizontalPadding)
+        .padding(.vertical, layout.topCardVerticalPadding)
+        .frame(
+            minWidth: 0,
+            maxWidth: .infinity,
+            minHeight: layout.topCardMinHeight,
+            alignment: .topLeading
+        )
         .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 
-    private var xpProgressButton: some View {
+    private func xpProgressButton(layout: HomeDashboardLayout) -> some View {
         Button {
             modalCoordinator.present(.xpDetail)
         } label: {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
+            VStack(alignment: .leading, spacing: layout.topCardTextSpacing) {
                 Text(xpProgressValueText)
                     .font(AppFont.metric)
                     .foregroundStyle(pillTextColor)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(.horizontal, layout.topCardHorizontalPadding)
+            .padding(.vertical, layout.topCardVerticalPadding)
+            .frame(
+                minWidth: 0,
+                maxWidth: .infinity,
+                minHeight: layout.topCardMinHeight,
+                alignment: .topLeading
+            )
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
@@ -189,6 +202,36 @@ struct HomeTab: View {
         return max(progress.span - progress.within, 0)
     }
 
+    private var activeTripDestinationText: String {
+        activeTrip?.destination ?? "No trip yet"
+    }
+
+    private var activeTripCountryText: String {
+        activeTrip?.country ?? "Start a trip"
+    }
+
+    private func tripCardWidth(in layout: HomeDashboardLayout) -> CGFloat {
+        let estimatedWidth = max(
+            measuredTextWidth(activeTripDestinationText, font: .preferredFont(forTextStyle: .title3)),
+            measuredTextWidth(activeTripCountryText, font: .preferredFont(forTextStyle: .callout))
+        ) + (layout.topCardHorizontalPadding * 2)
+
+        return min(max(estimatedWidth, layout.tripCardMinWidth), layout.tripCardMaxWidth)
+    }
+
+    private func progressCardWidth(in layout: HomeDashboardLayout) -> CGFloat {
+        let estimatedWidth = measuredTextWidth(
+            xpProgressValueText,
+            font: .preferredFont(forTextStyle: .headline)
+        ) + (layout.topCardHorizontalPadding * 2)
+
+        return min(max(estimatedWidth, layout.progressCardMinWidth), layout.progressCardMaxWidth)
+    }
+
+    private func measuredTextWidth(_ text: String, font: UIFont) -> CGFloat {
+        ceil((text as NSString).size(withAttributes: [.font: font]).width)
+    }
+
     private func abbreviatedXP(_ value: Int) -> String {
         guard value >= 1_000 else { return "\(value)" }
 
@@ -209,9 +252,14 @@ struct HomeDashboardLayout {
     let topRowTopInset: CGFloat
     let topRowHorizontalInset: CGFloat
     let topRowSpacing: CGFloat
-    let topCardHeight: CGFloat
-    let tripCardWidth: CGFloat
-    let progressCardWidth: CGFloat
+    let topCardMinHeight: CGFloat
+    let topCardHorizontalPadding: CGFloat
+    let topCardVerticalPadding: CGFloat
+    let topCardTextSpacing: CGFloat
+    let tripCardMinWidth: CGFloat
+    let tripCardMaxWidth: CGFloat
+    let progressCardMinWidth: CGFloat
+    let progressCardMaxWidth: CGFloat
     let sproutWidth: CGFloat
     let sproutHeight: CGFloat
     let sproutVerticalOffset: CGFloat
@@ -227,12 +275,17 @@ struct HomeDashboardLayout {
 
         topRowTopInset = max(18, 26 * scaleY)
         topRowHorizontalInset = max(14, Spacing.screenEdge * scaleX)
-        topRowSpacing = max(10, 12 * scaleX)
-        topCardHeight = max(88, 94 * scaleY)
+        topRowSpacing = max(8, 10 * scaleX)
+        topCardMinHeight = max(72, 80 * scaleY)
+        topCardHorizontalPadding = max(12, 14 * scaleX)
+        topCardVerticalPadding = max(10, 12 * scaleY)
+        topCardTextSpacing = Spacing.xxs
 
         let availableWidth = max(0, size.width - (topRowHorizontalInset * 2) - topRowSpacing)
-        tripCardWidth = availableWidth * 0.55
-        progressCardWidth = availableWidth - tripCardWidth
+        tripCardMinWidth = min(max(120, 132 * scaleX), availableWidth)
+        tripCardMaxWidth = availableWidth * 0.55
+        progressCardMinWidth = min(max(132, 144 * scaleX), availableWidth)
+        progressCardMaxWidth = availableWidth - tripCardMaxWidth
 
         let sproutCenterY = 455 * scaleY
         sproutHeight = 400 * scaleY

@@ -2,6 +2,19 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 
+enum WaveformLayout {
+    static let spacing: CGFloat = 2
+
+    static func barWidth(containerWidth: CGFloat, barCount: Int) -> CGFloat? {
+        guard barCount > 0, containerWidth.isFinite else { return nil }
+        let availableWidth = containerWidth - CGFloat(barCount - 1) * spacing
+        guard availableWidth > 0 else { return nil }
+        let width = availableWidth / CGFloat(barCount)
+        guard width.isFinite, width > 0 else { return nil }
+        return width
+    }
+}
+
 struct EntryStep: View {
     @Bindable var vm: ReflectionViewModel
 
@@ -112,7 +125,6 @@ private struct TypeEntryCard: View {
 private struct RecordEntryCard: View {
     @Bindable var vm: ReflectionViewModel
 
-    @Environment(\.colorScheme) private var colorScheme
     @State private var recorder: AudioRecorderController = AudioRecorderController()
     @State private var player = AudioPlayerController()
 
@@ -162,8 +174,8 @@ private struct RecordEntryCard: View {
             Text("Please allow microphone access in Settings to record audio.")
         }
         .onDisappear {
-            if recorder.isRecording {
-                Task { await stopAndSave() }
+            if recorder.hasInProgressRecording {
+                Task { await finalizeRecordingForDisappear() }
             }
             player.stop()
         }
@@ -370,6 +382,14 @@ private struct RecordEntryCard: View {
         }
     }
 
+    private func finalizeRecordingForDisappear() async {
+        if vm.isDiscardingDraft {
+            recorder.reset()
+            return
+        }
+        await stopAndSave()
+    }
+
     private func resetRecording() {
         player.reset()
         vm.clearAudioDraft()
@@ -392,14 +412,14 @@ private struct WaveformView: View {
     var body: some View {
         Canvas { ctx, size in
             let barCount = amplitudes.count
-            guard barCount > 0 else { return }
-            let barWidth: CGFloat = (size.width - CGFloat(barCount - 1) * 2) / CGFloat(barCount)
+            guard let barWidth = WaveformLayout.barWidth(containerWidth: size.width, barCount: barCount) else { return }
+            let cornerRadius = min(barWidth / 2, size.height / 2)
             for (i, amp) in amplitudes.enumerated() {
-                let x = CGFloat(i) * (barWidth + 2)
-                let barHeight = max(4, CGFloat(amp) * size.height)
+                let x = CGFloat(i) * (barWidth + WaveformLayout.spacing)
+                let barHeight = min(size.height, max(4, CGFloat(amp) * size.height))
                 let y = (size.height - barHeight) / 2
                 let rect = CGRect(x: x, y: y, width: barWidth, height: barHeight)
-                let path = Path(roundedRect: rect, cornerRadius: barWidth / 2)
+                let path = Path(roundedRect: rect, cornerRadius: cornerRadius)
                 if isRecording {
                     ctx.fill(path, with: .color(.white))
                 } else {
@@ -419,14 +439,14 @@ private struct PlaybackWaveformView: View {
     var body: some View {
         Canvas { ctx, size in
             let barCount = amplitudes.count
-            guard barCount > 0 else { return }
-            let barWidth: CGFloat = (size.width - CGFloat(barCount - 1) * 2) / CGFloat(barCount)
+            guard let barWidth = WaveformLayout.barWidth(containerWidth: size.width, barCount: barCount) else { return }
+            let cornerRadius = min(barWidth / 2, size.height / 2)
             for (i, amp) in amplitudes.enumerated() {
-                let x = CGFloat(i) * (barWidth + 2)
-                let barHeight = max(4, CGFloat(amp) * size.height)
+                let x = CGFloat(i) * (barWidth + WaveformLayout.spacing)
+                let barHeight = min(size.height, max(4, CGFloat(amp) * size.height))
                 let y = (size.height - barHeight) / 2
                 let rect = CGRect(x: x, y: y, width: barWidth, height: barHeight)
-                let path = Path(roundedRect: rect, cornerRadius: barWidth / 2)
+                let path = Path(roundedRect: rect, cornerRadius: cornerRadius)
                 ctx.fill(path, with: .color(.white))
             }
         }
@@ -452,6 +472,10 @@ private final class AudioRecorderController: NSObject {
     var showPermissionAlert = false
     var elapsedString = "00:00:00"
     var uiState: UIState = .idle
+
+    var hasInProgressRecording: Bool {
+        uiState == .recording || uiState == .paused
+    }
 
     private var recorder: AVAudioRecorder?
     private var tempURL: URL?
@@ -521,13 +545,17 @@ private final class AudioRecorderController: NSObject {
         timer?.invalidate()
         timer = nil
         recorder?.stop()
+        recorder = nil
         isRecording = false
         isPaused = false
-        try? AVAudioSession.sharedInstance().setActive(false)
+        deactivateAudioSession()
         guard let url = tempURL else { return nil }
+        tempURL = nil
         hasRecording = true
         uiState = .finished
-        return try? Data(contentsOf: url)
+        let data = try? Data(contentsOf: url)
+        try? FileManager.default.removeItem(at: url)
+        return data
     }
 
     func reset() {
@@ -546,7 +574,7 @@ private final class AudioRecorderController: NSObject {
         isPaused = false
         hasRecording = false
         uiState = .idle
-        try? AVAudioSession.sharedInstance().setActive(false)
+        deactivateAudioSession()
     }
 
     private func tick() {
@@ -567,6 +595,12 @@ private final class AudioRecorderController: NSObject {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.tick() }
+        }
+    }
+
+    private func deactivateAudioSession() {
+        Task.detached(priority: .utility) {
+            try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
         }
     }
 }

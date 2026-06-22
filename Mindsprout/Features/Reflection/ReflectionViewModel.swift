@@ -59,6 +59,7 @@ final class ReflectionViewModel {
     var rewardState: ReflectionRewardState?
     var submissionErrorMessage: String?
     var isSubmitting = false
+    var isDiscardingDraft = false
 
     var inspirationIndex: Int = 0
     var inspirationPrompt: String {
@@ -178,6 +179,7 @@ final class ReflectionViewModel {
     }
 
     func onAppear() {
+        isDiscardingDraft = false
         let pool = contentPack.prompts.highlights(for: tripType)
 
         // Load or create today's draft
@@ -284,6 +286,7 @@ final class ReflectionViewModel {
     }
 
     func replaceAudio(with data: Data, fileExtension: String = "m4a") {
+        guard !isDiscardingDraft else { return }
         clearAudioDraft()
         guard let path = try? mediaStore.write(data, kind: .audio, fileExtension: fileExtension) else { return }
         let asset = MediaAsset(kind: .audio, relativePath: path)
@@ -296,6 +299,7 @@ final class ReflectionViewModel {
     /// including the underlying files. No-op once the reflection has been
     /// submitted, so a completed reflection can never be destroyed here.
     func discardDraft() {
+        isDiscardingDraft = true
         guard let r = draftReflection, r.isDraft else { return }
 
         var mediaIDs = Set(r.photoAssetIDs)
@@ -307,6 +311,9 @@ final class ReflectionViewModel {
         context.delete(r)
         draftReflection = nil
         audioAssetID = nil
+        transcriptText = nil
+        transcriptionErrorMessage = nil
+        isTranscribing = false
         photoAssetIDs = []
         try? saveAction()
     }
@@ -325,17 +332,25 @@ final class ReflectionViewModel {
     /// the reflection. Failures preserve a user-facing error message so the UI
     /// can explain why a transcript is unavailable.
     func transcribeCurrentAudio() async {
-        guard let audioAssetID,
+        guard !isDiscardingDraft,
+              let audioAssetID,
               let path = MediaImage.relativePath(for: audioAssetID, in: context) else { return }
+        let transcribingAssetID = audioAssetID
         let url = mediaStore.url(for: path)
         isTranscribing = true
         transcriptionErrorMessage = nil
-        defer { isTranscribing = false }
+        defer {
+            if isDiscardingDraft || self.audioAssetID == transcribingAssetID {
+                isTranscribing = false
+            }
+        }
         do {
             let result = try await transcriber.transcribe(url: url)
+            guard !isDiscardingDraft, self.audioAssetID == transcribingAssetID else { return }
             let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
             transcriptText = trimmed.isEmpty ? nil : trimmed
         } catch {
+            guard !isDiscardingDraft, self.audioAssetID == transcribingAssetID else { return }
             transcriptText = nil
             transcriptionErrorMessage = Self.transcriptionErrorMessage(for: error)
         }

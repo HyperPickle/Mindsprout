@@ -79,17 +79,26 @@ final class AudioPlayerController {
         player?.stop()
         timer?.invalidate()
         isPlaying = false
+        deactivateAudioSession()
     }
 
     func reset() {
         player?.stop()
-        player?.currentTime = 0
+        player = nil
         timer?.invalidate()
         isPlaying = false
         progress = 0
         hasStartedPlayback = false
+        duration = 0
         amplitudes = Array(repeating: 0.06, count: 40)
         waveformSamples = Array(repeating: 0.12, count: 40)
+        deactivateAudioSession()
+    }
+
+    private func deactivateAudioSession() {
+        Task.detached(priority: .utility) {
+            try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+        }
     }
 }
 
