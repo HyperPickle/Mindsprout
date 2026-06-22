@@ -30,6 +30,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Resources/sprout.riv,
+				Resources/sprout1.riv,
 			);
 			target = AA0100000000000000000001 /* MindsproutTests */;
 		};

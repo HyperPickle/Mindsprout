@@ -33,7 +33,7 @@ final class SproutRiveController: ObservableObject {
         // Step 1: verify the .riv file loads at all (no state machine)
         // Step 2: if Step 1 works, uncomment stateMachineName and check artboardName
         riveVM = RiveViewModel(
-            fileName: "sprout",
+            fileName: "sprout1",
             // artboardName: "Sprout",        // ← uncomment if artboard isn't "Main"
             stateMachineName: "SproutHomeSM", // ← comment this out first to isolate the crash
             artboardName:"Sprout"

@@ -5,14 +5,23 @@
 //  Created by Changrila Souksamlane on 11/6/2026.
 //
 
+//
+//  SproutTransformationView.swift
+//  Mindsprout
+//
+//  Created by Changrila Souksamlane on 11/6/2026.
+//
+
 import SwiftUI
-import SpriteKit
+import RiveRuntime
 
 struct SproutTransformationView: View {
     @AppStorage("sproutName") var sproutName = ""
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
-    @StateObject private var seedHolder = SeedSceneHolder()
-    @State private var showSprout = false
+    
+    // On instancie un nouveau contrôleur Rive propre pour cet écran (ou on le configure pour afficher la Graine/Sprout au repos)
+    @StateObject private var riveController = SeedRiveController()
+    
     @State private var showText = false
     @State private var showButton = false
     var onFinish: () -> Void
@@ -21,19 +30,16 @@ struct SproutTransformationView: View {
         ZStack {
             // ✅ Fond
             BackgroundSky()
-            .ignoresSafeArea()
+                .ignoresSafeArea()
+            
+            ZStack {
+                SproutView(state: .idle)
+            }
             
             VStack(spacing: 32) {
+                
                 Spacer()
                 
-                // ✅ Seed/Sprout animation
-                ZStack {
-                    // Seed qui se transforme
-                    SpriteView(scene: seedHolder.scene, options: [.allowsTransparency])
-                        .frame(width: 250, height: 250)
-                }
-                
-                // ✅ Texte qui apparaît après la transformation
                 if showText {
                     VStack(spacing: 8) {
                         Text("Meet \(sproutName)!")
@@ -48,9 +54,8 @@ struct SproutTransformationView: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
                 
-                Spacer()
+                Spacer().frame(height: 20)
                 
-                // ✅ Bouton qui apparaît après
                 if showButton {
                     Button {
                         hasCompletedOnboarding = true
@@ -72,24 +77,19 @@ struct SproutTransformationView: View {
             }
         }
         .onAppear {
-            startTransformation()
+            startTransformationFlow()
         }
     }
     
-    func startTransformation() {
-        // ✅ Lance la transformation dès l'apparition
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            seedHolder.scene.playSeedToSprout {
-                // ✅ Texte apparaît après la transformation
-                withAnimation(.easeOut(duration: 0.6)) {
-                    showText = true
-                }
-                
-                // ✅ Bouton apparaît un peu après
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    withAnimation(.easeOut(duration: 0.5)) {
-                        showButton = true
-                    }
+    func startTransformationFlow() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.easeOut(duration: 0.6)) {
+                showText = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    showButton = true
                 }
             }
         }
@@ -97,5 +97,5 @@ struct SproutTransformationView: View {
 }
 
 #Preview {
-    SproutTransformationView(onFinish:{})
+    SproutTransformationView(onFinish: {})
 }
