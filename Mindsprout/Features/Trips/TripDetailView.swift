@@ -37,14 +37,13 @@ struct TripDetailView: View {
                         TripHeroCard(
                             trip: trip,
                             coverAssetID: trip.coverAssetID,
-                            memoryCount: viewModel.reflections.count,
-                            showHeadline: false
+                            memoryCount: viewModel.reflections.count
                         )
                     }
                     if !viewModel.reflections.isEmpty {
-                        SectionDivider(title: "MOMENTS", color: AppColor.onBackground)
+                        SectionDivider(title: "MOMENTS", color: AppColor.label)
                         ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
-                            NavigationLink(value: AdventuresRoute.tripDayDetail(tripID: tripID, initialDayIndex: offset)) {
+                            NavigationLink(value: TripsRoute.tripDayDetail(tripID: tripID, initialDayIndex: offset)) {
                                 DayCard(reflection: reflection)
                             }
                             .buttonStyle(.plain)
@@ -70,32 +69,36 @@ struct TripDetailView: View {
     }
 
     private var header: some View {
-        ZStack {
-            HStack {
-                Button { if let onBack { onBack() } else { dismiss() } } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 40, height: 40)
-                        .background(Circle().fill(.white.opacity(0.15)))
-                }
-                Spacer()
-                Button {
-                    modalCoordinator.present(.editTrip(tripID: tripID))
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 40, height: 40)
-                        .background(Circle().fill(.white.opacity(0.15)))
-                }
+        HStack(spacing: Spacing.xs) {
+            Button { if let onBack { onBack() } else { dismiss() } } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.label)
+                    .frame(width: 56, height: 56)
+                    .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             }
-            
+            .buttonStyle(.plain)
+            .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+
             Text(viewModel.trip?.destination ?? "Trip")
-                .font(.system(size: 20, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
                 .lineLimit(1)
-                .padding(.horizontal, 80)
+                .frame(maxWidth: .infinity, minHeight: 56)
+                .padding(.horizontal, Spacing.sm)
+                .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+
+            Button {
+                modalCoordinator.present(.editTrip(tripID: tripID))
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.label)
+                    .frame(width: 56, height: 56)
+                    .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
@@ -106,25 +109,32 @@ struct TripDetailView: View {
 
 private struct DayCard: View {
     let reflection: Reflection
-    private let photoWidth: CGFloat = 104
-    private var photoHeight: CGFloat { photoWidth * 16 / 9 }
+    private let photoHeight: CGFloat = 160
 
     var body: some View {
-        HStack(alignment: .top, spacing: Spacing.md) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             if let featured = reflection.photoAssetIDs.first {
                 TripPhotoThumb(assetID: featured)
-                    .frame(width: photoWidth, height: photoHeight)
-                    .overlay(alignment: .topTrailing) { photoBadge }
+                    .frame(height: photoHeight)
+                    .frame(maxWidth: .infinity)
+                    .overlay(alignment: .topLeading) { dayBadge }
+                    .overlay(alignment: .topTrailing) { openMemoryBadge }
+                    .overlay(alignment: .bottomTrailing) { photoBadge }
             }
+
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 HStack {
-                    Text("Day \(reflection.dayIndex)")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.ink)
+                    if reflection.photoAssetIDs.isEmpty {
+                        Text("Day \(reflection.dayIndex)")
+                            .font(AppFont.callout)
+                            .foregroundStyle(AppColor.label)
+                    }
                     Spacer()
-                    Text("Open memory →")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColor.primary)
+                    if reflection.photoAssetIDs.isEmpty {
+                        Text("Open memory →")
+                            .font(AppFont.callout)
+                            .foregroundStyle(AppColor.label)
+                    }
                 }
                 if let text = reflection.text, !text.isEmpty {
                     LabelBox(header: "MOMENT", text: String(text.prefix(200)), lineLimit: 6)
@@ -132,18 +142,39 @@ private struct DayCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .cardStyle()
+        .padding(Spacing.md)
+        .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+    }
+
+    private var dayBadge: some View {
+        Text("Day \(reflection.dayIndex)")
+            .font(AppFont.callout)
+            .foregroundStyle(AppColor.label)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, 8)
+            .readableLiquidGlass(in: Capsule())
+            .padding(Spacing.sm)
+    }
+
+    private var openMemoryBadge: some View {
+        Text("Open memory →")
+            .font(AppFont.callout)
+            .foregroundStyle(AppColor.label)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, 8)
+            .readableLiquidGlass(in: Capsule())
+            .padding(Spacing.sm)
     }
 
     @ViewBuilder private var photoBadge: some View {
         if reflection.photoAssetIDs.count > 1 {
             Label("\(reflection.photoAssetIDs.count)", systemImage: "photo.on.rectangle")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(AppFont.eyebrow)
                 .foregroundStyle(.white)
                 .padding(.horizontal, Spacing.xs)
                 .padding(.vertical, 4)
                 .background(Capsule().fill(.black.opacity(0.45)))
-                .padding(Spacing.xs)
+                .padding(Spacing.sm)
         }
     }
 }
@@ -196,40 +227,44 @@ struct TripDayDetailView: View {
                 didSetInitial = true
             }
         }
-        .overlay { lightbox }
+        .overlay {
+            ReflectionLightbox(photos: current?.photoAssetIDs ?? [], selectedAsset: $lightboxAsset)
+                .animation(.easeInOut(duration: 0.2), value: lightboxAsset)
+        }
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: Spacing.xs) {
             Button { if let onBack { onBack() } else { dismiss() } } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(.white.opacity(0.15)))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.label)
+                    .frame(width: 56, height: 56)
+                    .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             }
-            
-            Spacer()
-            
-            VStack(spacing: 2) {
-                Text(viewModel.trip?.destination ?? "Trip")
-                    .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
-                
-                Text("DAY \(current?.dayIndex ?? 1)")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .tracking(1)
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-            
-            Spacer()
-            
-            // Balanced spacer
-            Color.clear.frame(width: 40, height: 40)
+            .buttonStyle(.plain)
+            .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+
+            Text(dayTitle)
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
+                .lineLimit(1)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                .padding(.horizontal, Spacing.sm)
+                .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+
+            Color.clear
+                .frame(width: 56, height: 56)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)
+    }
+
+    private var dayTitle: String {
+        guard let current else { return "Day 1" }
+        return "Day \(current.dayIndex)"
     }
 
     private var emptyState: some View {
@@ -237,64 +272,23 @@ struct TripDayDetailView: View {
             Spacer()
             Image(systemName: "book.closed")
                 .font(.system(size: 40))
-                .foregroundStyle(AppColor.inkMuted)
+                .foregroundStyle(AppColor.label)
             Text("No reflections yet")
-                .font(AppFont.headline)
-                .foregroundStyle(AppColor.ink)
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
             Text("Memories from this trip will appear here.")
                 .font(AppFont.callout)
-                .foregroundStyle(AppColor.ink)
+                .foregroundStyle(AppColor.label)
             Spacer()
         }
         .frame(maxWidth: .infinity)
     }
 
-    private var lightboxSelection: Binding<UUID> {
-        Binding(get: { lightboxAsset ?? UUID() }, set: { lightboxAsset = $0 })
-    }
-
-    @ViewBuilder private var lightbox: some View {
-        if lightboxAsset != nil, let photos = current?.photoAssetIDs, !photos.isEmpty {
-            ZStack {
-                Color.black.opacity(0.7).ignoresSafeArea()
-                    .onTapGesture { lightboxAsset = nil }
-
-                TabView(selection: lightboxSelection) {
-                    ForEach(photos, id: \.self) { id in
-                        MediaImage(assetID: id, contentMode: .fit)
-                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-                            .padding(Spacing.lg)
-                            .shadow(color: .black.opacity(0.4), radius: 20, y: 10)
-                            .tag(id)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: photos.count > 1 ? .always : .never))
-
-                VStack {
-                    HStack {
-                        Spacer()
-                        Button { lightboxAsset = nil } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 40, height: 40)
-                                .background(Circle().fill(.black.opacity(0.4)))
-                        }
-                    }
-                    Spacer()
-                }
-                .padding(Spacing.screenEdge)
-            }
-            .transition(.opacity)
-        }
-    }
 }
 
 private struct DayContentView: View {
     let reflection: Reflection
     @Binding var lightboxAsset: UUID?
-    @Environment(\.modelContext) private var context
-    @Environment(\.appEnvironment) private var env
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Spacing.xs), count: 3)
 
@@ -302,12 +296,15 @@ private struct DayContentView: View {
         ScrollView {
             VStack(spacing: Spacing.lg) {
                 mainCard
-                
-                if let audioID = reflection.audioAssetID, let url = audioURL(audioID) {
-                    AudioPlayerView(url: url)
-                        .padding(.horizontal, Spacing.xs)
+
+                if let audioID = reflection.audioAssetID {
+                    ReflectionAudioPlayer(audioAssetID: audioID)
+
+                    if let transcript = reflection.transcript, !transcript.isEmpty {
+                        ReflectionTranscriptSection(transcript: transcript)
+                    }
                 }
-                
+
                 if reflection.photoAssetIDs.count > 1 {
                     albumSection
                 }
@@ -321,50 +318,45 @@ private struct DayContentView: View {
     private var mainCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let featured = reflection.photoAssetIDs.first {
-                MediaImage(assetID: featured)
-                    .frame(height: 280)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                    .onTapGesture { lightboxAsset = featured }
-            }
-            
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("REFLECTION")
-                        .font(.system(size: 12, weight: .black, design: .rounded))
-                        .tracking(1.5)
-                        .foregroundStyle(AppColor.primary)
-                    
-                    Spacer()
-                    
-                    Text(reflection.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.inkMuted)
+                GeometryReader { proxy in
+                    MediaImage(assetID: featured, contentMode: .fill)
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
+                        .contentShape(Rectangle())
+                        .onTapGesture { lightboxAsset = featured }
                 }
-                
+                .frame(height: 280)
+            }
+
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+                    Text("REFLECTION")
+                        .font(AppFont.sectionTitle)
+                        .foregroundStyle(AppColor.label)
+                }
+
                 if let text = reflection.text, !text.isEmpty {
                     Text(text)
                         .font(AppFont.body)
                         .lineSpacing(4)
-                        .foregroundStyle(AppColor.ink)
+                        .foregroundStyle(AppColor.label)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Text("No words for this day, just memories.")
                         .font(AppFont.body)
                         .italic()
-                        .foregroundStyle(AppColor.inkMuted)
+                        .foregroundStyle(AppColor.label)
                 }
             }
             .padding(Spacing.lg)
         }
-        .background(AppColor.cardSurface)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
-        .shadow(color: AppColor.ink.opacity(0.12), radius: 15, y: 8)
+        .frame(maxWidth: .infinity)
+        .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 
     private var albumSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            SectionDivider(title: "ALBUM", color: .white)
+            SectionDivider(title: "ALBUM", color: AppColor.label)
             
             LazyVGrid(columns: columns, spacing: Spacing.xs) {
                 ForEach(reflection.photoAssetIDs, id: \.self) { id in
@@ -378,22 +370,17 @@ private struct DayContentView: View {
             }
         }
     }
-
-    private func audioURL(_ id: UUID) -> URL? {
-        guard let path = MediaImage.relativePath(for: id, in: context) else { return nil }
-        return env.mediaStore.url(for: path)
-    }
 }
 
 struct SectionDivider: View {
     let title: LocalizedStringKey
-    var color: Color = AppColor.ink
+    var color: Color = AppColor.label
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
             line
             Text(title)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(AppFont.eyebrow)
                 .tracking(1)
                 .foregroundStyle(color)
                 .lineLimit(1)

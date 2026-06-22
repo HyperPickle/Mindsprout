@@ -5,8 +5,6 @@ struct DesignSystemGallery: View {
         ("primary", AppColor.primary),
         ("primaryEdge", AppColor.primaryEdge),
         ("currency", AppColor.currency),
-        ("ink", AppColor.ink),
-        ("inkSecondary", AppColor.inkSecondary),
         ("grassTop", AppColor.grassTop),
         ("grassBottom", AppColor.grassBottom),
         ("skyTop", AppColor.skyTop)
@@ -18,14 +16,20 @@ struct DesignSystemGallery: View {
                 section("Typography") {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text("Display").font(AppFont.display)
-                        Text("Title").font(AppFont.title)
-                        Text("Headline").font(AppFont.headline)
+                        Text("Screen title").font(AppFont.screenTitle)
+                        Text("Section title").font(AppFont.sectionTitle)
                         Text("Body emphasized").font(AppFont.bodyEmphasized)
                         Text("Body").font(AppFont.body)
                         Text("Callout").font(AppFont.callout)
                         Text("Caption").font(AppFont.caption)
+                        Text("EYEBROW").font(AppFont.eyebrow)
+                        Text("Button").font(AppFont.button)
+                        Text("12,480 XP").font(AppFont.metricLarge)
+                        Text("Level 12").font(AppFont.metric)
+                        Text("01:24").font(AppFont.timerLarge)
+                        Text("00:38").font(AppFont.timerCompact)
                     }
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(AppColor.label)
                 }
 
                 section("Colors") {
@@ -40,7 +44,7 @@ struct DesignSystemGallery: View {
                                         RoundedRectangle(cornerRadius: CornerRadius.small)
                                             .stroke(AppColor.hairline, lineWidth: 1)
                                     )
-                                Text(name).font(AppFont.caption).foregroundStyle(AppColor.inkSecondary)
+                                Text(name).font(AppFont.caption).foregroundStyle(AppColor.label)
                             }
                         }
                     }
@@ -55,10 +59,10 @@ struct DesignSystemGallery: View {
 
                 section("Card") {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
-                        Text("Kyoto, Japan").font(AppFont.headline).foregroundStyle(AppColor.ink)
+                        Text("Kyoto, Japan").font(AppFont.sectionTitle).foregroundStyle(AppColor.label)
                         Text("Wonder came slowly")
                             .font(AppFont.callout)
-                            .foregroundStyle(AppColor.inkSecondary)
+                            .foregroundStyle(AppColor.label)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .cardStyle()
@@ -66,20 +70,26 @@ struct DesignSystemGallery: View {
             }
             .padding(Spacing.screenEdge)
         }
-        .background(Color.white.ignoresSafeArea())
+        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
     }
 
     @ViewBuilder
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(title.uppercased())
-                .font(AppFont.caption)
-                .foregroundStyle(AppColor.inkMuted)
+                .font(AppFont.eyebrow)
+                .foregroundStyle(AppColor.label)
             content()
         }
     }
 }
 
-#Preview("Design System Gallery") {
+#Preview("Design System Gallery — Light") {
     DesignSystemGallery()
+        .preferredColorScheme(.light)
+}
+
+#Preview("Design System Gallery — Dark") {
+    DesignSystemGallery()
+        .preferredColorScheme(.dark)
 }

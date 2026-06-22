@@ -43,6 +43,49 @@ struct ReflectionCadenceTests {
         #expect(todaysReflection(for: t, in: context) == nil)
     }
 
+    @Test func completedLookupReturnsTodaysSubmittedReflection() throws {
+        let context = makeContext()
+        let t = trip()
+        context.insert(t)
+        let r = Reflection(tripID: t.id, dayIndex: 1, date: Date(), isDraft: false)
+        context.insert(r)
+        try context.save()
+        #expect(todaysCompletedReflection(for: t, in: context)?.id == r.id)
+    }
+
+    @Test func completedLookupIgnoresDraft() throws {
+        let context = makeContext()
+        let t = trip()
+        context.insert(t)
+        let draft = Reflection(tripID: t.id, dayIndex: 1, date: Date(), isDraft: true)
+        context.insert(draft)
+        try context.save()
+        #expect(todaysCompletedReflection(for: t, in: context) == nil)
+    }
+
+    @Test func completedLookupIgnoresYesterdaysReflection() throws {
+        let context = makeContext()
+        let t = trip()
+        context.insert(t)
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let r = Reflection(tripID: t.id, dayIndex: 1, date: yesterday, isDraft: false)
+        context.insert(r)
+        try context.save()
+        #expect(todaysCompletedReflection(for: t, in: context) == nil)
+    }
+
+    @Test func completedLookupIgnoresOtherTrip() throws {
+        let context = makeContext()
+        let t = trip()
+        let other = trip()
+        context.insert(t)
+        context.insert(other)
+        let r = Reflection(tripID: other.id, dayIndex: 1, date: Date(), isDraft: false)
+        context.insert(r)
+        try context.save()
+        #expect(todaysCompletedReflection(for: t, in: context) == nil)
+    }
+
     @Test func dayIndexSameDayIsOne() {
         let t = trip()
         #expect(dayIndex(for: t, on: t.startDate) == 1)

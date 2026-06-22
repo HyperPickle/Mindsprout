@@ -30,8 +30,8 @@ struct GrassBackground: View {
 
 #Preview("Backgrounds") {
     VStack(spacing: 0) {
-        SkyBackground().overlay(Text("Sky").font(AppFont.headline))
-        GrassBackground().overlay(Text("Grass").font(AppFont.headline))
-        SandBackground().overlay(Text("Sand").font(AppFont.headline))
+        SkyBackground().overlay(Text("Sky").font(AppFont.sectionTitle))
+        GrassBackground().overlay(Text("Grass").font(AppFont.sectionTitle))
+        SandBackground().overlay(Text("Sand").font(AppFont.sectionTitle))
     }
 }

@@ -48,4 +48,19 @@ struct MediaStoreTests {
         // Should not throw for an absent path.
         try store.delete(relativePath: "photos/does-not-exist.jpg")
     }
+
+    @Test func deterministicRelativePathWritePersistsInRequestedFolder() throws {
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let store = MediaStore(root: root)
+        let payload = Data("static map snapshot".utf8)
+        let relativePath = "maps/trips/test-map.jpg"
+
+        try store.write(payload, relativePath: relativePath)
+
+        let read = try store.read(relativePath: relativePath)
+        #expect(read == payload)
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent(relativePath).path))
+    }
 }

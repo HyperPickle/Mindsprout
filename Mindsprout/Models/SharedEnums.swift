@@ -4,7 +4,7 @@ enum TripType: String, Codable, CaseIterable, Sendable, Identifiable {
     case solo
     case friends
     case family
-    case business
+    case work
 
     var id: String { rawValue }
 }

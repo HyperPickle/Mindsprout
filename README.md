@@ -4,24 +4,23 @@ Mindsprout is an iOS app about turning travel into a small daily habit of reflec
 
 The point is to make looking back on a trip feel light rather than like a chore. A reflection takes a couple of minutes, and the Sprout gives you a reason to come back the next day.
 
+For design-system specifics that do not belong in this overview, use `TYPOGRAPHY.MD` for type rules and `ASSET-GUIDE.md` for asset creation, naming, and usage guidance.
+
 ## Trips and Reflections
 
 You start a trip and say what you're hoping to get out of it. Trips come in a few kinds, solo, with friends, with family, or for work, and each one asks slightly different things. While the trip is on, you log one reflection a day against it. A reflection can be typed or recorded as audio, and you can attach photos to it.
 
 ## The Sprout
 
-There's one Sprout, and it sticks with you across every trip rather than starting over each time. Each reflection feeds it and earns experience. As that builds up it levels, and at certain points it evolves into a new form with a short animated sequence to mark the moment.
+There’s a single Sprout that stays with you from trip to trip instead of resetting each time. Each reflection feeds it and earns experience. As that builds up it levels, and at certain points it evolves into a new form with a short animated sequence to mark the moment.
 
 The core of all this works without a connection. A few extras, like a suggested theme for a trip or mood tags on a reflection, fill in when you're online, and your entries save either way.
 
-## Current State
-
-The groundwork is done. The app builds and runs, the data and design layers are set up, and the tab structure is in place. The trip, reflection, and Sprout screens are being built on top of that in stages. Profile, the shop, and the first-run intro are placeholders for now while their designs are sorted out.
-
 ## Technical Breakdown
 
-- **Platform.** SwiftUI app targeting iOS 18 and up. iPhone only, portrait. No third-party dependencies.
+- **Platform.** SwiftUI app targeting iOS 26+. iPhone only.
 - **Structure.** Grouped by feature, so everything for a given screen tends to live in one place. `App` holds the entry point and tab navigation, `Core` holds shared services, `DesignSystem` holds the visual building blocks, `Models` holds the stored types, and each thing under `Features` is self-contained.
+- **Design references.** Use `TYPOGRAPHY.MD` when adjusting fonts, text hierarchy, or type tokens, and `ASSET-GUIDE.md` when adding or updating images, icons, or exported visual assets.
 
   ```
   Mindsprout/

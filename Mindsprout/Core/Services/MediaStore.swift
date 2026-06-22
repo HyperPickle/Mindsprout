@@ -3,6 +3,7 @@ import Foundation
 protocol MediaStoring {
     func url(for relativePath: String) -> URL
     func write(_ data: Data, kind: MediaKind, fileExtension: String) throws -> String
+    func write(_ data: Data, relativePath: String) throws
     func read(relativePath: String) throws -> Data
     func delete(relativePath: String) throws
 }
@@ -32,12 +33,16 @@ final class MediaStore: MediaStoring {
 
     func write(_ data: Data, kind: MediaKind, fileExtension: String) throws -> String {
         let folder = subfolder(for: kind)
-        let directory = root.appendingPathComponent(folder, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
         let relativePath = "\(folder)/\(UUID().uuidString).\(fileExtension)"
-        try data.write(to: url(for: relativePath), options: .atomic)
+        try write(data, relativePath: relativePath)
         return relativePath
+    }
+
+    func write(_ data: Data, relativePath: String) throws {
+        let fileURL = url(for: relativePath)
+        let directory = fileURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try data.write(to: fileURL, options: .atomic)
     }
 
     func read(relativePath: String) throws -> Data {

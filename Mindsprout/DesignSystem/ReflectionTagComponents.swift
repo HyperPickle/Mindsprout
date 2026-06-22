@@ -22,13 +22,13 @@ struct ReflectionTagChip: View {
     private var chipContent: some View {
         HStack(spacing: Spacing.xxs) {
             Text(text)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(AppFont.bodyEmphasized)
             if removable {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
             }
         }
-        .foregroundStyle(accent ? AppColor.inkSecondary : AppColor.primaryEdge)
+        .foregroundStyle(accent ? AppColor.label : AppColor.primaryEdge)
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 6)
         .background(
@@ -50,16 +50,16 @@ struct ReflectionTagsSection: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack {
                 Text(title)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(AppFont.eyebrow)
                     .tracking(0.8)
-                    .foregroundStyle(AppColor.inkMuted)
+                    .foregroundStyle(AppColor.label)
                 Spacer()
                 if !tags.isEmpty {
                     Button("Edit") {
                         isEditing = true
                     }
                     .buttonStyle(.plain)
-                    .font(AppFont.callout)
+                    .font(AppFont.button)
                     .foregroundStyle(AppColor.primaryEdge)
                 }
             }
@@ -72,9 +72,9 @@ struct ReflectionTagsSection: View {
                         Image(systemName: "plus.circle.fill")
                             .font(AppFont.callout)
                         Text(emptyLabel)
-                            .font(AppFont.callout)
+                            .font(AppFont.button)
                     }
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.label)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.sm)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -122,13 +122,13 @@ struct ReflectionTagEditorSheet: View {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 Text("Add or refine the tags for this reflection.")
                     .font(AppFont.callout)
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.label)
 
                 HStack(spacing: Spacing.sm) {
                     TextField("New tag", text: $newTag)
                         .textInputAutocapitalization(.words)
                         .font(AppFont.body)
-                        .foregroundStyle(AppColor.ink)
+                        .foregroundStyle(AppColor.label)
                         .padding(.horizontal, Spacing.md)
                         .padding(.vertical, Spacing.sm)
                         .background(
@@ -146,7 +146,7 @@ struct ReflectionTagEditorSheet: View {
                 if draftTags.isEmpty {
                     Text("No tags yet.")
                         .font(AppFont.callout)
-                        .foregroundStyle(AppColor.inkMuted)
+                        .foregroundStyle(AppColor.label)
                         .padding(.vertical, Spacing.sm)
                 } else {
                     FlowLayout(horizontalSpacing: Spacing.xs, verticalSpacing: Spacing.xs) {

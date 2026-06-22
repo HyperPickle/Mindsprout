@@ -2,13 +2,28 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 
+enum WaveformLayout {
+    static let spacing: CGFloat = 2
+
+    static func barWidth(containerWidth: CGFloat, barCount: Int) -> CGFloat? {
+        guard barCount > 0, containerWidth.isFinite else { return nil }
+        let availableWidth = containerWidth - CGFloat(barCount - 1) * spacing
+        guard availableWidth > 0 else { return nil }
+        let width = availableWidth / CGFloat(barCount)
+        guard width.isFinite, width > 0 else { return nil }
+        return width
+    }
+}
+
 struct EntryStep: View {
     @Bindable var vm: ReflectionViewModel
 
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: Spacing.md) {
-                sproutHeader
+                ReflectionStepHeader(title: vm.affirmationHeadline) {
+                    vm.step = .highlight
+                }
                 typeRecordToggle
                 if vm.bodyKind == .text {
                     TypeEntryCard(vm: vm)
@@ -22,31 +37,6 @@ struct EntryStep: View {
             continueButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(BackgroundSky())
-    }
-
-    private var sproutHeader: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Button { vm.step = 1 } label: {
-                HStack(spacing: Spacing.xxs) {
-                    Image(systemName: "chevron.left")
-                    Text("Back")
-                }
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.onBackground)
-            }
-            .buttonStyle(.plain)
-
-            HStack(alignment: .center, spacing: Spacing.sm) {
-                SproutIdleView()
-                    .frame(width: 95, height: 95)
-                Text(vm.affirmationHeadline)
-                    .font(AppFont.headline)
-                    .foregroundStyle(AppColor.onBackground)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-            }
-        }
     }
 
     private var typeRecordToggle: some View {
@@ -55,7 +45,7 @@ struct EntryStep: View {
             toggleSegment("Record", kind: .audio)
         }
         .padding(3)
-        .glassEffect(in: Capsule())
+        .readableLiquidGlass(in: Capsule())
     }
 
     private func toggleSegment(_ label: String, kind: ReflectionBodyKind) -> some View {
@@ -63,8 +53,8 @@ struct EntryStep: View {
             vm.bodyKind = kind
         } label: {
             Text(label)
-                .font(AppFont.callout)
-                .foregroundStyle(vm.bodyKind == kind ? .white : .white.opacity(0.6))
+                .font(AppFont.button)
+                .foregroundStyle(vm.bodyKind == kind ? AppColor.label : AppColor.label.opacity(0.6))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.xs)
                 .background(
@@ -77,10 +67,9 @@ struct EntryStep: View {
     }
 
     private var continueButton: some View {
-        Button("Continue") {
-            vm.step = 3
+        HomeCTAButton(title: "Continue", widthScale: 1) {
+            vm.step = .photos
         }
-        .buttonStyle(.primaryWhite)
         .disabled(!vm.canContinueStep2)
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.bottom, Spacing.md)
@@ -91,6 +80,7 @@ struct EntryStep: View {
 
 private struct TypeEntryCard: View {
     @Bindable var vm: ReflectionViewModel
+
     private let maxChars = 200
 
     var body: some View {
@@ -98,14 +88,14 @@ private struct TypeEntryCard: View {
             ZStack(alignment: .topLeading) {
                 if vm.entryText.isEmpty {
                     Text(vm.inspirationPrompt)
-                        .font(.system(size: 15).italic())
-                        .foregroundStyle(AppColor.inkMuted)
+                        .font(AppFont.callout.italic())
+                        .foregroundStyle(ReflectionSurfaceStyle.cardTextColor.opacity(ReflectionSurfaceStyle.secondaryCardTextOpacity))
                         .padding(Spacing.sm)
                         .allowsHitTesting(false)
                 }
                 TextEditor(text: $vm.entryText)
                     .font(AppFont.body)
-                    .foregroundStyle(AppColor.ink)
+                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
                     .scrollContentBackground(.hidden)
                     .padding(Spacing.xs)
                     .onChange(of: vm.entryText) { _, new in
@@ -122,11 +112,11 @@ private struct TypeEntryCard: View {
                 Spacer()
                 Text("\(vm.entryText.count)/\(maxChars)")
                     .font(AppFont.caption)
-                    .foregroundStyle(AppColor.inkMuted)
+                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor.opacity(ReflectionSurfaceStyle.secondaryCardTextOpacity))
             }
             .padding(Spacing.sm)
         }
-        .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+        .reflectionCardSurface(in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
     }
 }
 
@@ -134,26 +124,33 @@ private struct TypeEntryCard: View {
 
 private struct RecordEntryCard: View {
     @Bindable var vm: ReflectionViewModel
+
     @State private var recorder: AudioRecorderController = AudioRecorderController()
     @State private var player = AudioPlayerController()
 
     var body: some View {
         VStack(spacing: Spacing.md) {
             if previewURL != nil {
-                PlaybackWaveformView(progress: player.progress)
+                PlaybackWaveformView(amplitudes: player.amplitudes)
                     .frame(height: 80)
             } else {
                 WaveformView(amplitudes: recorder.amplitudes, isRecording: recorder.isRecording)
                     .frame(height: 80)
             }
 
-            Text(recorder.elapsedString)
-                .font(.system(size: 28, weight: .light, design: .monospaced))
-                .foregroundStyle(AppColor.ink)
+            if previewURL == nil {
+                Text(recorder.elapsedString)
+                    .font(AppFont.timerLarge)
+                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
+            } else {
+                Text(playbackTimeLabel)
+                    .font(AppFont.timerLarge)
+                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
+            }
 
             if previewURL != nil {
                 playbackControls
-                deleteRecordingButton
+                transcriptPreview
             } else {
                 VStack(spacing: Spacing.sm) {
                     stateButton
@@ -165,7 +162,7 @@ private struct RecordEntryCard: View {
 
         }
         .padding(Spacing.lg)
-        .glassEffect(.regular.tint(.white), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+        .reflectionCardSurface(in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
         .alert("Microphone Access Required", isPresented: $recorder.showPermissionAlert) {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -177,8 +174,8 @@ private struct RecordEntryCard: View {
             Text("Please allow microphone access in Settings to record audio.")
         }
         .onDisappear {
-            if recorder.isRecording {
-                Task { await stopAndSave() }
+            if recorder.hasInProgressRecording {
+                Task { await finalizeRecordingForDisappear() }
             }
             player.stop()
         }
@@ -209,15 +206,12 @@ private struct RecordEntryCard: View {
                 Image(systemName: stateButtonIcon)
                     .font(.system(size: 16, weight: .semibold))
                 Text(stateButtonTitle)
-                    .font(AppFont.callout)
+                    .font(AppFont.button)
             }
             .foregroundStyle(stateButtonForeground)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Spacing.sm)
-            .background(
-                Capsule().fill(stateButtonBackground)
-                    .shadow(color: AppColor.ink.opacity(0.12), radius: 6, y: 3)
-            )
+            .reflectionControlSurface(in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -235,69 +229,117 @@ private struct RecordEntryCard: View {
         Button {
             Task { await stopAndSave() }
         } label: {
-            Text("Finish Recording")
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.ink)
+            Text("Finish")
+                .font(AppFont.button)
+                .foregroundStyle(ReflectionSurfaceStyle.controlTextColor)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.sm)
-                .background(Capsule().fill(AppColor.hairline.opacity(0.5)))
+                .reflectionControlSurface(in: Capsule())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
 
     private var deleteRecordingButton: some View {
-        Button {
+        Button(role: .destructive) {
             resetRecording()
         } label: {
             HStack(spacing: Spacing.xs) {
                 Image(systemName: "trash")
                     .font(.system(size: 14, weight: .semibold))
                 Text("Delete")
-                    .font(AppFont.callout)
+                    .font(AppFont.button)
             }
-            .foregroundStyle(AppColor.ink)
+            .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Spacing.sm)
-            .background(Capsule().fill(AppColor.hairline.opacity(0.5)))
+            .reflectionControlSurface(in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
 
     private var playbackControls: some View {
-        HStack(spacing: Spacing.md) {
-            Button {
-                player.toggle()
-            } label: {
+        Button {
+            player.toggle()
+        } label: {
+            HStack(spacing: Spacing.xs) {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(AppColor.ink)
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(.white))
-                    .overlay(Circle().stroke(AppColor.hairline, lineWidth: 1))
-                    .contentShape(Circle())
+                    .font(.system(size: 16, weight: .semibold))
+                Text(player.isPlaying ? "Pause" : "Play")
+                    .font(AppFont.button)
             }
-            .buttonStyle(.plain)
+            .foregroundStyle(ReflectionSurfaceStyle.controlTextColor)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Spacing.sm)
+            .reflectionControlSurface(in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
 
-            Spacer()
-
-            Text(playbackTimeLabel)
-                .font(.system(size: 20, weight: .light, design: .monospaced))
-                .foregroundStyle(AppColor.inkSecondary)
+    @ViewBuilder
+    private var transcriptPreview: some View {
+        if vm.isTranscribing {
+            HStack(spacing: Spacing.xs) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Transcribing…")
+                    .font(AppFont.callout)
+                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else if let transcript = vm.transcriptText, !transcript.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Transcript")
+                    .font(AppFont.caption)
+                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor.opacity(ReflectionSurfaceStyle.secondaryCardTextOpacity))
+                Text(transcript)
+                    .font(AppFont.callout)
+                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(AppColor.hairline.opacity(0.25))
+            )
+        } else if let errorMessage = vm.transcriptionErrorMessage {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Transcript unavailable")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.destructive)
+                Text(errorMessage)
+                    .font(AppFont.callout)
+                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(AppColor.destructive.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .stroke(AppColor.destructive.opacity(0.2), lineWidth: 1)
+            )
         }
     }
 
     private var stateButtonTitle: LocalizedStringKey {
         switch recorder.uiState {
         case .idle:
-            "Start Recording"
+            "Start"
         case .recording:
-            "Pause Recording"
+            "Pause"
         case .paused:
-            "Resume Recording"
+            "Resume"
         case .finished:
-            "Resume Recording"
+            "Resume"
         }
     }
 
@@ -315,23 +357,7 @@ private struct RecordEntryCard: View {
     }
 
     private var stateButtonForeground: Color {
-        switch recorder.uiState {
-        case .recording:
-            .white
-        default:
-            AppColor.ink
-        }
-    }
-
-    private var stateButtonBackground: Color {
-        switch recorder.uiState {
-        case .recording:
-            AppColor.primary
-        case .finished:
-            AppColor.hairline.opacity(0.55)
-        default:
-            .white
-        }
+        ReflectionSurfaceStyle.controlTextColor
     }
 
     private func handleStateButtonTap() async {
@@ -350,7 +376,18 @@ private struct RecordEntryCard: View {
     private func stopAndSave() async {
         if let data = await recorder.stop() {
             vm.replaceAudio(with: data)
+            // Transcribe on-device in the background; ready before the user
+            // finishes the flow. Result is shown in the preview below.
+            Task { await vm.transcribeCurrentAudio() }
         }
+    }
+
+    private func finalizeRecordingForDisappear() async {
+        if vm.isDiscardingDraft {
+            recorder.reset()
+            return
+        }
+        await stopAndSave()
     }
 
     private func resetRecording() {
@@ -375,42 +412,43 @@ private struct WaveformView: View {
     var body: some View {
         Canvas { ctx, size in
             let barCount = amplitudes.count
-            guard barCount > 0 else { return }
-            let barWidth: CGFloat = (size.width - CGFloat(barCount - 1) * 2) / CGFloat(barCount)
+            guard let barWidth = WaveformLayout.barWidth(containerWidth: size.width, barCount: barCount) else { return }
+            let cornerRadius = min(barWidth / 2, size.height / 2)
             for (i, amp) in amplitudes.enumerated() {
-                let x = CGFloat(i) * (barWidth + 2)
-                let barHeight = max(4, CGFloat(amp) * size.height)
+                let x = CGFloat(i) * (barWidth + WaveformLayout.spacing)
+                let barHeight = min(size.height, max(4, CGFloat(amp) * size.height))
                 let y = (size.height - barHeight) / 2
                 let rect = CGRect(x: x, y: y, width: barWidth, height: barHeight)
-                let path = Path(roundedRect: rect, cornerRadius: barWidth / 2)
+                let path = Path(roundedRect: rect, cornerRadius: cornerRadius)
                 if isRecording {
-                    ctx.fill(path, with: .color(AppColor.primary))
+                    ctx.fill(path, with: .color(.white))
                 } else {
-                    ctx.stroke(path, with: .color(AppColor.hairline), style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                    ctx.stroke(path, with: .color(.white), style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
                 }
             }
         }
     }
 }
 
+/// Live, zoomed-in playback waveform: solid white rounded bars driven by the
+/// player's rolling amplitude buffer. Scrolls while playing, holds the last
+/// frame when paused.
 private struct PlaybackWaveformView: View {
-    let progress: Double
-    private let heights: [CGFloat] = [0.22, 0.20, 0.24, 0.23, 0.28, 0.55, 0.60, 0.64, 0.61, 0.59, 0.57, 0.55, 0.52, 0.50, 0.53, 0.60, 0.62, 0.67, 0.63, 0.61, 0.58, 0.57, 0.60, 0.62, 0.61, 0.59, 0.60, 0.58]
+    let amplitudes: [Float]
 
     var body: some View {
-        GeometryReader { geo in
-            let count = heights.count
-            let filled = max(1, Int((Double(count) * progress).rounded()))
-            let barWidth = max(4, (geo.size.width - CGFloat(count - 1) * 6) / CGFloat(count))
-
-            HStack(alignment: .center, spacing: 6) {
-                ForEach(0..<count, id: \.self) { index in
-                    Capsule()
-                        .fill(index < filled ? AppColor.primary : AppColor.hairline.opacity(0.9))
-                        .frame(width: barWidth, height: max(10, geo.size.height * heights[index]))
-                }
+        Canvas { ctx, size in
+            let barCount = amplitudes.count
+            guard let barWidth = WaveformLayout.barWidth(containerWidth: size.width, barCount: barCount) else { return }
+            let cornerRadius = min(barWidth / 2, size.height / 2)
+            for (i, amp) in amplitudes.enumerated() {
+                let x = CGFloat(i) * (barWidth + WaveformLayout.spacing)
+                let barHeight = min(size.height, max(4, CGFloat(amp) * size.height))
+                let y = (size.height - barHeight) / 2
+                let rect = CGRect(x: x, y: y, width: barWidth, height: barHeight)
+                let path = Path(roundedRect: rect, cornerRadius: cornerRadius)
+                ctx.fill(path, with: .color(.white))
             }
-            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 }
@@ -434,6 +472,10 @@ private final class AudioRecorderController: NSObject {
     var showPermissionAlert = false
     var elapsedString = "00:00:00"
     var uiState: UIState = .idle
+
+    var hasInProgressRecording: Bool {
+        uiState == .recording || uiState == .paused
+    }
 
     private var recorder: AVAudioRecorder?
     private var tempURL: URL?
@@ -465,17 +507,21 @@ private final class AudioRecorderController: NSObject {
             AVNumberOfChannelsKey: 1,
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
         ]
-        try? AVAudioSession.sharedInstance().setCategory(.record, mode: .default)
-        try? AVAudioSession.sharedInstance().setActive(true)
-        recorder = try? AVAudioRecorder(url: url, settings: settings)
-        recorder?.isMeteringEnabled = true
-        recorder?.record()
-        isRecording = true
-        isPaused = false
-        hasRecording = false
-        uiState = .recording
-        elapsed = 0
-        startTimer()
+        Task.detached(priority: .userInitiated) {
+            try? AVAudioSession.sharedInstance().setCategory(.record, mode: .default)
+            try? AVAudioSession.sharedInstance().setActive(true)
+            await MainActor.run {
+                self.recorder = try? AVAudioRecorder(url: url, settings: settings)
+                self.recorder?.isMeteringEnabled = true
+                self.recorder?.record()
+                self.isRecording = true
+                self.isPaused = false
+                self.hasRecording = false
+                self.uiState = .recording
+                self.elapsed = 0
+                self.startTimer()
+            }
+        }
     }
 
     func pause() {
@@ -499,13 +545,17 @@ private final class AudioRecorderController: NSObject {
         timer?.invalidate()
         timer = nil
         recorder?.stop()
+        recorder = nil
         isRecording = false
         isPaused = false
-        try? AVAudioSession.sharedInstance().setActive(false)
+        deactivateAudioSession()
         guard let url = tempURL else { return nil }
+        tempURL = nil
         hasRecording = true
         uiState = .finished
-        return try? Data(contentsOf: url)
+        let data = try? Data(contentsOf: url)
+        try? FileManager.default.removeItem(at: url)
+        return data
     }
 
     func reset() {
@@ -524,7 +574,7 @@ private final class AudioRecorderController: NSObject {
         isPaused = false
         hasRecording = false
         uiState = .idle
-        try? AVAudioSession.sharedInstance().setActive(false)
+        deactivateAudioSession()
     }
 
     private func tick() {
@@ -547,6 +597,12 @@ private final class AudioRecorderController: NSObject {
             Task { @MainActor [weak self] in self?.tick() }
         }
     }
+
+    private func deactivateAudioSession() {
+        Task.detached(priority: .utility) {
+            try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+        }
+    }
 }
 
 #Preview {
@@ -563,8 +619,9 @@ private final class AudioRecorderController: NSObject {
         mediaStore: MediaStore(root: FileManager.default.temporaryDirectory),
         gameConfig: .default,
         ai: TemplateAIGenerationService(),
+        transcriber: SpeechTranscriptionService(),
         tripType: .solo,
-        onDismiss: {}
+        onComplete: { _ in }
     )
     vm.selectedPrompt = HighlightPrompt(id: "first-time", title: "Tried something for the first time", subtitle: "")
     return EntryStep(vm: vm)

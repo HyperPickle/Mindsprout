@@ -1,11 +1,15 @@
 import SwiftUI
+import SwiftData
 
 struct LevelUpFlow: View {
     let presentation: LevelUpPresentation
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Query private var sprouts: [Sprout]
     @State private var step: Step = .sleeping
+
+    private var sproutName: String { sprouts.first?.name.isEmpty == false ? sprouts.first!.name : "Sprout" }
 
     private enum Step: Int, CaseIterable {
         case sleeping
@@ -34,17 +38,17 @@ struct LevelUpFlow: View {
         switch step {
         case .sleeping:
             sproutMoment(
-                status: "Sprout is feeling sleepy",
+                status: "\(sproutName) is feeling sleepy",
                 title: "Something is stirring",
-                subtitle: "\(presentation.destination) gave Sprout enough energy to grow."
+                subtitle: "\(presentation.destination) gave \(sproutName) enough energy to grow."
             )
         case .transition:
             transitionCard
         case .evolved:
             sproutMoment(
-                status: "Sprout evolved!",
+                status: "\(sproutName) evolved!",
                 title: "Level \(presentation.newLevel)",
-                subtitle: "Your Sprout reached a new milestone."
+                subtitle: "\(sproutName) reached a new milestone."
             )
         case .insight:
             insightCard
@@ -53,12 +57,12 @@ struct LevelUpFlow: View {
         }
     }
 
-    private func sproutMoment(status: LocalizedStringKey, title: LocalizedStringKey, subtitle: LocalizedStringKey) -> some View {
+    private func sproutMoment(status: String, title: String, subtitle: String) -> some View {
         VStack(spacing: Spacing.lg) {
             Spacer()
             Text(status)
                 .font(AppFont.caption)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColor.label)
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.xs)
                 .background(Capsule().fill(AppColor.primaryEdge.opacity(0.58)))
@@ -83,12 +87,12 @@ struct LevelUpFlow: View {
                     .font(.system(size: 48, weight: .bold))
                     .foregroundStyle(AppColor.currency)
                 Text("A new layer unfolds")
-                    .font(AppFont.title)
-                    .foregroundStyle(AppColor.ink)
+                    .font(AppFont.screenTitle)
+                    .foregroundStyle(AppColor.label)
                     .multilineTextAlignment(.center)
-                Text("The moment settles into Sprout, turning reflection into growth.")
+                Text("The moment settles into \(sproutName), turning reflection into growth.")
                     .font(AppFont.body)
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.label)
                     .multilineTextAlignment(.center)
             }
             .padding(Spacing.xl)
@@ -103,14 +107,14 @@ struct LevelUpFlow: View {
             VStack(spacing: Spacing.md) {
                 Text("Growth Insight")
                     .font(AppFont.callout)
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.label)
                 Text(presentation.insight.trait)
-                    .font(.system(size: 44, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColor.ink)
+                    .font(AppFont.display)
+                    .foregroundStyle(AppColor.label)
                     .multilineTextAlignment(.center)
                 Text(presentation.insight.blurb)
                     .font(AppFont.body)
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.label)
                     .multilineTextAlignment(.center)
             }
             .padding(Spacing.xl)
@@ -125,17 +129,17 @@ struct LevelUpFlow: View {
             Spacer()
             VStack(alignment: .leading, spacing: Spacing.md) {
                 Text(presentation.postcard.title)
-                    .font(AppFont.title)
-                    .foregroundStyle(AppColor.ink)
+                    .font(AppFont.screenTitle)
+                    .foregroundStyle(AppColor.label)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(presentation.postcard.body)
                     .font(AppFont.body)
-                    .foregroundStyle(AppColor.inkSecondary)
+                    .foregroundStyle(AppColor.label)
                     .fixedSize(horizontal: false, vertical: true)
                 Divider()
                 Text("Level \(presentation.previousLevel) → \(presentation.newLevel)")
                     .font(AppFont.caption)
-                    .foregroundStyle(AppColor.inkMuted)
+                    .foregroundStyle(AppColor.label)
             }
             .padding(Spacing.xl)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -148,16 +152,16 @@ struct LevelUpFlow: View {
         }
     }
 
-    private func rewardText(title: LocalizedStringKey, subtitle: LocalizedStringKey) -> some View {
+    private func rewardText(title: String, subtitle: String) -> some View {
         VStack(spacing: Spacing.xs) {
             Text(title)
-                .font(AppFont.title)
-                .foregroundStyle(.white)
+                .font(AppFont.screenTitle)
+                .foregroundStyle(AppColor.label)
                 .multilineTextAlignment(.center)
                 .shadow(color: .black.opacity(0.22), radius: 4, y: 2)
             Text(subtitle)
                 .font(AppFont.callout)
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(AppColor.label.opacity(0.92))
                 .multilineTextAlignment(.center)
                 .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
         }

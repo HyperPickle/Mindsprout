@@ -17,6 +17,14 @@ struct ScreenshotHost: View {
 
     @ViewBuilder private var content: some View {
         switch screen {
+        case "trips":
+            TripsTab()
+        case "profile":
+            ProfileTab()
+        case "settings":
+            NavigationStack {
+                SettingsView()
+            }
         case "newtrip":
             NewTripFlow()
         case "expectations":
@@ -24,7 +32,7 @@ struct ScreenshotHost: View {
         case "detail":
             DetailHost(container: container)
         default:
-            AdventuresTab()
+            TripsTab()
         }
     }
 }

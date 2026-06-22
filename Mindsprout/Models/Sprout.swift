@@ -4,6 +4,7 @@ import SwiftData
 @Model
 final class Sprout {
     var id: UUID = UUID()
+    var name: String = ""
     var xp: Int = 0
     var level: Int = 1
     var currentStageIndex: Int = 0
@@ -13,6 +14,7 @@ final class Sprout {
 
     init(
         id: UUID = UUID(),
+        name: String = "",
         xp: Int = 0,
         level: Int = 1,
         currentStageIndex: Int = 0,
@@ -21,6 +23,7 @@ final class Sprout {
         createdAt: Date = Date()
     ) {
         self.id = id
+        self.name = name
         self.xp = xp
         self.level = level
         self.currentStageIndex = currentStageIndex

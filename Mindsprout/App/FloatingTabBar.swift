@@ -5,7 +5,7 @@ struct FloatingTabBar: View {
     @Binding var selection: AppTab
     
     private var centerTab: AppTab {
-        selection == .home ? .reflect : .home
+        selection == .home ? .home : .home
     }
     
     var body: some View {
@@ -31,7 +31,7 @@ struct FloatingTabBar: View {
     
     private var pill: some View {
         HStack(spacing: 0) {
-            sideItem(.adventures)
+            sideItem(.trips)
             Spacer()
             Color.clear.frame(width: 72)
             Spacer()
@@ -121,7 +121,7 @@ struct PressScaleButtonStyle: ButtonStyle {
         VStack {
             Spacer()
             FloatingTabBar(selection: .constant(.home))
-            FloatingTabBar(selection: .constant(.adventures))
+            FloatingTabBar(selection: .constant(.trips))
         }
     }
 }
