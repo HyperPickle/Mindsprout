@@ -97,17 +97,21 @@ struct DestinationPickerView: View {
                     Image(systemName: "mappin.circle.fill")
                         .foregroundStyle(Color(hex: 0x5C6A6E))
                     
-                    TextField(
-                        selectedCity.isEmpty ? "Search a city..." : selectedCity,
-                        text: $searchText
-                    )
-                    .font(.system(size: 16, design: .rounded))
-                    .foregroundStyle(Color(hex: 0x5C6A6E))
-                    .focused($isFocused)
-                    .onChange(of: searchText) { _, newValue in
-                        if network.isConnected {
-                            searchDelegate.search(newValue)
+                    ZStack(alignment: .leading) {
+                        if searchText.isEmpty {
+                            Text(selectedCity.isEmpty ? "Search a city..." : selectedCity)
+                                .font(.system(size: 16, design: .rounded))
+                                .foregroundStyle(Color(hex: 0x5C6A6E))
                         }
+                        TextField("", text: $searchText)
+                            .font(.system(size: 16, design: .rounded))
+                            .foregroundStyle(Color(hex: 0x5C6A6E))
+                            .focused($isFocused)
+                            .onChange(of: searchText) { _, newValue in
+                                if network.isConnected {
+                                    searchDelegate.search(newValue)
+                                }
+                            }
                     }
                     
                     Spacer()
@@ -212,12 +216,12 @@ struct DestinationPickerView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color(hex: 0x5C6A6E))
                     
                     if !subtitle.isEmpty {
                         Text(subtitle)
                             .font(.system(size: 12, design: .rounded))
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(Color(hex: 0x5C6A6E))
                     }
                 }
                 Spacer()

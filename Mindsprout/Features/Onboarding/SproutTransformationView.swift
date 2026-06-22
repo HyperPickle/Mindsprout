@@ -1,17 +1,3 @@
-//
-//  SproutTransformationView.swift
-//  Mindsprout
-//
-//  Created by Changrila Souksamlane on 11/6/2026.
-//
-
-//
-//  SproutTransformationView.swift
-//  Mindsprout
-//
-//  Created by Changrila Souksamlane on 11/6/2026.
-//
-
 import SwiftUI
 import RiveRuntime
 
@@ -21,41 +7,39 @@ struct SproutTransformationView: View {
     @AppStorage("sproutName") var sproutName = ""
 
     @StateObject private var riveController = SeedRiveController()
-    
+
     @State private var showText = false
     @State private var showButton = false
     var onFinish: () -> Void
-    
+
+    private let waterAnimationDuration: Double = 17.0
+
     var body: some View {
         ZStack {
             BackgroundSky()
                 .ignoresSafeArea()
-            
-            ZStack {
-                SproutIdleView()
-                    .frame(width: 300, height: 300)
-                    .offset(x: 0, y: -10)
-            }
-            
+
+            SeedView(controller: riveController)
+
             VStack(spacing: 32) {
                 Spacer()
-                
+
                 if showText {
                     VStack(spacing: 8) {
                         Text("Meet \(sproutName)!")
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
-                        
-                        Text("Your travel companion is ready\nto explore the world with you ")
+
+                        Text("Your travel companion is ready\nto explore the world with you")
                             .font(.system(size: 16, design: .rounded))
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
                     }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
-                
+
                 Spacer().frame(height: 20)
-                
+
                 if showButton {
                     Button {
                         hasCompletedOnboarding = true
@@ -72,7 +56,7 @@ struct SproutTransformationView: View {
                     }
                     .padding(.horizontal, 24)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    
+
                     Spacer().frame(height: 40)
                 }
             }
@@ -81,13 +65,16 @@ struct SproutTransformationView: View {
             startTransformationFlow()
         }
     }
-    
+
     func startTransformationFlow() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        // 1. Lance l'animation water dès l'apparition
+        riveController.triggerWaterAnimation()
+
+        // 2. Après la fin de l'animation → affiche le texte et le bouton
+        DispatchQueue.main.asyncAfter(deadline: .now() + waterAnimationDuration) {
             withAnimation(.easeOut(duration: 0.6)) {
                 showText = true
             }
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.easeOut(duration: 0.5)) {
                     showButton = true

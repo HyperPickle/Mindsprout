@@ -70,13 +70,7 @@ struct SproutNamingView: View {
                     guard !sproutName.isEmpty else { return }
                     savedSproutName = sproutName
                     isFieldFocused = false
-                    
-
-                    riveController.triggerWaterAnimation()
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 17) {
-                        showTransformation = true
-                    }
+                    onContinue()
                 } label: {
                     Text("Continue")
                         .font(.system(size: 17, weight: .semibold, design: .rounded))

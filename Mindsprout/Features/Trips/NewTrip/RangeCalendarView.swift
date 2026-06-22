@@ -8,6 +8,10 @@ struct RangeCalendarView: View {
     private let calendar = Calendar.current
     private let weekdaySymbols = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
+    // Couleurs cohérentes avec DestinationPickerView
+    private let accent = Color(hex: 0x5C6A6E)
+    private let accentLight = Color(hex: 0x5C6A6E).opacity(0.18)
+
     var body: some View {
         VStack(spacing: Spacing.sm) {
             monthHeader
@@ -15,7 +19,7 @@ struct RangeCalendarView: View {
                 ForEach(weekdaySymbols, id: \.self) { symbol in
                     Text(symbol)
                         .font(AppFont.caption)
-                        .foregroundStyle(AppColor.inkMuted)
+                        .foregroundStyle(Color(hex: 0x5C6A6E).opacity(0.6))
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -27,7 +31,9 @@ struct RangeCalendarView: View {
     private var monthHeader: some View {
         HStack {
             Button { shiftMonth(-1) } label: {
-                Image(systemName: "chevron.left").font(.system(size: 16, weight: .bold))
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(accent)
             }
             Spacer()
             HStack(spacing: Spacing.sm) {
@@ -44,10 +50,11 @@ struct RangeCalendarView: View {
             }
             Spacer()
             Button { shiftMonth(1) } label: {
-                Image(systemName: "chevron.right").font(.system(size: 16, weight: .bold))
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(accent)
             }
         }
-        .foregroundStyle(AppColor.ink)
         .padding(.horizontal, Spacing.xs)
     }
 
@@ -56,21 +63,29 @@ struct RangeCalendarView: View {
             Text(text).font(AppFont.bodyEmphasized)
             Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
         }
-        .foregroundStyle(AppColor.ink)
+        .foregroundStyle(accent)
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.small).fill(AppColor.cardSurface.opacity(0.6)))
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.small)
+                .fill(Color(hex: 0x5C6A6E).opacity(0.12))
+        )
     }
 
     private var grid: some View {
         let days = monthDays
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 6) {
+        return LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7),
+            spacing: 6
+        ) {
             ForEach(Array(days.enumerated()), id: \.offset) { _, day in
                 if let day {
                     DayCell(
                         day: calendar.component(.day, from: day),
                         state: state(for: day),
-                        isSingleSelection: calendar.startOfDay(for: startDate) == calendar.startOfDay(for: endDate)
+                        isSingleSelection: calendar.startOfDay(for: startDate) == calendar.startOfDay(for: endDate),
+                        accent: accent,
+                        accentLight: accentLight
                     )
                     .onTapGesture { select(day) }
                 } else {
@@ -144,10 +159,14 @@ struct RangeCalendarView: View {
     }
 }
 
+// MARK: - Day Cell
+
 private struct DayCell: View {
     let day: Int
     let state: RangeCalendarView.DayState
     var isSingleSelection: Bool = false
+    let accent: Color
+    let accentLight: Color
 
     var body: some View {
         Text("\(day)")
@@ -163,8 +182,8 @@ private struct DayCell: View {
     private var foreground: Color {
         switch state {
         case .start, .end: return .white
-        case .inRange: return AppColor.ink
-        case .normal: return AppColor.ink
+        case .inRange: return accent
+        case .normal: return Color(hex: 0x5C6A6E)
         }
     }
 
@@ -190,6 +209,24 @@ private struct DayCell: View {
             Rectangle().fill(AppColor.primary.opacity(0.22))
         case .normal:
             Color.clear
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    @Previewable @State var start = Date()
+    @Previewable @State var end = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+
+    ZStack {
+        BackgroundSky()
+        VStack {
+            RangeCalendarView(startDate: $start, endDate: $end)
+                .padding(Spacing.md)
+                .background(Color.white.opacity(0.8), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+                .padding()
+            Spacer()
         }
     }
 }
