@@ -38,7 +38,7 @@ struct EntryStep: View {
             .buttonStyle(.plain)
 
             HStack(alignment: .center, spacing: Spacing.sm) {
-                BlinkingSproutView()
+                SproutIdleView()
                     .frame(width: 95, height: 95)
                 Text(vm.affirmationHeadline)
                     .font(AppFont.headline)

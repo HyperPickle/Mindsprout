@@ -17,7 +17,7 @@ final class SeedRiveController: ObservableObject {
     init() {
         // Chargement spécifique pour l'onboarding de la graine
         riveVM = RiveViewModel(
-            fileName: "sprout1", // Ton fichier .riv
+            fileName: "sprout2", // Ton fichier .riv
             stateMachineName: "SeedStateMachine",
             alignment: .center,
             artboardName: "Seed"

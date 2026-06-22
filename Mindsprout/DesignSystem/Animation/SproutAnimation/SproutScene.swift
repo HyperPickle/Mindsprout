@@ -14,11 +14,14 @@ import Combine
 final class SproutRiveController: ObservableObject {
     let riveVM: RiveViewModel
     
+    
     @Published var currentDirection: CGFloat = 1.0
-
+    @Published var sproutWalkOffset: CGSize = .zero
     @Published private(set) var isDragging = false
     @Published private(set) var isWalking = false
-
+    @Published var isFacingLeft = false
+  
+    private let screenHalfWidth: CGFloat = UIScreen.main.bounds.width / 2 - 80
 
     private var tapCount = 0
     private var tapTimer: Timer?
@@ -33,9 +36,8 @@ final class SproutRiveController: ObservableObject {
         // Step 1: verify the .riv file loads at all (no state machine)
         // Step 2: if Step 1 works, uncomment stateMachineName and check artboardName
         riveVM = RiveViewModel(
-            fileName: "sprout1",
-            // artboardName: "Sprout",        // ← uncomment if artboard isn't "Main"
-            stateMachineName: "SproutHomeSM", // ← comment this out first to isolate the crash
+            fileName: "sprouttest",
+            stateMachineName: "SproutHomeSM",
             artboardName:"Sprout"
         )
     }
@@ -103,26 +105,89 @@ final class SproutRiveController: ObservableObject {
         }
     }
 
+    
+
     private func doWalk() {
         isWalking = true
+        let randomDir = Bool.random()
+        currentDirection = randomDir ? 1.0 : -1.0
+        self.isFacingLeft = (self.currentDirection == -1.0)
         
-        // 1. On choisit aléatoirement si le personnage va à droite ou à gauche
-        currentDirection = Bool.random() ? 1.0 : -1.0
-        
-        // 2. Si ton personnage est asymétrique, tu peux activer un booléen dans Rive ici
-        // ex: riveVM.setInput("isFacingLeft", value: currentDirection == -1.0)
-        
-        // 3. On lance l'animation de marche Rive (qui déplace l'avatar)
+        // 1. Déclenche l'animation de marche Rive (démarre instantanément)
         riveVM.triggerInput("triggerStartWalk")
         
-        let duration = Double.random(in: 3...6)
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
-            // 4. On stoppe l'animation de marche
-            self?.riveVM.triggerInput("triggerStopWalk")
-            self?.isWalking = false
-            self?.scheduleRandomBehavior()
+        let startX = sproutWalkOffset.width
+        let screenLimit: CGFloat = 200.0
+        let naturalStep: CGFloat = CGFloat.random(in: 80...150)
+        
+        // Durée totale de l'action de marche (identique à la durée de l'offset)
+        let walkDuration: Double = 2.5
+        
+        if currentDirection > 0 {
+            // --- MARCHE VERS LA DROITE ---
+            if startX + naturalStep > screenLimit {
+                // Sortie de l'écran en douceur
+                withAnimation(.linear(duration: 1.5)) {
+                    self.sproutWalkOffset = CGSize(width: screenLimit + 40, height: 0)
+                }
+                
+                // Téléportation invisible SANS animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    self.sproutWalkOffset = CGSize(width: -screenLimit - 40, height: 0)
+                    
+                    // Rentre sur l'écran par la gauche en douceur
+                    withAnimation(.linear(duration: 1.0)) {
+                        self.sproutWalkOffset = CGSize(width: -screenLimit + 60, height: 0)
+                    }
+                }
+            } else {
+                // Déplacement linéaire fluide qui couvre exactement toute la durée de l'action
+                withAnimation(.linear(duration: walkDuration)) {
+                    self.sproutWalkOffset = CGSize(width: startX + naturalStep, height: 0)
+                }
+            }
+        } else {
+            // --- MARCHE VERS LA GAUCHE ---
+            if startX - naturalStep < -screenLimit {
+                // Sortie de l'écran en douceur
+                withAnimation(.linear(duration: 1.5)) {
+                    self.sproutWalkOffset = CGSize(width: -screenLimit - 40, height: 0)
+                }
+                
+                // Téléportation invisible SANS animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    self.sproutWalkOffset = CGSize(width: screenLimit + 40, height: 0)
+                    
+                    // Rentre sur l'écran par la droite en douceur
+                    withAnimation(.linear(duration: 1.2)) {
+                        self.sproutWalkOffset = CGSize(width: screenLimit - 60, height: 0)
+                    }
+                }
+            } else {
+                // Déplacement linéaire fluide qui couvre exactement toute la durée de l'action
+                withAnimation(.linear(duration: walkDuration)) {
+                    self.sproutWalkOffset = CGSize(width: startX - naturalStep, height: 0)
+                }
+            }
+        }
+        
+        // 2. On attend la fin exacte du déplacement (ici 2.5s) avant d'arrêter Rive et de le figer
+        DispatchQueue.main.asyncAfter(deadline: .now() + walkDuration) { [weak self] in
+            guard let self = self else { return }
+            
+            // Stoppe l'animation de marche dans Rive au même moment où il s'arrête de glisser
+            self.riveVM.triggerInput("triggerStopWalk")
+            
+            // 3. Temps de stabilisation très court (0.3s) avant de repasser en Idle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                guard let self = self else { return }
+                self.isWalking = false
+                self.isFacingLeft = false
+                self.scheduleRandomBehavior()
+            }
         }
     }
+    
     private func doSit() {
         riveVM.triggerInput("triggerSit")
         let duration = Double.random(in: 5...10)
@@ -142,6 +207,7 @@ final class SproutRiveController: ObservableObject {
     private func doSleepBriefly() {
         riveVM.triggerInput("triggerSleep")
         let duration = Double.random(in: 5...10)
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
             self?.riveVM.triggerInput("triggerWakeUp")
             self?.scheduleRandomBehavior()
@@ -216,26 +282,47 @@ struct SproutView: View {
     @StateObject private var controller = SproutRiveController()
 
     @State private var sproutOffset: CGSize = .zero
-    @State private var dragBaseOffset: CGSize = .zero  // capture si drag démarre en pleine animation
+    @State private var dragBaseOffset: CGSize = .zero
     @State private var lastDragX: CGFloat = 0
 
-    var body: some View {
-        ZStack {
-            // Rive fullscreen → bonne taille, ne capte pas les gestes
-            controller.riveVM.view()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-                // 💡 Effet miroir appliqué automatiquement si currentDirection = -1.0 (gauche)
-                .scaleEffect(x: controller.currentDirection == -1.0 ? -1.0 : 1.0, y: 1.0)
-                .offset(sproutOffset)
+    private let sproutSize: CGFloat = 300
+    private let sproutAnchorY: CGFloat = 0.5
 
-            // Couche transparente fullscreen pour les gestes
-            Color.clear
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .gesture(dragGesture)
-                .onTapGesture { controller.onTap() }
+    private var totalOffset: CGSize {
+        CGSize(
+            width: sproutOffset.width + controller.sproutWalkOffset.width,
+            height: sproutOffset.height + controller.sproutWalkOffset.height
+        )
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let baseX = geo.size.width / 2
+            let baseY = geo.size.height * sproutAnchorY
+
+            ZStack {
+                controller.riveVM.view()
+                    .frame(width: sproutSize, height: sproutSize)
+                    .scaleEffect(
+                        x: controller.isFacingLeft ? -1.0 : 1.0,
+                        y: 1.0
+                    )
+                    .position(
+                        x: baseX + totalOffset.width,
+                        y: baseY + totalOffset.height
+                    )
+                    .allowsHitTesting(false)
+
+                Color.clear
+                    .contentShape(Rectangle())
+                    .frame(width: sproutSize, height: sproutSize)
+                    .position(
+                        x: baseX + totalOffset.width,
+                        y: baseY + totalOffset.height
+                    )
+                    .gesture(dragGesture)
+                    .onTapGesture { controller.onTap() }
+            }
         }
         .ignoresSafeArea()
         .onAppear {
@@ -277,16 +364,8 @@ struct SproutView: View {
             }
     }
 }
-//
-//#Preview {
-//    ZStack {
-//        Image("HomeBackground")
-//            .resizable()
-//            .scaledToFill()
-//            .ignoresSafeArea()
-//        SproutView(state: .idle)
-//    }
-//}
+
+// MARK: - Preview
 
 #Preview {
     ZStack {
@@ -297,3 +376,24 @@ struct SproutView: View {
         SproutView(state: .idle)
     }
 }
+
+// MARK: - SproutIdleView (Welcome only)
+
+struct SproutIdleView: View {
+    @StateObject private var riveVM = RiveViewModel(
+        fileName: "sprout2",
+        stateMachineName: "SproutHomeSM",
+        artboardName: "Sprout"
+    )
+
+    var body: some View {
+        riveVM.view()
+            .allowsHitTesting(false)
+            .onAppear {
+                // Force idle : aucun comportement random, juste breathing + blink
+                riveVM.setInput("isHungry", value: false)
+                riveVM.setInput("isSad", value: false)
+            }
+    }
+}
+

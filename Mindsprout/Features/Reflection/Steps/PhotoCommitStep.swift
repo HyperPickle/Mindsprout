@@ -62,7 +62,7 @@ struct PhotoCommitStep: View {
             .buttonStyle(.plain)
 
             HStack(alignment: .center, spacing: Spacing.sm) {
-                BlinkingSproutView()
+                SproutIdleView()
                     .frame(width: 95, height: 95)
                 Text("A picture worth a thousand words they say ;)")
                     .font(AppFont.headline)

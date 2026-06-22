@@ -13,7 +13,6 @@ struct SproutNamingView: View {
     @AppStorage("sproutName") var savedSproutName = ""
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
     
-    // 1. On initialise le contrôleur Rive ici pour piloter la graine
     @StateObject private var riveController = SeedRiveController()
     
     @FocusState private var isFieldFocused: Bool
@@ -25,6 +24,7 @@ struct SproutNamingView: View {
         ZStack {
             BackgroundSky()
             .ignoresSafeArea()
+            
             
             VStack {
                 HStack {
@@ -44,16 +44,11 @@ struct SproutNamingView: View {
             
             SeedView(controller: riveController)
 
-            
-            // ✅ Contenu centré
             VStack {
+                Spacer(minLength: 0)
+                       .frame(maxHeight: .infinity)
                 
-                
-                // ✅ Seed animation (avec le contrôleur injecté en paramètre)
-                
-                // ✅ TextField + description
                 VStack(spacing: 8) {
-                    Spacer()
                     TextField("", text: $sproutName)
                         .multilineTextAlignment(.center)
                         .font(.system(size: 16, design: .rounded))
@@ -70,21 +65,17 @@ struct SproutNamingView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
-                Spacer().frame(height: 20)
                 
-                // ✅ Bouton Continue
                 Button {
                     guard !sproutName.isEmpty else { return }
                     savedSproutName = sproutName
                     isFieldFocused = false
                     
-                    // 1. Déclenche l'animation "triggerWater" dans Rive
+
                     riveController.triggerWaterAnimation()
                     
-                    // 2. On attend un court instant pour laisser l'animation démarrer avant de changer d'écran
                     DispatchQueue.main.asyncAfter(deadline: .now() + 17) {
-                        showTransformation = true // ✅ navigue
-                        onContinue()
+                        showTransformation = true
                     }
                 } label: {
                     Text("Continue")
@@ -101,11 +92,12 @@ struct SproutNamingView: View {
                 .disabled(sproutName.isEmpty)
                 .padding(.horizontal, 24)
                 .fullScreenCover(isPresented: $showTransformation) {
-                    SproutTransformationView(onFinish: {}) // ✅ page de transformation
+                    SproutTransformationView(onFinish: {})
                 }
                 Spacer()
+                        .frame(height: UIScreen.main.bounds.height * 0.12)
             }
-            .frame(maxHeight: .infinity) // ✅ centré verticalement
+            .frame(maxHeight: .infinity)
         }
         .onTapGesture {
             isFocused = false

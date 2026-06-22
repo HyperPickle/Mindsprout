@@ -175,7 +175,7 @@ struct HomeTab: View {
 
     private func sproutStage(layout: HomeDashboardLayout) -> some View {
         SproutView(state: displaySprout.state.homeDisplayState)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: 300, height: 300)
             .accessibilityHidden(true)
     }
 

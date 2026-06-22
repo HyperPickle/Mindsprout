@@ -33,11 +33,12 @@ struct SproutTransformationView: View {
                 .ignoresSafeArea()
             
             ZStack {
-                SproutView(state: .idle)
+                SproutIdleView()
+                    .frame(width: 300, height: 300)
+                    .offset(x: 0, y: -10)
             }
             
             VStack(spacing: 32) {
-                
                 Spacer()
                 
                 if showText {
