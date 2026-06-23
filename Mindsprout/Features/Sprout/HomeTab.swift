@@ -4,9 +4,6 @@ import SwiftData
 import UIKit
 
 struct HomeTab: View {
-    private let fabBarHorizontalInset: CGFloat = 21
-    private let floatingTabReservedHeight: CGFloat = 75
-
     @Binding var selection: AppTab
 
     @Environment(\.modelContext) private var context
@@ -27,13 +24,6 @@ struct HomeTab: View {
     private var todayCompletedReflection: Reflection? {
         guard let activeTrip else { return nil }
         return todaysCompletedReflection(for: activeTrip, in: context)
-    }
-
-    private var ctaAction: HomeDashboardCTAAction {
-        HomeDashboardState(
-            hasActiveTrip: activeTrip != nil,
-            completedTodayReflectionID: todayCompletedReflection?.id
-        ).ctaAction
     }
 
     // MARK: - Hungry State
@@ -58,11 +48,8 @@ struct HomeTab: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
+            ZStack {
                 dashboardContent
-                bottomPanel
-                    .padding(.horizontal, fabBarHorizontalInset)
-                    .padding(.bottom, floatingTabReservedHeight)
             }
             .task {
                 ensureSproutExists()
@@ -241,12 +228,6 @@ struct HomeTab: View {
         .accessibilityHidden(true)
     }
 
-    // MARK: - Bottom Panel
-
-    private var bottomPanel: some View {
-        ctaButton
-    }
-
     private var styleButton: some View {
         Button {
             showWardrobe = true
@@ -266,28 +247,6 @@ struct HomeTab: View {
             .glassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(PressScaleButtonStyle())
-    }
-
-    private var ctaButton: some View {
-        HomeCTAButton(title: ctaLabel, widthScale: 1) {
-            switch ctaAction {
-            case .createTrip:
-                modalCoordinator.present(.newTrip)
-            case .startReflection:
-                guard let activeTrip else { return }
-                modalCoordinator.present(.reflection(tripID: activeTrip.id))
-            case .viewTodayReflection(let reflectionID):
-                modalCoordinator.present(.todayReflection(reflectionID: reflectionID))
-            }
-        }
-    }
-
-    private var ctaLabel: LocalizedStringKey {
-        switch ctaAction {
-        case .createTrip: return "Create a Trip"
-        case .startReflection: return "Reflect to Feed"
-        case .viewTodayReflection: return "View Reflection"
-        }
     }
 
     // MARK: - Helpers
@@ -312,8 +271,6 @@ struct HomeTab: View {
 
 struct HomeDashboardLayout {
     static let sproutAspectRatio: CGFloat = 507.0 / 800.0
-    static let referenceCTAHeight: CGFloat = HomeCTAButton.referenceHeight
-    static let ctaScale: CGFloat = HomeCTAButton.widthScale
 
     let topRowCenterY: CGFloat
     let tripGroupCenterX: CGFloat
@@ -323,8 +280,6 @@ struct HomeDashboardLayout {
     let sproutViewportSize: CGSize
     let sproutWidth: CGFloat
     let sproutHeight: CGFloat
-    let ctaWidth: CGFloat
-    let ctaHeight: CGFloat
 
     // Propriétés pour topRow (version 1)
     let topRowTopInset: CGFloat
@@ -357,11 +312,6 @@ struct HomeDashboardLayout {
         sproutWidth = sproutHeight * Self.sproutAspectRatio
         sproutVerticalOffset = (size.height / 2) - sproutCenterY
         sproutViewportSize = size
-
-        // CTA
-        let currentCTAWidth = max(0, size.width - (Spacing.screenEdge * 2))
-        ctaWidth = currentCTAWidth * Self.ctaScale
-        ctaHeight = Self.referenceCTAHeight * Self.ctaScale
 
         // Top row cards
         topRowTopInset = max(18, 26 * scaleY)
