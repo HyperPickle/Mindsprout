@@ -18,9 +18,6 @@ struct PhotoCommitStep: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: Spacing.md) {
-                    ReflectionStepHeader(title: "Attach a Picture") {
-                        vm.step = .entry
-                    }
                     photoCard
                 }
                 .padding(.horizontal, Spacing.screenEdge)

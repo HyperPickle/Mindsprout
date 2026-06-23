@@ -20,12 +20,14 @@ Travel-reflection iOS app (18–35). ~10-min daily loop: reflect on one travel m
 
 **Do not run Xcode builds or simulator launches automatically.** Only build or run tests when the user explicitly requests it, or when a build is strictly required to unblock the current task (e.g. resolving a compiler error you introduced). Never validate changes by building "just to be safe" after every prompt.
 
-**No third-party dependencies** without updating this file.
+Third-party dependencies:
+- Rive iOS (`rive-ios`) for Sprout animation playback.
+- FabBar (vendored under `Packages/FabBar` from `https://github.com/ryanashcraft/FabBar.git` 1.1.0) for the iOS 26-style bottom bar with floating action button.
 
 ## Conventions
 
 - **MVVM + Observation**: `@Observable` VM per flow; **SwiftData `@Model` = source of truth**, local-only but sync-ready. Photos/audio = files by path, never blobs.
-- **Nav:** root `TabView` (Adventures/Reflect/Home/Profile), per-tab `NavigationStack` enum routes; multi-step flows as `ModalCoordinator`; auth + onboarding gate the shell.
+- **Nav:** root `TabView` content with FabBar chrome (Trips/Reflect/Profile + Home FAB), per-tab `NavigationStack` enum routes; multi-step flows as `ModalCoordinator`; auth + onboarding gate the shell.
 - **Offline-first:** core loop needs no network; AI behind `AIGenerationService` (default = on-device templates).
 - XP/level/evolution constants in `GameConfig`; stage art `sprout_stage{n}_{state}`. Sign in with Apple, Keychain. Camera/Photos/Mic only — **no location**.
 - UI copy → `Localizable.xcstrings`.

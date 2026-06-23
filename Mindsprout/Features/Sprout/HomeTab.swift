@@ -4,12 +4,11 @@ import SwiftData
 import UIKit
 
 struct HomeTab: View {
-    private let homeCTAHorizontalPadding: CGFloat = Spacing.screenEdge
-    private let floatingTabReservedHeight: CGFloat = 164
+    private let fabBarHorizontalInset: CGFloat = 21
+    private let floatingTabReservedHeight: CGFloat = 75
 
     @Binding var selection: AppTab
 
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var context
     @Environment(ModalCoordinator.self) private var modalCoordinator
     @Environment(\.appEnvironment) private var env
@@ -62,7 +61,7 @@ struct HomeTab: View {
             ZStack(alignment: .bottom) {
                 dashboardContent
                 bottomPanel
-                    .padding(.horizontal, Spacing.screenEdge)
+                    .padding(.horizontal, fabBarHorizontalInset)
                     .padding(.bottom, floatingTabReservedHeight)
             }
             .task {
@@ -103,6 +102,17 @@ struct HomeTab: View {
                 tripPill(maxWidth: layout.tripGroupMaxWidth)
                     .frame(width: layout.tripGroupMaxWidth, height: layout.tripPillHeight, alignment: .leading)
                     .position(x: layout.tripGroupCenterX, y: layout.topRowCenterY)
+
+                // Style button - top right, top-aligned with trip card
+                VStack {
+                    HStack {
+                        Spacer()
+                        styleButton
+                            .padding(.trailing, 16)
+                    }
+                    Spacer()
+                }
+                .padding(.top, max(0, layout.topRowCenterY - 32))
 
                 // ✅ DropBubble uniquement si hungry
                 if sproutDisplayState == .hungry {
@@ -146,7 +156,7 @@ struct HomeTab: View {
     // MARK: - Trip Pill
 
     private func tripPill(maxWidth: CGFloat) -> some View {
-        let cardShape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+        let cardShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         let horizontalPadding: CGFloat = 20
         let cloudReservedWidth: CGFloat = activeTrip == nil ? horizontalPadding : 96
         let cardWidth = tripPillWidth(maxWidth: maxWidth)
@@ -234,13 +244,7 @@ struct HomeTab: View {
     // MARK: - Bottom Panel
 
     private var bottomPanel: some View {
-        VStack(spacing: Spacing.sm) {
-            HStack {
-                styleButton
-                Spacer()
-            }
-            ctaButton
-        }
+        ctaButton
     }
 
     private var styleButton: some View {
@@ -251,15 +255,15 @@ struct HomeTab: View {
                 Image("Style icon")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 44, height: 44)
+                    .frame(width: 43, height: 43)
                     .offset(x: -4, y: -4)
                 Text("Style")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(AppFont.callout)
             }
-            .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
-            .frame(height: 36)
-            .padding(.trailing, 13)
-            .glassEffect(in: Capsule())
+            .foregroundStyle(AppColor.label)
+            .frame(height: 41)
+            .padding(.trailing, 15)
+            .glassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(PressScaleButtonStyle())
     }
@@ -276,7 +280,6 @@ struct HomeTab: View {
                 modalCoordinator.present(.todayReflection(reflectionID: reflectionID))
             }
         }
-        .padding(.horizontal, homeCTAHorizontalPadding)
     }
 
     private var ctaLabel: LocalizedStringKey {

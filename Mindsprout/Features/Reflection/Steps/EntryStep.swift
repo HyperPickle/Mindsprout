@@ -21,9 +21,6 @@ struct EntryStep: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: Spacing.md) {
-                ReflectionStepHeader(title: vm.affirmationHeadline) {
-                    vm.step = .highlight
-                }
                 typeRecordToggle
                 if vm.bodyKind == .text {
                     TypeEntryCard(vm: vm)

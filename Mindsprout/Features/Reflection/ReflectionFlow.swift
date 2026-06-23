@@ -24,17 +24,21 @@ struct ReflectionFlow: View {
         ZStack {
             BackgroundSky()
 
-            Group {
-                if let vm = viewModel {
-                    stepContent(vm: vm)
-                } else {
-                    EmptyView()
+            VStack(spacing: 0) {
+                if let vm = viewModel, showsCloseControl, !isSubmitted {
+                    flowHeader(vm: vm)
+                }
+                Group {
+                    if let vm = viewModel {
+                        stepContent(vm: vm)
+                    } else {
+                        EmptyView()
+                    }
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea(.keyboard)
-        .overlay(alignment: .topTrailing) { closeControl }
         // Once the reflection is submitted (reward step) the flow can no longer
         // be backed out of interactively — only the reward CTA closes it.
         .interactiveDismissDisabled(isSubmitted)
@@ -78,23 +82,40 @@ struct ReflectionFlow: View {
         }
     }
 
-    @ViewBuilder
-    private var closeControl: some View {
-        if showsCloseControl, viewModel != nil, !isSubmitted {
+    private func flowHeader(vm: ReflectionViewModel) -> some View {
+        HStack(spacing: Spacing.xs) {
             Button {
                 showDiscardConfirmation = true
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .bold))
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(AppColor.label)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Circle())
+                    .frame(width: 56, height: 56)
+                    .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             }
             .buttonStyle(.plain)
-            .readableLiquidGlass(in: Circle())
-            .padding(.trailing, Spacing.screenEdge)
-            .padding(.top, Spacing.xs)
+            .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             .accessibilityLabel("Close reflection")
+
+            Text(stepTitle(for: vm))
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, minHeight: 56)
+                .padding(.horizontal, Spacing.sm)
+                .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        }
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.md)
+        .padding(.bottom, Spacing.sm)
+    }
+
+    private func stepTitle(for vm: ReflectionViewModel) -> String {
+        switch vm.step {
+        case .highlight: return "Today's highlight?"
+        case .entry:     return vm.affirmationHeadline
+        case .photos:    return "Attach a Picture"
+        case .reward:    return ""
         }
     }
 

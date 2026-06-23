@@ -1,14 +1,19 @@
+import FabBar
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct RootView: View {
-    private static let floatingTabBottomOffset: CGFloat = 34
-
     @AppStorage("isLoggedIn") private var isLoggedIn = false
 
     @Environment(\.appEnvironment) private var env
+    @Environment(\.modelContext) private var context
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selection: AppTab = .home
+    @State private var fabBarSelection: AppTab = .home
     @State private var modalCoordinator = ModalCoordinator()
+
+    @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
 
     let featureFlags: FeatureFlags
 
@@ -38,18 +43,37 @@ struct RootView: View {
     }
 
     private var appShell: some View {
-        ZStack {
-            shellBackground
+        TabView(selection: tabSelection) {
+            Tab(AppTab.trips.title, systemImage: AppTab.trips.systemImage, value: AppTab.trips) {
+                TripsTab()
+                    .fabBarSafeAreaPadding()
+                    .toolbarVisibility(tabBarVisibility, for: .tabBar)
+            }
 
-            currentTab
+            Tab(AppTab.reflect.title, systemImage: AppTab.reflect.systemImage, value: AppTab.reflect) {
+                HomeTab(selection: $selection)
+                    .fabBarSafeAreaPadding()
+                    .toolbarVisibility(tabBarVisibility, for: .tabBar)
+            }
+
+            Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
+                HomeTab(selection: $selection)
+                    .fabBarSafeAreaPadding()
+                    .toolbarVisibility(tabBarVisibility, for: .tabBar)
+            }
+
+            Tab(AppTab.profile.title, systemImage: AppTab.profile.systemImage, value: AppTab.profile) {
+                ProfileTab()
+                    .fabBarSafeAreaPadding()
+                    .toolbarVisibility(tabBarVisibility, for: .tabBar)
+            }
         }
+        .fabBar(
+            selection: fabSelection,
+            tabs: fabBarTabs,
+            action: fabAction
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea(.all, edges: .bottom)
-        .overlay(alignment: .bottom) {
-            FloatingTabBar(selection: $selection)
-                .padding(.bottom, Self.floatingTabBottomOffset)
-                .ignoresSafeArea(.keyboard)
-        }
         .tint(AppColor.label)
         .environment(modalCoordinator)
         .sheet(item: bottomSheetBinding) { modal in
@@ -68,27 +92,96 @@ struct RootView: View {
         .transition(.opacity)
     }
 
-    @ViewBuilder private var currentTab: some View {
-        switch selection {
-        case .trips:
-            TripsTab()
-        case .home:
-            HomeTab(selection: $selection)
-        case .profile:
-            ProfileTab()
+    private var tabBarVisibility: Visibility {
+        horizontalSizeClass == .compact ? .hidden : .visible
+    }
+
+    private var fabAction: FabBarAction {
+        let iconTintColor = UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? .white
+                : UIColor(red: 4/255, green: 14/255, blue: 16/255, alpha: 1)
+        }
+        switch reflectAction {
+        case .createTrip:
+            return FabBarAction(
+                systemImage: "plus.fill",
+                accessibilityLabel: "Start a trip",
+                tintColor: nil,
+                iconTintColor: iconTintColor,
+                title: "Start"
+            ) { openReflectFlow() }
+        case .startReflection, .viewTodayReflection:
+            return FabBarAction(
+                systemImage: AppTab.reflect.systemImage,
+                accessibilityLabel: "Reflect",
+                tintColor: nil,
+                iconTintColor: iconTintColor,
+                title: "Reflect"
+            ) { openReflectFlow() }
         }
     }
 
-    @ViewBuilder private var shellBackground: some View {
-        switch selection {
-        case .home:
-            Image("HomeBackground")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-        case .trips, .profile:
-            BackgroundSky()
-                .ignoresSafeArea()
+    private var fabBarTabs: [FabBarTab<AppTab>] {
+        [
+            FabBarTab(value: .trips, title: "Trips", systemImage: AppTab.trips.systemImage),
+            FabBarTab(value: .home, title: "Home", systemImage: AppTab.home.systemImage),
+            FabBarTab(value: .profile, title: "Profile", systemImage: AppTab.profile.systemImage),
+        ]
+    }
+
+    private var tabSelection: Binding<AppTab> {
+        Binding(
+            get: { selection },
+            set: { nextSelection in
+                selection = nextSelection
+                fabBarSelection = nextSelection
+            }
+        )
+    }
+
+    private var fabSelection: Binding<AppTab> {
+        Binding(
+            get: { fabBarSelection },
+            set: { nextSelection in
+                fabBarSelection = nextSelection
+                selection = nextSelection
+            }
+        )
+    }
+
+    private var activeTrip: Trip? {
+        TripResolver.active(in: trips)
+    }
+
+    private var reflectAction: HomeDashboardCTAAction {
+        HomeDashboardState(
+            hasActiveTrip: activeTrip != nil,
+            completedTodayReflectionID: completedTodayReflectionID
+        ).ctaAction
+    }
+
+    private var completedTodayReflectionID: UUID? {
+        guard let activeTrip else { return nil }
+        return todaysCompletedReflection(for: activeTrip, in: context)?.id
+    }
+
+    private func openReflectFlow() {
+        selection = .home
+
+        let modal: AppModal
+        switch reflectAction {
+        case .createTrip:
+            modal = .newTrip
+        case .startReflection:
+            guard let activeTrip else { return }
+            modal = .reflection(tripID: activeTrip.id)
+        case .viewTodayReflection(let reflectionID):
+            modal = .todayReflection(reflectionID: reflectionID)
+        }
+
+        Task { @MainActor in
+            modalCoordinator.present(modal)
         }
     }
 

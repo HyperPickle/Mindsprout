@@ -15,7 +15,6 @@ struct HighlightPickerStep: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: Spacing.sm) {
-                    ReflectionStepHeader(title: "Today's highlight?")
                     promptCards
                     writeYourOwn
                     diceRow

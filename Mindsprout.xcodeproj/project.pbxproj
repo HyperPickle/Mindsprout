@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D59400022FE901CA00F1835E /* FabBar in Frameworks */ = {isa = PBXBuildFile; productRef = D59400012FE901CA00F1835E /* FabBar */; };
 		D593DDE22FE801CA00F1835E /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = D593DDE12FE801CA00F1835E /* RiveRuntime */; };
 /* End PBXBuildFile section */
 
@@ -61,6 +62,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D59400022FE901CA00F1835E /* FabBar in Frameworks */,
 				D593DDE22FE801CA00F1835E /* RiveRuntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -113,6 +115,7 @@
 			);
 			name = Mindsprout;
 			packageProductDependencies = (
+				D59400012FE901CA00F1835E /* FabBar */,
 				D593DDE12FE801CA00F1835E /* RiveRuntime */,
 			);
 			productName = Mindsprout;
@@ -171,6 +174,7 @@
 			mainGroup = 76597E8E2FCFA23400C4ADE5;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				D59400002FE901CA00F1835E /* XCLocalSwiftPackageReference "Packages/FabBar" */,
 				D593DDE02FE801CA00F1835E /* XCRemoteSwiftPackageReference "rive-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -496,6 +500,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		D59400002FE901CA00F1835E /* XCLocalSwiftPackageReference "Packages/FabBar" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FabBar;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		D593DDE02FE801CA00F1835E /* XCRemoteSwiftPackageReference "rive-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -508,6 +519,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		D59400012FE901CA00F1835E /* FabBar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D59400002FE901CA00F1835E /* XCLocalSwiftPackageReference "Packages/FabBar" */;
+			productName = FabBar;
+		};
 		D593DDE12FE801CA00F1835E /* RiveRuntime */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D593DDE02FE801CA00F1835E /* XCRemoteSwiftPackageReference "rive-ios" */;

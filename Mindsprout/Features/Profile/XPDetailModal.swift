@@ -75,17 +75,13 @@ struct XPDetailModal: View {
     // MARK: - Level hero
 
     private var levelHero: some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
-            Text("Level")
-                .font(AppFont.eyebrow)
-                .foregroundStyle(AppColor.label.opacity(0.6))
-
+        Group {
             if isMaxLevel {
-                Text("Max")
-                    .font(AppFont.display)
+                Text("Level Max")
+                    .font(AppFont.metricLarge)
                     .foregroundStyle(AppColor.label)
             } else {
-                Text("\(level)")
+                Text("Level \(level)")
                     .font(AppFont.metricLarge)
                     .foregroundStyle(AppColor.label)
                     .contentTransition(.numericText())
