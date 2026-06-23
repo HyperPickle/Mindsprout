@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct RootView: View {
+    private static let floatingTabBottomOffset: CGFloat = 34
+
     @AppStorage("isLoggedIn") private var isLoggedIn = false
 
     @Environment(\.appEnvironment) private var env
@@ -36,18 +38,17 @@ struct RootView: View {
     }
 
     private var appShell: some View {
-        @Bindable var coordinator = modalCoordinator
+        ZStack {
+            shellBackground
 
-        return TabView(selection: $selection) {
-            Tab(AppTab.trips.title, systemImage: AppTab.trips.systemImage, value: AppTab.trips) {
-                TripsTab()
-            }
-            Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
-                HomeTab(selection: .constant(.home))
-            }
-            Tab(AppTab.profile.title, systemImage: AppTab.profile.systemImage, value: AppTab.profile) {
-                ProfileTab()
-            }
+            currentTab
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea(.all, edges: .bottom)
+        .overlay(alignment: .bottom) {
+            FloatingTabBar(selection: $selection)
+                .padding(.bottom, Self.floatingTabBottomOffset)
+                .ignoresSafeArea(.keyboard)
         }
         .tint(AppColor.label)
         .environment(modalCoordinator)
@@ -65,6 +66,30 @@ struct RootView: View {
             CenteredModalHost(coordinator: modalCoordinator)
         }
         .transition(.opacity)
+    }
+
+    @ViewBuilder private var currentTab: some View {
+        switch selection {
+        case .trips:
+            TripsTab()
+        case .home:
+            HomeTab(selection: $selection)
+        case .profile:
+            ProfileTab()
+        }
+    }
+
+    @ViewBuilder private var shellBackground: some View {
+        switch selection {
+        case .home:
+            Image("HomeBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        case .trips, .profile:
+            BackgroundSky()
+                .ignoresSafeArea()
+        }
     }
 
     /// Drives the standard bottom sheet for every modal except the ones that

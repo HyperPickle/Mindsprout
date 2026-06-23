@@ -5,6 +5,7 @@ import UIKit
 
 struct HomeTab: View {
     private let homeCTAHorizontalPadding: CGFloat = Spacing.screenEdge
+    private let floatingTabReservedHeight: CGFloat = 164
 
     @Binding var selection: AppTab
 
@@ -62,7 +63,7 @@ struct HomeTab: View {
                 dashboardContent
                 bottomPanel
                     .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.md)
+                    .padding(.bottom, floatingTabReservedHeight)
             }
             .task {
                 ensureSproutExists()
@@ -73,7 +74,6 @@ struct HomeTab: View {
             .background(dashboardBackground)
         }
         .ignoresSafeArea()
-        .toolbarBackground(.hidden, for: .tabBar)
         .fullScreenCover(isPresented: $showWardrobe) {
             WardrobeView(isPresented: $showWardrobe)
                 .environment(modalCoordinator)
