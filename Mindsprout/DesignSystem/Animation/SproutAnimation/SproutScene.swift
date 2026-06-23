@@ -246,7 +246,7 @@ final class SproutRiveController: ObservableObject {
         isWalking = false
         withAnimation(.easeOut(duration: 0.3)) { sproutWalkOffset = .zero }
         riveVM.triggerInput("triggerSleep")
-        let duration = Double.random(in: 2...4)
+        let duration = Double.random(in: 1...3)
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
             self?.riveVM.triggerInput("triggerWakeUp")
             self?.scheduleRandomBehavior()
