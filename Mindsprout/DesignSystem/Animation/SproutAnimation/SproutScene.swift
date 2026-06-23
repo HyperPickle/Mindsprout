@@ -1,15 +1,3 @@
-//
-//  SproutScene.swift
-//  Mindsprout
-//
-//  Created by Changrila Souksamlane on 6/6/2026.
-//
-//
-//  SproutScene.swift
-//  Mindsprout
-//
-//  Created by Changrila Souksamlane on 6/6/2026.
-//
 import RiveRuntime
 import SwiftUI
 import Combine

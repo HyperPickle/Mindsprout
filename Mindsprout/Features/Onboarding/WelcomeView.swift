@@ -99,7 +99,7 @@ struct WelcomeView: View {
 struct TitleView: View {
     var body: some View {
         VStack(spacing: 8) {
-            SproutView(state: .idle)
+            SproutIdleView()
                 .frame(width: 200, height: 200)
 
             Text("mindsprout")
