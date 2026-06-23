@@ -113,7 +113,9 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         case .neutral:
             return colorScheme == .dark ? .white.opacity(0.05) : .white.opacity(0.10)
         case .selected:
-            return colorScheme == .dark ? .white.opacity(0.14) : .black.opacity(0.08)
+            return colorScheme == .dark
+                ? AppColor.primary.opacity(0.30)
+                : AppColor.primary.opacity(0.22)
         case .cta(let isEnabled):
             return isEnabled
                 ? (colorScheme == .dark ? .white.opacity(0.16) : .white.opacity(0.20))
@@ -132,7 +134,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         case .cta(let isEnabled):
             return isEnabled ? .white : .clear
         case .selected:
-            return colorScheme == .dark ? .white : .black
+            return AppColor.primary
         case .neutral, .subtle:
             return .clear
         }
@@ -141,7 +143,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
     private var tintOpacity: Double {
         switch style {
         case .selected:
-            return colorScheme == .dark ? 0.08 : 0.03
+            return colorScheme == .dark ? 0.28 : 0.20
         case .cta(let isEnabled):
             return isEnabled ? (colorScheme == .dark ? 0.08 : 0.12) : 0
         case .danger:
@@ -168,7 +170,9 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
 
     private var borderColor: Color {
         switch style {
-        case .selected, .cta:
+        case .selected:
+            return AppColor.primaryEdge
+        case .cta:
             return colorScheme == .dark ? .white : AppColor.graphite
         case .danger:
             return AppColor.destructive
@@ -182,7 +186,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         case .neutral:
             return colorScheme == .dark ? 0.8 : 0
         case .selected:
-            return colorScheme == .dark ? 1.2 : 1.5
+            return colorScheme == .dark ? 2 : 2.5
         case .cta(let isEnabled):
             return isEnabled ? 1.3 : (colorScheme == .dark ? 0.8 : 0)
         case .danger:
@@ -195,7 +199,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
     private var borderOpacity: Double {
         switch style {
         case .selected:
-            return colorScheme == .dark ? 0.85 : 0.70
+            return colorScheme == .dark ? 0.95 : 0.90
         case .cta(let isEnabled):
             return isEnabled ? (colorScheme == .dark ? 0.80 : 0.75) : 0.45
         case .danger:

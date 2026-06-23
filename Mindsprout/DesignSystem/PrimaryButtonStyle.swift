@@ -5,12 +5,13 @@ struct PrimaryButtonStyle: ButtonStyle {
     var foreground: Color = Color.white
     var usesLiquidGlass = false
     var glassSurfaceStyle: ((Bool) -> TripGlassSurfaceStyle)? = nil
+    var uppercased = true
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(AppFont.button)
-            .textCase(.uppercase)
+            .textCase(uppercased ? .uppercase : nil)
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Spacing.md)
@@ -41,6 +42,9 @@ extension ButtonStyle where Self == PrimaryButtonStyle {
     static var primary: PrimaryButtonStyle { PrimaryButtonStyle() }
     static var primaryWhite: PrimaryButtonStyle {
         PrimaryButtonStyle(fill: .white, foreground: AppColor.label, usesLiquidGlass: true)
+    }
+    static var primaryWhiteSentenceCase: PrimaryButtonStyle {
+        PrimaryButtonStyle(fill: .white, foreground: AppColor.label, usesLiquidGlass: true, uppercased: false)
     }
     static var tripGlassCTA: PrimaryButtonStyle {
         PrimaryButtonStyle(

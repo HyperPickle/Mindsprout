@@ -49,12 +49,13 @@ struct ReflectionRewardStep: View {
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
-            Spacer(minLength: Spacing.xl)
-
             Text("A moment worth keeping")
                 .font(AppFont.screenTitle)
                 .foregroundStyle(AppColor.label)
                 .multilineTextAlignment(.center)
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.md)
+                .liquidGlass(cornerRadius: 16)
 
             sproutSection
                 .frame(maxWidth: .infinity)
@@ -64,6 +65,9 @@ struct ReflectionRewardStep: View {
                 .font(AppFont.metricLarge)
                 .foregroundStyle(AppColor.label)
                 .contentTransition(.numericText())
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.sm)
+                .liquidGlass(cornerRadius: 22)
 
             Text("Your reflection helped \(sproutName) grow.")
                 .font(AppFont.callout)

@@ -54,6 +54,7 @@ struct HomeTab: View {
             ZStack {
                 dashboardContent
             }
+            .ignoresSafeArea(.container, edges: .bottom)
             .task {
                 ensureSproutExists()
                 while !Task.isCancelled {
@@ -72,9 +73,13 @@ struct HomeTab: View {
     // MARK: - Background
 
     private var dashboardBackground: some View {
-        Image("HomeBackground")
-            .resizable()
-            .scaledToFill()
+        Color.clear
+            .overlay {
+                Image("HomeBackground")
+                    .resizable()
+                    .scaledToFill()
+            }
+            .clipped()
             .ignoresSafeArea()
     }
 
@@ -101,7 +106,7 @@ struct HomeTab: View {
                             .padding(.leading, 21)
                         Spacer()
                     }
-                    .padding(.bottom, fabBarBottomPadding > 0 ? fabBarBottomPadding + 21 : 16)
+                    .padding(.bottom, fabBarBottomPadding > 0 ? fabBarBottomPadding + 46 : 50)
                 }
 
                 // ✅ DropBubble uniquement si hungry

@@ -19,7 +19,11 @@ final class SeedRiveController: ObservableObject {
         riveVM = RiveViewModel(
             fileName: "sprout2", // Ton fichier .riv
             stateMachineName: "SeedStateMachine",
-            alignment: .center,
+            // .top pins the artboard's top edge to the screen top so the seed
+            // travels off the real top (and the sprout descends from it) instead
+            // of being clipped at the artboard boundary mid-screen. Scale is
+            // unchanged, so the resting seed keeps its current size.
+            alignment: .topCenter,
             artboardName: "Seed"
         )
     }

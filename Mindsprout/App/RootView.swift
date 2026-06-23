@@ -167,8 +167,9 @@ struct RootView: View {
     }
 
     private func openReflectFlow() {
-        selection = .home
-
+        // Present the reflect flow over the current tab so that, once it
+        // dismisses, the user lands back on whichever screen they invoked the
+        // FAB action from — rather than being forced onto Home.
         let modal: AppModal
         switch reflectAction {
         case .createTrip:

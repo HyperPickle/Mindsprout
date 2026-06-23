@@ -28,14 +28,14 @@ struct OnboardingCoordinatorView: View {
             case .profilePhoto(let userID):
                             ProfilePhotoOnboardingView(userID: userID) {
                                 withAnimation {
-                                    env.auth.handleAuthorization(userID: userID)
+                                    currentStep = .namingSprout(userID: userID)
                                 }
                             }
                             .transition(.asymmetric(
                                 insertion: .move(edge: .trailing),
                                 removal: .move(edge: .leading)
                             ))
-                        
+
             case .namingSprout(let userID):
                 SproutNamingView(
                     isOnboarding: true,
@@ -46,7 +46,7 @@ struct OnboardingCoordinatorView: View {
                     },
                     onContinue: {
                         withAnimation {
-                            currentStep = .transformation(userID: userID)
+                            env.auth.handleAuthorization(userID: userID)
                         }
                     }
                 )

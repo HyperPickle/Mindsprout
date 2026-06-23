@@ -34,12 +34,12 @@ struct SproutTransformationView: View {
                 if showText {
                     VStack(spacing: 8) {
                         Text("Meet \(sproutName)!")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
+                            .font(AppFont.display)
+                            .foregroundStyle(AppColor.label)
 
                         Text("Your travel companion is ready\nto explore the world with you")
-                            .font(.system(size: 16, design: .rounded))
-                            .foregroundColor(.white.opacity(0.9))
+                            .font(AppFont.callout)
+                            .foregroundStyle(AppColor.label)
                             .multilineTextAlignment(.center)
                     }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -53,13 +53,18 @@ struct SproutTransformationView: View {
                         isLoggedIn = true
                         onFinish()
                     } label: {
-                        Text("Start my journey!")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                        Text("Start my journey")
+                            .font(AppFont.button)
+                            .foregroundStyle(AppColor.label)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color(hex: 0x4CAF50))
-                            .clipShape(RoundedRectangle(cornerRadius: 30))
+                            .background(
+                                Color.clear
+                                    .readableLiquidGlass(
+                                        in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                                    )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                     }
                     .padding(.horizontal, 24)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))

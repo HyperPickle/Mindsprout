@@ -96,7 +96,7 @@ private struct NewTripBasicsView: View {
     }
 
     private var field: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Where are we going?")
                 .font(AppFont.bodyEmphasized)
                 .foregroundStyle(AppColor.label)
@@ -273,8 +273,6 @@ struct TripTypeCell: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
         Button(action: action) {
             VStack(spacing: Spacing.xs) {
@@ -291,13 +289,9 @@ struct TripTypeCell: View {
             .background {
                 Color.clear
                     .tripGlassSurface(
-                        style: .neutral,
+                        style: isSelected ? .selected : .neutral,
                         in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     )
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                    .strokeBorder(isSelected ? (colorScheme == .dark ? Color.white.opacity(0.72) : AppColor.graphite) : .clear, lineWidth: 2)
             }
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }

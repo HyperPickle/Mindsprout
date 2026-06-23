@@ -67,13 +67,15 @@ struct ProfileTab: View {
 
                                 // Location Badge (Full width) — reflects the active trip
                                 HStack(spacing: Spacing.xs) {
-                                    Spacer()
                                     Image(systemName: activeTrip == nil ? "map" : "mappin")
                                         .font(.system(size: 14) )
                                     Text(activeTrip.map { "\($0.destination), \($0.country)" } ?? "Planning next trip")
                                         .font(AppFont.callout)
-                                    Spacer()
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
+                                .frame(maxWidth: .infinity)
                                 .padding(.vertical, Spacing.sm)
                                 .liquidGlass(cornerRadius: CornerRadius.medium)
                                 .padding(.horizontal, Spacing.screenEdge)

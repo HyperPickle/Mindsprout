@@ -77,6 +77,7 @@ struct EntryStep: View {
 
 private struct TypeEntryCard: View {
     @Bindable var vm: ReflectionViewModel
+    @FocusState private var isEditorFocused: Bool
 
     private let maxChars = 200
 
@@ -95,6 +96,13 @@ private struct TypeEntryCard: View {
                     .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
                     .scrollContentBackground(.hidden)
                     .padding(Spacing.xs)
+                    .focused($isEditorFocused)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") { isEditorFocused = false }
+                        }
+                    }
                     .onChange(of: vm.entryText) { _, new in
                         if new.count > maxChars {
                             vm.entryText = String(new.prefix(maxChars))

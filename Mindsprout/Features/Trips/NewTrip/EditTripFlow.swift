@@ -57,7 +57,17 @@ struct EditTripFlow: View {
         }
         .presentationCornerRadius(36)
         .presentationDragIndicator(.visible)
-        .task { viewModel.load(context: context, pack: try? env.contentPackLoader.load()) }
+        .task {
+            // Loading swaps placeholder state (empty reflections, default dates)
+            // for the trip's real data, which changes the form's content height.
+            // Suppress animation so the fields settle in place instead of
+            // bouncing in on whatever transaction is ambient at present time.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                viewModel.load(context: context, pack: try? env.contentPackLoader.load())
+            }
+        }
         .confirmationDialog(
             "Switch active trip?",
             isPresented: $showActiveConfirm,
@@ -112,7 +122,7 @@ struct EditTripFlow: View {
     // MARK: - Sections
 
     private var destinationField: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             sectionLabel("Where did you go?")
             DestinationPickerView(
                 selectedCity: $viewModel.destination,

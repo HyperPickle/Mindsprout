@@ -25,7 +25,7 @@ struct ProfilePhotoEditorContent: View {
 
         var actionWidth: CGFloat? {
             switch self {
-            case .onboarding: return 280
+            case .onboarding: return 320
             case .modal: return nil
             }
         }
@@ -125,7 +125,7 @@ struct ProfilePhotoEditorContent: View {
                 } label: {
                     actionRow(title: "Take Photo", systemImage: "camera.fill", foregroundColor: AppColor.label)
                 }
-                .buttonStyle(.primaryWhite)
+                .buttonStyle(.primaryWhiteSentenceCase)
                 .frame(width: style.actionWidth)
 
                 PhotosPicker(selection: $photoPickerItem, matching: .images) {
@@ -134,11 +134,8 @@ struct ProfilePhotoEditorContent: View {
                         systemImage: "photo.on.rectangle",
                         foregroundColor: AppColor.label
                     )
-                    .font(AppFont.button)
-                    .frame(height: 50)
-                    .background(Color.white.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                 }
+                .buttonStyle(.primaryWhiteSentenceCase)
                 .frame(width: style.actionWidth)
             }
 

@@ -37,7 +37,7 @@ struct WelcomeView: View {
                 if let authError {
                     Text(authError)
                         .font(AppFont.caption)
-                        .foregroundColor(AppColor.label)
+                        .foregroundStyle(AppColor.label)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                         .padding(.top, 10)
@@ -45,7 +45,7 @@ struct WelcomeView: View {
 
                 Text("Grow your Sprout, save your reflections.")
                     .font(AppFont.caption)
-                    .foregroundColor(AppColor.label.opacity(0.85))
+                    .foregroundStyle(AppColor.label)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                     .padding(.top, 10)
@@ -106,11 +106,11 @@ struct TitleView: View {
             VStack(spacing: 6) {
                 Text("mindsprout")
                     .font(AppFont.display)
-                    .foregroundColor(AppColor.label)
+                    .foregroundStyle(AppColor.label)
 
                 Text("see the world, to see yourself").italic()
                     .font(AppFont.callout)
-                    .foregroundColor(AppColor.label)
+                    .foregroundStyle(AppColor.label)
             }
         }
         .frame(maxWidth: .infinity)

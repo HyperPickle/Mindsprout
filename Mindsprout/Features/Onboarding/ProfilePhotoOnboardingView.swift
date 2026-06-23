@@ -19,34 +19,26 @@ struct ProfilePhotoOnboardingView: View {
                 VStack(spacing: 12) {
                     Text("Add a Profile Photo")
                         .font(AppFont.screenTitle)
-                        .foregroundColor(AppColor.label)
+                        .foregroundStyle(AppColor.label)
 
                     Text("Show off your travel self.")
                         .font(AppFont.callout)
-                        .foregroundColor(AppColor.label.opacity(0.8))
+                        .foregroundStyle(AppColor.label)
                 }
 
                 ProfilePhotoEditorContent(style: .onboarding, userID: userID)
                 
                 Spacer()
                 
-                VStack(spacing: 20) {
-                    Button("Continue") {
-                        onComplete()
-                    }
-                    .buttonStyle(.primaryWhite)
-                    .frame(width: 280)
-                    .opacity(user?.profilePhotoPath == nil ? 0.6 : 1.0)
-                    
-                    Button("Skip for now") {
-                        onComplete()
-                    }
-                    .font(AppFont.button)
-                    .foregroundColor(AppColor.label.opacity(0.7))
+                Button("Continue") {
+                    onComplete()
                 }
+                .buttonStyle(.primaryWhiteSentenceCase)
+                .frame(width: 320)
+                .opacity(user?.profilePhotoPath == nil ? 0.6 : 1.0)
                 .padding(.bottom, 40)
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 24)
         }
     }
 }
