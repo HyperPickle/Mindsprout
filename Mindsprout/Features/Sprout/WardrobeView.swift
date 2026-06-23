@@ -84,7 +84,10 @@ struct WardrobeView: View {
 
     var body: some View {
         ZStack {
-            BackgroundSky().ignoresSafeArea()
+            Image("HomeBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // ── Top half: Sprout ──────────────────────────────────
