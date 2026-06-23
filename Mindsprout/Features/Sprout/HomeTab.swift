@@ -19,6 +19,7 @@ struct HomeTab: View {
     @Query(sort: \Sprout.createdAt) private var sprouts: [Sprout]
 
     @State private var bubbleOffset: CGFloat = 0
+    @State private var showWardrobe = false
 
     private var pillTextColor: Color { AppColor.label }
 
@@ -80,6 +81,10 @@ struct HomeTab: View {
         }
         .ignoresSafeArea()
         .toolbarBackground(.hidden, for: .tabBar)
+        .fullScreenCover(isPresented: $showWardrobe) {
+            WardrobeView(isPresented: $showWardrobe)
+                .environment(modalCoordinator)
+        }
     }
 
     // MARK: - Background
@@ -250,8 +255,33 @@ struct HomeTab: View {
 
     private var bottomPanel: some View {
         VStack(spacing: Spacing.sm) {
+            HStack {
+                styleButton
+                Spacer()
+            }
             ctaButton
         }
+    }
+
+    private var styleButton: some View {
+        Button {
+            showWardrobe = true
+        } label: {
+            HStack(spacing: 2) {
+                Image("Style icon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+                    .offset(x: -4, y: -4)
+                Text("Style")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+            }
+            .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
+            .frame(height: 36)
+            .padding(.trailing, 13)
+            .glassEffect(in: Capsule())
+        }
+        .buttonStyle(PressScaleButtonStyle())
     }
 
     private var ctaButton: some View {

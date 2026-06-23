@@ -42,7 +42,7 @@ final class SproutRiveController: ObservableObject {
         // Step 1: verify the .riv file loads at all (no state machine)
         // Step 2: if Step 1 works, uncomment stateMachineName and check artboardName
         riveVM = RiveViewModel(
-            fileName: "sprouttest",
+            fileName: "sprouttest3",
             stateMachineName: "SproutHomeSM",
             artboardName:"Sprout"
         )
@@ -75,6 +75,11 @@ final class SproutRiveController: ObservableObject {
     }
 
     // MARK: - App State
+
+    func applyGlasses(_ rawValue: Int) {
+        guard isRiveReady else { return }
+        try? riveVM.setInput("Glass", value: Double(rawValue))
+    }
 
     func updateState(_ state: SproutState) {
         guard isRiveReady else {
@@ -312,6 +317,7 @@ final class SproutRiveController: ObservableObject {
 struct SproutView: View {
     let state: SproutState
     @StateObject private var controller = SproutRiveController()
+    @AppStorage("sproutGlassesChoice") private var savedGlasses: Int = 0
 
     @State private var sproutOffset: CGSize = .zero
     @State private var dragBaseOffset: CGSize = .zero
@@ -363,9 +369,13 @@ struct SproutView: View {
         .onAppear {
             controller.onViewAppeared()
             controller.updateState(state)
+            controller.applyGlasses(savedGlasses)
         }
         .onChange(of: state) { _, newState in
             controller.updateState(newState)
+        }
+        .onChange(of: savedGlasses) { _, newValue in
+            controller.applyGlasses(newValue)
         }
     }
 

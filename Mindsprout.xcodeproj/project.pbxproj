@@ -34,6 +34,7 @@
 				Resources/sprout2.riv,
 				Resources/sprout3.riv,
 				Resources/sprouttest.riv,
+				Resources/sprouttest3.riv,
 			);
 			target = AA0100000000000000000001 /* MindsproutTests */;
 		};
