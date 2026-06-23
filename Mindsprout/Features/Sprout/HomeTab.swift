@@ -5,7 +5,6 @@ import UIKit
 
 struct HomeTab: View {
     private let homeCTAHorizontalPadding: CGFloat = Spacing.screenEdge
-    private let progressionEngine = SproutProgressionEngine()
 
     @Binding var selection: AppTab
 
@@ -21,8 +20,6 @@ struct HomeTab: View {
     @State private var bubbleOffset: CGFloat = 0
     @State private var showWardrobe = false
 
-    private var pillTextColor: Color { AppColor.label }
-
     private var activeTrip: Trip? { TripResolver.active(in: trips) }
     private var sprout: Sprout? { sprouts.first }
     private var displaySprout: Sprout { sprout ?? Sprout() }
@@ -37,10 +34,6 @@ struct HomeTab: View {
             hasActiveTrip: activeTrip != nil,
             completedTodayReflectionID: todayCompletedReflection?.id
         ).ctaAction
-    }
-
-    private var tripPillWidth: CGFloat {
-        activeTrip == nil ? 200 : 150
     }
 
     // MARK: - Hungry State
@@ -106,14 +99,10 @@ struct HomeTab: View {
                 // Sprout
                 sproutStage(layout: layout)
 
-                // Top row: trip pill + day badge + currency
-                tripPill
-                    .frame(width: layout.tripGroupWidth, height: layout.tripPillHeight)
+                // Top row: trip pill + day badge
+                tripPill(maxWidth: layout.tripGroupMaxWidth)
+                    .frame(width: layout.tripGroupMaxWidth, height: layout.tripPillHeight, alignment: .leading)
                     .position(x: layout.tripGroupCenterX, y: layout.topRowCenterY)
-
-                currencyButton
-                    .frame(height: layout.currencyPillHeight)
-                    .position(x: layout.currencyPillCenterX, y: layout.topRowCenterY)
 
                 // ✅ DropBubble uniquement si hungry
                 if sproutDisplayState == .hungry {
@@ -156,89 +145,80 @@ struct HomeTab: View {
 
     // MARK: - Trip Pill
 
-    private var tripPill: some View {
-        HStack {
+    private func tripPill(maxWidth: CGFloat) -> some View {
+        let cardShape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+        let horizontalPadding: CGFloat = 20
+        let cloudReservedWidth: CGFloat = activeTrip == nil ? horizontalPadding : 96
+        let cardWidth = tripPillWidth(maxWidth: maxWidth)
+        let textMaxWidth = max(72, cardWidth - horizontalPadding - cloudReservedWidth)
+
+        return ZStack(alignment: .bottomTrailing) {
             VStack(alignment: .leading, spacing: 0) {
                 Text(activeTrip?.destination ?? "No trip yet")
-                    .font(.system(size: 25, weight: .bold, design: .rounded))
-                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.84)
+                    .font(AppFont.sectionTitle)
+                    .foregroundStyle(AppColor.label)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
                 Text(activeTrip?.country ?? "Start an adventure")
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
-                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x705A4D))
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.secondaryLabel)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.84)
+                    .truncationMode(.tail)
             }
-            Spacer()
-        }
-        .padding(.leading, 16)
-        .padding(.trailing, activeTrip == nil ? 16 : 0)
-        .frame(width: tripPillWidth, height: 48)
-        .background(alignment: .leading) {
-            Color.clear
-                .frame(width: activeTrip == nil ? tripPillWidth : tripPillWidth * 1.3, height: 60)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        }
-        .overlay(alignment: .trailing) {
+            .frame(width: textMaxWidth, alignment: .leading)
+            .padding(.leading, horizontalPadding)
+            .padding(.trailing, cloudReservedWidth)
+            .padding(.vertical, 14)
+            .frame(width: cardWidth, alignment: .leading)
+            .background {
+                Color.clear
+                    .readableLiquidGlass(in: cardShape)
+            }
+
             if let activeTrip {
                 dayBadge(
                     day: displayedDayIndex(for: activeTrip),
                     totalDays: tripDuration(for: activeTrip)
                 )
-                .scaleEffect(1.35)
-                .offset(x: 46, y: 18)
+                .offset(x: 28, y: 22)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func tripPillWidth(maxWidth: CGFloat) -> CGFloat {
+        let destination = activeTrip?.destination ?? "No trip yet"
+        let country = activeTrip?.country ?? "Start an adventure"
+        let reservedChrome: CGFloat = activeTrip == nil ? 40 : 104
+        let estimatedDestinationWidth = CGFloat(destination.count) * 13
+        let estimatedCountryWidth = CGFloat(country.count) * 7.5
+        let contentWidth = max(estimatedDestinationWidth, estimatedCountryWidth) + reservedChrome
+        let minWidth: CGFloat = activeTrip == nil ? 220 : 204
+
+        return min(maxWidth, max(minWidth, contentWidth))
     }
 
     private func dayBadge(day: Int, totalDays: Int) -> some View {
         ZStack {
             Image("Cloud")
                 .resizable()
+                .renderingMode(.template)
                 .scaledToFit()
-                .frame(width: 60, height: 60)
-                .foregroundStyle(pillTextColor)
+                .foregroundStyle(.white)
+                .frame(width: 96, height: 70)
+                .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
             VStack(spacing: 0) {
                 Text("day")
-                    .font(.system(size: 8, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Color(hex: 0x705A4D))
+                    .font(AppFont.eyebrow)
+                    .foregroundStyle(AppColor.graphite.opacity(0.72))
                     .textCase(.uppercase)
                 Text("\(day) / \(totalDays)")
-                    .font(.system(size: 12, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(hex: 0x705A4D))
-                    .monospacedDigit()
+                    .font(AppFont.metric)
+                    .foregroundStyle(AppColor.graphite)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .offset(y: 3)
         }
-    }
-
-    // MARK: - Currency Button
-
-    private var currencyButton: some View {
-        Button {
-            modalCoordinator.present(.shop)
-        } label: {
-            HStack(spacing: 4) {
-                Image("Points")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 44, height: 44)
-                    .offset(x: -4, y: -4)
-                Text("\(displaySprout.currency)")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(colorScheme == .dark ? Color(hex: 0xFFFFFF) : Color(hex: 0x6B4C2A))
-                    .monospacedDigit()
-                    .lineLimit(1)
-            }
-            .frame(height: 36)
-            .padding(.trailing, 13)
-            .glassEffect(in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open shop")
+        .accessibilityLabel("Day \(day) of \(totalDays)")
     }
 
     // MARK: - Sprout Stage
@@ -315,18 +295,6 @@ struct HomeTab: View {
         try? context.save()
     }
 
-    private var xpProgressValueText: String {
-        guard let xpRemainingToNextLevel else { return "Max level reached" }
-        return "\(abbreviatedXP(xpRemainingToNextLevel)) XP to Level Up"
-    }
-
-    private var xpRemainingToNextLevel: Int? {
-        let level = max(displaySprout.level, progressionEngine.level(forTotalXP: displaySprout.xp))
-        guard level < progressionEngine.config.maxLevel else { return nil }
-        let progress = progressionEngine.levelProgress(totalXP: displaySprout.xp, level: level)
-        return max(progress.span - progress.within, 0)
-    }
-
     private func tripDuration(for trip: Trip) -> Int {
         let components = Calendar.current.dateComponents([.day], from: trip.startDate, to: trip.endDate)
         return max(1, (components.day ?? 0) + 1)
@@ -334,13 +302,6 @@ struct HomeTab: View {
 
     private func displayedDayIndex(for trip: Trip) -> Int {
         min(dayIndex(for: trip), tripDuration(for: trip))
-    }
-
-    private func abbreviatedXP(_ value: Int) -> String {
-        guard value >= 1_000 else { return "\(value)" }
-        let abbreviated = Double(value) / 1_000
-        if value.isMultiple(of: 1_000) { return "\(Int(abbreviated))K" }
-        return String(format: "%.1fK", abbreviated)
     }
 }
 
@@ -353,10 +314,8 @@ struct HomeDashboardLayout {
 
     let topRowCenterY: CGFloat
     let tripGroupCenterX: CGFloat
-    let tripGroupWidth: CGFloat
+    let tripGroupMaxWidth: CGFloat
     let tripPillHeight: CGFloat
-    let currencyPillCenterX: CGFloat
-    let currencyPillHeight: CGFloat
     let sproutVerticalOffset: CGFloat
     let sproutViewportSize: CGSize
     let sproutWidth: CGFloat
@@ -374,8 +333,6 @@ struct HomeDashboardLayout {
     let topCardTextSpacing: CGFloat
     let tripCardMinWidth: CGFloat
     let tripCardMaxWidth: CGFloat
-    let progressCardMinWidth: CGFloat
-    let progressCardMaxWidth: CGFloat
 
     init(size: CGSize) {
         let referenceWidth: CGFloat = 402
@@ -383,13 +340,13 @@ struct HomeDashboardLayout {
         let scaleX = size.width / referenceWidth
         let scaleY = size.height / referenceHeight
 
-        // Trip pill + currency
+        // Trip pill
         topRowCenterY = 50 * scaleY
-        tripGroupCenterX = (220 * scaleX / 2) + (8 * scaleX)
-        tripGroupWidth = 250 * scaleX
-        tripPillHeight = 60 * scaleY
-        currencyPillCenterX = 338 * scaleX
-        currencyPillHeight = 42 * scaleY
+        let tripGroupLeadingX = 8 * scaleX
+        let screenSafeTripWidth = max(180, size.width - tripGroupLeadingX - 54)
+        tripGroupMaxWidth = min(max(236, 340 * scaleX), screenSafeTripWidth)
+        tripGroupCenterX = tripGroupLeadingX + (tripGroupMaxWidth / 2)
+        tripPillHeight = 104 * scaleY
 
         // Sprout
         let sproutCenterY = 455 * scaleY
@@ -415,8 +372,6 @@ struct HomeDashboardLayout {
         let availableWidth = max(0, size.width - (topRowHorizontalInset * 2) - topRowSpacing)
         tripCardMinWidth = min(max(120, 132 * scaleX), availableWidth)
         tripCardMaxWidth = availableWidth * 0.55
-        progressCardMinWidth = min(max(132, 144 * scaleX), availableWidth)
-        progressCardMaxWidth = availableWidth - tripCardMaxWidth
     }
 }
 
