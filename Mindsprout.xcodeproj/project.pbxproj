@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D59400022FE901CA00F1835E /* FabBar in Frameworks */ = {isa = PBXBuildFile; productRef = D59400012FE901CA00F1835E /* FabBar */; };
 		D593DDE22FE801CA00F1835E /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = D593DDE12FE801CA00F1835E /* RiveRuntime */; };
+		D59400022FE901CA00F1835E /* FabBar in Frameworks */ = {isa = PBXBuildFile; productRef = D59400012FE901CA00F1835E /* FabBar */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -153,7 +153,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2650;
-				LastUpgradeCheck = 2650;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					76597E962FCFA23400C4ADE5 = {
 						CreatedOnToolsVersion = 26.5;
@@ -290,6 +290,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -347,6 +348,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -519,15 +521,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D59400012FE901CA00F1835E /* FabBar */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D59400002FE901CA00F1835E /* XCLocalSwiftPackageReference "Packages/FabBar" */;
-			productName = FabBar;
-		};
 		D593DDE12FE801CA00F1835E /* RiveRuntime */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D593DDE02FE801CA00F1835E /* XCRemoteSwiftPackageReference "rive-ios" */;
 			productName = RiveRuntime;
+		};
+		D59400012FE901CA00F1835E /* FabBar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D59400002FE901CA00F1835E /* XCLocalSwiftPackageReference "Packages/FabBar" */;
+			productName = FabBar;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
