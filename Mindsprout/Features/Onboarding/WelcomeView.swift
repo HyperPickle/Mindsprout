@@ -98,18 +98,20 @@ struct WelcomeView: View {
 
 struct TitleView: View {
     var body: some View {
-        VStack(spacing: 8) {
-            SproutIdleView()
+        VStack(spacing: 0) {
+            SproutView(state: .idle, idleOnly: true, draggable: false)
                 .frame(width: 200, height: 200)
+                .padding(.bottom, 52)
 
-            Text("mindsprout")
-                .font(AppFont.display)
-                .foregroundColor(AppColor.label)
-                .padding(.top, -28)
+            VStack(spacing: 6) {
+                Text("mindsprout")
+                    .font(AppFont.display)
+                    .foregroundColor(AppColor.label)
 
-            Text("see the world, to see yourself").italic()
-                .font(AppFont.callout)
-                .foregroundColor(AppColor.label)
+                Text("see the world, to see yourself").italic()
+                    .font(AppFont.callout)
+                    .foregroundColor(AppColor.label)
+            }
         }
         .frame(maxWidth: .infinity)
     }

@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import SwiftData
 import UIKit
+import FabBar
 
 struct HomeTab: View {
     @Binding var selection: AppTab
@@ -16,6 +17,8 @@ struct HomeTab: View {
 
     @State private var bubbleOffset: CGFloat = 0
     @State private var showWardrobe = false
+
+    @Environment(\.fabBarBottomSafeAreaPadding) private var fabBarBottomPadding
 
     private var activeTrip: Trip? { TripResolver.active(in: trips) }
     private var sprout: Sprout? { sprouts.first }
@@ -90,16 +93,16 @@ struct HomeTab: View {
                     .frame(width: layout.tripGroupMaxWidth, height: layout.tripPillHeight, alignment: .leading)
                     .position(x: layout.tripGroupCenterX, y: layout.topRowCenterY)
 
-                // Style button - top right, top-aligned with trip card
+                // Style button - bottom left, above tab bar
                 VStack {
-                    HStack {
-                        Spacer()
-                        styleButton
-                            .padding(.trailing, 16)
-                    }
                     Spacer()
+                    HStack {
+                        styleButton
+                            .padding(.leading, 21)
+                        Spacer()
+                    }
+                    .padding(.bottom, fabBarBottomPadding > 0 ? fabBarBottomPadding + 21 : 16)
                 }
-                .padding(.top, max(0, layout.topRowCenterY - 32))
 
                 // ✅ DropBubble uniquement si hungry
                 if sproutDisplayState == .hungry {
@@ -244,7 +247,7 @@ struct HomeTab: View {
             .foregroundStyle(AppColor.label)
             .frame(height: 41)
             .padding(.trailing, 15)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .glassEffect(in: Capsule())
         }
         .buttonStyle(PressScaleButtonStyle())
     }

@@ -117,24 +117,18 @@ private struct DayCard: View {
                 TripPhotoThumb(assetID: featured)
                     .frame(height: photoHeight)
                     .frame(maxWidth: .infinity)
-                    .overlay(alignment: .topLeading) { dayBadge }
-                    .overlay(alignment: .topTrailing) { openMemoryBadge }
                     .overlay(alignment: .bottomTrailing) { photoBadge }
             }
 
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 HStack {
-                    if reflection.photoAssetIDs.isEmpty {
-                        Text("Day \(reflection.dayIndex)")
-                            .font(AppFont.callout)
-                            .foregroundStyle(AppColor.label)
-                    }
+                    Text("Day \(reflection.dayIndex)")
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.label)
                     Spacer()
-                    if reflection.photoAssetIDs.isEmpty {
-                        Text("Open memory →")
-                            .font(AppFont.callout)
-                            .foregroundStyle(AppColor.label)
-                    }
+                    Text("Open memory →")
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.label)
                 }
                 if let text = reflection.text, !text.isEmpty {
                     LabelBox(header: "MOMENT", text: String(text.prefix(200)), lineLimit: 6)
@@ -142,38 +136,20 @@ private struct DayCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(Spacing.md)
+        .padding(.horizontal, Spacing.md)
+        .padding(.top, Spacing.md)
+        .padding(.bottom, Spacing.lg)
         .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-    }
-
-    private var dayBadge: some View {
-        Text("Day \(reflection.dayIndex)")
-            .font(AppFont.callout)
-            .foregroundStyle(AppColor.label)
-            .padding(.horizontal, Spacing.sm)
-            .padding(.vertical, 8)
-            .readableLiquidGlass(in: Capsule())
-            .padding(Spacing.sm)
-    }
-
-    private var openMemoryBadge: some View {
-        Text("Open memory →")
-            .font(AppFont.callout)
-            .foregroundStyle(AppColor.label)
-            .padding(.horizontal, Spacing.sm)
-            .padding(.vertical, 8)
-            .readableLiquidGlass(in: Capsule())
-            .padding(Spacing.sm)
     }
 
     @ViewBuilder private var photoBadge: some View {
         if reflection.photoAssetIDs.count > 1 {
             Label("\(reflection.photoAssetIDs.count)", systemImage: "photo.on.rectangle")
                 .font(AppFont.eyebrow)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColor.label)
                 .padding(.horizontal, Spacing.xs)
                 .padding(.vertical, 4)
-                .background(Capsule().fill(.black.opacity(0.45)))
+                .glassEffect(in: Capsule())
                 .padding(Spacing.sm)
         }
     }

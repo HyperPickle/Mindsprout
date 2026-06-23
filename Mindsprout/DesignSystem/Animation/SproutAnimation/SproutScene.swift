@@ -7,14 +7,14 @@ import Combine
 @MainActor
 final class SproutRiveController: ObservableObject {
     let riveVM: RiveViewModel
-    
-    
+    private let idleOnly: Bool
+
     @Published var currentDirection: CGFloat = 1.0
     @Published var sproutWalkOffset: CGSize = .zero
     @Published private(set) var isDragging = false
     @Published private(set) var isWalking = false
     @Published var isFacingLeft = false
-  
+
     private let screenHalfWidth: CGFloat = UIScreen.main.bounds.width / 2 - 80
 
     private var tapCount = 0
@@ -26,9 +26,8 @@ final class SproutRiveController: ObservableObject {
     private var pendingState: SproutState?
     private var isRiveReady = false
 
-    init() {
-        // Step 1: verify the .riv file loads at all (no state machine)
-        // Step 2: if Step 1 works, uncomment stateMachineName and check artboardName
+    init(idleOnly: Bool = false) {
+        self.idleOnly = idleOnly
         riveVM = RiveViewModel(
             fileName: "sprouttest3",
             stateMachineName: "SproutHomeSM",
@@ -76,13 +75,15 @@ final class SproutRiveController: ObservableObject {
         }
         currentState = state
         behaviorTimer?.invalidate()
+        isWalking = false
+        sproutWalkOffset = .zero
 
         riveVM.setInput("isHungry", value: false)
         riveVM.setInput("isSad", value: false)
 
         switch state {
         case .idle, .readyToEvolve:
-            scheduleRandomBehavior()
+            if !idleOnly { scheduleRandomBehavior() }
         case .hungry:
             riveVM.setInput("isHungry", value: true)
         case .sleeping:
@@ -306,8 +307,15 @@ final class SproutRiveController: ObservableObject {
 // MARK: - View
 struct SproutView: View {
     let state: SproutState
-    @StateObject private var controller = SproutRiveController()
+    let draggable: Bool
+    @StateObject private var controller: SproutRiveController
     @AppStorage("sproutGlassesChoice") private var savedGlasses: Int = 0
+
+    init(state: SproutState, idleOnly: Bool = false, draggable: Bool = true) {
+        self.state = state
+        self.draggable = draggable
+        _controller = StateObject(wrappedValue: SproutRiveController(idleOnly: idleOnly))
+    }
 
     @State private var sproutOffset: CGSize = .zero
     @State private var dragBaseOffset: CGSize = .zero
@@ -348,9 +356,9 @@ struct SproutView: View {
                         x: baseX + totalOffset.width,
                         y: baseY + totalOffset.height
                     )
-                    .gesture(dragGesture)
+                    .gesture(draggable ? dragGesture : nil)
                     .onTapGesture {
-                            controller.onTap()
+                        controller.onTap()
                     }
                 
             }
@@ -412,22 +420,3 @@ struct SproutView: View {
     }
 }
 
-// MARK: - SproutIdleView (Welcome only)
-
-struct SproutIdleView: View {
-    @StateObject private var riveVM = RiveViewModel(
-        fileName: "sprout2",
-        stateMachineName: "SproutHomeSM",
-        artboardName: "Sprout"
-    )
-
-    var body: some View {
-        riveVM.view()
-            .allowsHitTesting(false)
-            .onAppear {
-                // Force idle : aucun comportement random, juste breathing + blink
-                riveVM.setInput("isHungry", value: false)
-                riveVM.setInput("isSad", value: false)
-            }
-    }
-}

@@ -105,7 +105,7 @@ struct RootView: View {
         switch reflectAction {
         case .createTrip:
             return FabBarAction(
-                systemImage: "plus.fill",
+                systemImage: "plus",
                 accessibilityLabel: "Start a trip",
                 tintColor: nil,
                 iconTintColor: iconTintColor,

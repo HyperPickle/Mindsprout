@@ -16,6 +16,7 @@ final class GlassTabBarView: UIView {
     private(set) var tabCount: Int
     private var segmentedTrailingConstraint: NSLayoutConstraint?
     private(set) var action: FabBarAction
+    private var fabTitleContentView: UIView?
 
     init(
         segmentedControl: TabBarSegmentedControl,
@@ -80,6 +81,8 @@ final class GlassTabBarView: UIView {
 
         fabButton.addAction(UIAction { [weak self] _ in self?.action.action() }, for: .touchUpInside)
 
+        installFabTitleContentView(for: action)
+
         // Extra bottom inset compensates for UISegmentedControl's internal padding,
         // visually centering the content within the glass container.
         let segmentedControlBottomInsetAdjustment: CGFloat = 1
@@ -120,24 +123,33 @@ final class GlassTabBarView: UIView {
     private static func makeButtonConfiguration(for action: FabBarAction) -> UIButton.Configuration {
         var config = UIButton.Configuration.plain()
         config.contentInsets = .zero
-        if let title = action.title {
-            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-            config.image = UIImage(systemName: action.systemImage, withConfiguration: symbolConfig)
-            config.imagePlacement = .top
-            config.imagePadding = 2
-            var titleAttr = AttributedString(title)
-            titleAttr.font = UIFont.systemFont(ofSize: Constants.tabTitleFontSize, weight: .semibold)
-            config.attributedTitle = titleAttr
-        } else {
+        if action.title == nil {
             let symbolConfig = UIImage.SymbolConfiguration(pointSize: Constants.fabIconPointSize, weight: .medium)
             config.image = UIImage(systemName: action.systemImage, withConfiguration: symbolConfig)
+            config.baseForegroundColor = action.iconTintColor
         }
-        config.baseForegroundColor = action.iconTintColor
         return config
+    }
+
+    private func installFabTitleContentView(for action: FabBarAction) {
+        guard let title = action.title else { return }
+        let contentView = TabItemContentView(title: title, symbolName: action.systemImage)
+        contentView.tintColor = action.iconTintColor
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        fabGlassView.contentView.addSubview(contentView)
+        NSLayoutConstraint.activate([
+            contentView.centerXAnchor.constraint(equalTo: fabGlassView.contentView.centerXAnchor),
+            contentView.centerYAnchor.constraint(equalTo: fabGlassView.contentView.centerYAnchor),
+        ])
+        fabTitleContentView = contentView
     }
 
     func updateAction(_ newAction: FabBarAction) {
         action = newAction
+
+        fabTitleContentView?.removeFromSuperview()
+        fabTitleContentView = nil
+
         fabButton.configuration = Self.makeButtonConfiguration(for: newAction)
         fabButton.accessibilityLabel = newAction.accessibilityLabel
 
@@ -145,6 +157,8 @@ final class GlassTabBarView: UIView {
         newEffect.isInteractive = true
         newEffect.tintColor = newAction.tintColor
         fabGlassView.effect = newEffect
+
+        installFabTitleContentView(for: newAction)
     }
 
     /// Creates the appropriate trailing constraint for the segmented glass view.
@@ -193,5 +207,6 @@ final class GlassTabBarView: UIView {
             config.baseForegroundColor = action.iconTintColor
             fabButton.configuration = config
         }
+        fabTitleContentView?.tintColor = action.iconTintColor
     }
 }

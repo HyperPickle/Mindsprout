@@ -50,14 +50,14 @@ struct SettingsView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        SettingsActionButton(title: "Account", icon: "person.crop.circle") {
+                        SettingsActionButton(title: "Account", icon: "person") {
                             modalCoordinator.present(.account)
                         }
                         SettingsActionButton(title: "Rename Sprout", icon: "leaf") {
                             newSproutName = sproutName
                             showRenameSprout = true
                         }
-                        SettingsActionButton(title: "Appearance", icon: "eye") {
+                        SettingsActionButton(title: "Appearance", icon: "paintpalette") {
                             modalCoordinator.present(.themeSettings)
                         }
                         SettingsActionButton(title: "Privacy Policy", icon: "lock") {
@@ -132,6 +132,7 @@ private struct SettingsActionButton: View {
                 HStack {
                     Image(systemName: icon)
                         .font(.system(size: 22))
+                        .symbolRenderingMode(.monochrome)
                         .frame(width: 30)
                     Spacer()
                 }
