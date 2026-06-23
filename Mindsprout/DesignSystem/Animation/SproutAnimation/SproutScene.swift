@@ -224,6 +224,7 @@ final class SproutRiveController: ObservableObject {
     
     private func doSit() {
         isWalking = false
+        withAnimation(.easeOut(duration: 0.3)) { sproutWalkOffset = .zero }
         riveVM.triggerInput("triggerSit")
         let duration = Double.random(in: 5...10)
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
@@ -234,6 +235,7 @@ final class SproutRiveController: ObservableObject {
 
     private func doJump() {
         isWalking = false
+        withAnimation(.easeOut(duration: 0.3)) { sproutWalkOffset = .zero }
         riveVM.triggerInput("triggerJump")
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
             self?.scheduleRandomBehavior()
@@ -242,9 +244,9 @@ final class SproutRiveController: ObservableObject {
 
     private func doSleepBriefly() {
         isWalking = false
+        withAnimation(.easeOut(duration: 0.3)) { sproutWalkOffset = .zero }
         riveVM.triggerInput("triggerSleep")
         let duration = Double.random(in: 2...4)
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
             self?.riveVM.triggerInput("triggerWakeUp")
             self?.scheduleRandomBehavior()
