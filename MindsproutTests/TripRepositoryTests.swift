@@ -31,7 +31,7 @@ struct TripRepositoryTests {
         let (repo, _) = makeRepo()
         let trip = try repo.create(
             destination: "Oslo", country: "Norway",
-            startDate: days(-1), endDate: days(1), type: .business, expectations: []
+            startDate: days(-1), endDate: days(1), type: .work, expectations: []
         )
         try repo.delete(trip)
         #expect(try repo.allTrips().isEmpty)

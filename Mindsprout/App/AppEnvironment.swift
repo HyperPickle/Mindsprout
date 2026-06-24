@@ -14,7 +14,10 @@ struct AppEnvironment {
             gameConfig: .default,
             ai: TemplateAIGenerationService(),
             mediaStore: MediaStore(),
-            transcriber: SpeechTranscriptionService(),
+            transcriber: FallbackTranscriptionService(
+                primary: WhisperCppTranscriptionService(),
+                fallback: SpeechTranscriptionService()
+            ),
             contentPackLoader: ContentPackLoader(),
             analytics: NoOpAnalyticsService(),
             auth: AppleAuthService()

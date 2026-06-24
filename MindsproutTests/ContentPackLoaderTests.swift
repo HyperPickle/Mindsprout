@@ -9,7 +9,7 @@ struct ContentPackLoaderTests {
 
         #expect(!pack.prompts.inspirationPrompts.isEmpty)
         #expect(!pack.prompts.highlights(for: .solo).isEmpty)
-        #expect(!pack.prompts.highlights(for: .business).isEmpty)
+        #expect(!pack.prompts.highlights(for: .work).isEmpty)
         #expect(!pack.expectations.presets(for: .family).isEmpty)
     }
 

@@ -1,5 +1,5 @@
 {
-  "originHash" : "ebd03ecc3b8b97a6884a292cdd86ad7e8eab1662bcdce1981b18eefe52d5d8d6",
+  "originHash" : "e8234aed085e7f0b2de3b561fcf5a101cf2840a575095e8531fa3a24d19f2eca",
   "pins" : [
     {
       "identity" : "rive-ios",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "43d6dcdceb3ed44b946e4fb53f7b16471bac3222",
         "version" : "6.20.6"
+      }
+    },
+    {
+      "identity" : "whisper-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/HyperPickle/whisper-ios",
+      "state" : {
+        "revision" : "6ac34942ee05e91e817c4d96c45fa5b126ad35c9",
+        "version" : "1.9.1"
       }
     }
   ],

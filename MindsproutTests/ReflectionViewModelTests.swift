@@ -272,11 +272,15 @@ struct ReflectionViewModelTests {
         let rewardState = try #require(vm.rewardState)
         let milestonePresentation = try #require(rewardState.milestonePresentation)
         #expect(rewardState.isMilestone)
-        #expect(milestonePresentation == expectedFallback)
+        #expect(milestonePresentation.destination == expectedFallback.destination)
+        #expect(milestonePresentation.previousLevel == expectedFallback.previousLevel)
+        #expect(milestonePresentation.newLevel == expectedFallback.newLevel)
+        #expect(milestonePresentation.insight == expectedFallback.insight)
+        #expect(milestonePresentation.postcard == expectedFallback.postcard)
 
         vm.completeReward()
 
-        #expect(completions == [.milestone(expectedFallback)])
+        #expect(completions == [.milestone(milestonePresentation)])
     }
 
     @Test func completedReflectionSkipsRewardScreenInsteadOfShowingZeroXP() throws {

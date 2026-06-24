@@ -17,6 +17,71 @@ private struct FakeLocalizedTranscriptionError: LocalizedError {
     var errorDescription: String? { "Transcription failed in tests." }
 }
 
+/// Records whether it was asked to transcribe, so tests can assert the fallback
+/// was (or wasn't) reached.
+private final class CountingTranscriber: Transcribing, @unchecked Sendable {
+    private let behavior: @Sendable () throws -> String
+    private(set) var callCount = 0
+
+    init(_ behavior: @escaping @Sendable () throws -> String) {
+        self.behavior = behavior
+    }
+
+    func transcribe(url: URL) async throws -> String {
+        callCount += 1
+        return try behavior()
+    }
+}
+
+@Suite struct FallbackTranscriptionServiceTests {
+
+    private let url = URL(fileURLWithPath: "/dev/null")
+
+    @Test func primarySuccessSkipsFallback() async throws {
+        let fallback = CountingTranscriber { "fallback text" }
+        let service = FallbackTranscriptionService(
+            primary: CountingTranscriber { "whisper text" },
+            fallback: fallback
+        )
+
+        let result = try await service.transcribe(url: url)
+
+        #expect(result == "whisper text")
+        #expect(fallback.callCount == 0)
+    }
+
+    @Test func primaryThrowFallsBack() async throws {
+        let service = FallbackTranscriptionService(
+            primary: CountingTranscriber { throw FakeLocalizedTranscriptionError() },
+            fallback: CountingTranscriber { "apple speech text" }
+        )
+
+        let result = try await service.transcribe(url: url)
+        #expect(result == "apple speech text")
+    }
+
+    @Test func primaryEmptyFallsBack() async throws {
+        let service = FallbackTranscriptionService(
+            primary: CountingTranscriber { "   " },
+            fallback: CountingTranscriber { "apple speech text" }
+        )
+
+        let result = try await service.transcribe(url: url)
+        #expect(result == "apple speech text")
+    }
+
+    @Test func bothFailingPropagatesError() async {
+        let service = FallbackTranscriptionService(
+            primary: CountingTranscriber { throw FakeLocalizedTranscriptionError() },
+            fallback: CountingTranscriber { throw FakeLocalizedTranscriptionError() }
+        )
+
+        await #expect(throws: FakeLocalizedTranscriptionError.self) {
+            _ = try await service.transcribe(url: self.url)
+        }
+    }
+}
+
 @MainActor
 struct TranscriptionTests {
 

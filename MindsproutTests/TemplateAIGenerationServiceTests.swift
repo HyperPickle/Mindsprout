@@ -29,7 +29,7 @@ struct TemplateAIGenerationServiceTests {
 
     @Test func differentInputsCanYieldDifferentThemes() async {
         let kyoto = TripThemeRequest(tripType: .solo, destination: "Kyoto", country: "Japan", expectations: [])
-        let lisbon = TripThemeRequest(tripType: .business, destination: "Lisbon", country: "Portugal", expectations: ["Find balance on the road"])
+        let lisbon = TripThemeRequest(tripType: .work, destination: "Lisbon", country: "Portugal", expectations: ["Find balance on the road"])
         // Deterministic per-input; the seeds differ so this is a meaningful signal.
         let a = await service.generateTripTheme(kyoto)
         let b = await service.generateTripTheme(lisbon)

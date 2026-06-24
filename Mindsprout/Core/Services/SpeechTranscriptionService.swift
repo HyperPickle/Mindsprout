@@ -16,6 +16,7 @@ protocol Transcribing: Sendable {
 enum TranscriptionError: Error {
     case localeNotSupported
     case modelUnavailable
+    case inferenceFailed
 }
 
 extension TranscriptionError: LocalizedError {
@@ -25,6 +26,8 @@ extension TranscriptionError: LocalizedError {
             return String(localized: "Transcription isn’t available on this device.")
         case .modelUnavailable:
             return String(localized: "The speech model couldn’t be installed. Connect to the internet and try again.")
+        case .inferenceFailed:
+            return String(localized: "Couldn’t transcribe this recording.")
         }
     }
 }

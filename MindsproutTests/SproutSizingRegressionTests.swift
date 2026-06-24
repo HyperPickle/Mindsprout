@@ -1,20 +1,20 @@
 import CoreGraphics
-import SpriteKit
 import Testing
 @testable import Mindsprout
 
 @MainActor
 struct SproutSizingRegressionTests {
-    @Test func idleStateRestoresNativeWidthAfterWidePose() {
-        let scene = SproutScene(size: CGSize(width: 400, height: 600))
-        let sprout = SKSpriteNode(color: .green, size: CGSize(width: 337, height: 400))
-        sprout.position = CGPoint(x: 200, y: 300)
-        scene.addChild(sprout)
-        scene.sprout = sprout
+    @Test func sproutViewCanRenderIdleStateWithoutSpriteKitSizingState() {
+        let view = SproutView(state: .idle)
 
-        scene.startIdle()
+        #expect(view.state == .idle)
+        #expect(view.draggable)
+    }
 
-        #expect(sprout.size.width == 400 * HomeDashboardLayout.sproutAspectRatio)
-        #expect(sprout.size.height == 400)
+    @Test func homeLayoutStillDocumentsLegacySproutNativeAspectRatio() {
+        let layout = HomeDashboardLayout(size: CGSize(width: 402, height: 874))
+
+        #expect(layout.sproutHeight == 400)
+        #expect(layout.sproutWidth == 400 * HomeDashboardLayout.sproutAspectRatio)
     }
 }

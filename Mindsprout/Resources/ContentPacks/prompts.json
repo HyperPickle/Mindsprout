@@ -44,7 +44,7 @@
       { "id": "family-home",    "title": "A small moment that felt like home",            "subtitle": "a habit / a phrase / a look..." },
       { "id": "family-learn",   "title": "Learned something about someone I love",        "subtitle": "a story / a preference / a side I hadn't seen..." }
     ],
-    "business": [
+    "work": [
       { "id": "biz-routine",    "title": "Something that broke the routine",              "subtitle": "between the meetings, a moment that counted..." },
       { "id": "biz-notwork",    "title": "When the trip stopped feeling like work",       "subtitle": "a walk / a meal / a conversation..." }
     ]

@@ -17,12 +17,13 @@ struct HomeDashboardLayoutTests {
         #expect(layout.sproutWidth == 400 * HomeDashboardLayout.sproutAspectRatio)
     }
 
-    @Test func ctaDimensionsAreReducedByFifteenPercent() {
+    @Test func tripPillUsesReferenceTopRowGeometry() {
         let size = CGSize(width: 402, height: 874)
         let layout = HomeDashboardLayout(size: size)
-        let currentCTAWidth = size.width - (Spacing.screenEdge * 2)
 
-        #expect(layout.ctaWidth == currentCTAWidth * HomeDashboardLayout.ctaScale)
-        #expect(layout.ctaHeight == HomeDashboardLayout.referenceCTAHeight * HomeDashboardLayout.ctaScale)
+        #expect(layout.topRowCenterY == 50)
+        #expect(layout.tripGroupCenterX == 178)
+        #expect(layout.tripGroupMaxWidth == 340)
+        #expect(layout.tripPillHeight == 104)
     }
 }

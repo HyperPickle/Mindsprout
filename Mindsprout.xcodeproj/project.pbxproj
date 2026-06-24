@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		D593DDE22FE801CA00F1835E /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = D593DDE12FE801CA00F1835E /* RiveRuntime */; };
 		D59400022FE901CA00F1835E /* FabBar in Frameworks */ = {isa = PBXBuildFile; productRef = D59400012FE901CA00F1835E /* FabBar */; };
+		AAAA0000000000000000AA03 /* whisper in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA0000000000000000AA02 /* whisper */; };
+		AAAA0000000000000000AA05 /* WhisperSupport in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA0000000000000000AA04 /* WhisperSupport */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +66,8 @@
 			files = (
 				D59400022FE901CA00F1835E /* FabBar in Frameworks */,
 				D593DDE22FE801CA00F1835E /* RiveRuntime in Frameworks */,
+				AAAA0000000000000000AA03 /* whisper in Frameworks */,
+				AAAA0000000000000000AA05 /* WhisperSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,6 +121,8 @@
 			packageProductDependencies = (
 				D59400012FE901CA00F1835E /* FabBar */,
 				D593DDE12FE801CA00F1835E /* RiveRuntime */,
+				AAAA0000000000000000AA02 /* whisper */,
+				AAAA0000000000000000AA04 /* WhisperSupport */,
 			);
 			productName = Mindsprout;
 			productReference = 76597E972FCFA23400C4ADE5 /* Mindsprout.app */;
@@ -176,6 +182,7 @@
 			packageReferences = (
 				D59400002FE901CA00F1835E /* XCLocalSwiftPackageReference "Packages/FabBar" */,
 				D593DDE02FE801CA00F1835E /* XCRemoteSwiftPackageReference "rive-ios" */,
+				AAAA0000000000000000AA01 /* XCRemoteSwiftPackageReference "whisper-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 76597E982FCFA23400C4ADE5 /* Products */;
@@ -530,6 +537,14 @@
 				minimumVersion = 6.20.6;
 			};
 		};
+		AAAA0000000000000000AA01 /* XCRemoteSwiftPackageReference "whisper-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/HyperPickle/whisper-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -542,6 +557,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D59400002FE901CA00F1835E /* XCLocalSwiftPackageReference "Packages/FabBar" */;
 			productName = FabBar;
+		};
+		AAAA0000000000000000AA02 /* whisper */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAAA0000000000000000AA01 /* XCRemoteSwiftPackageReference "whisper-ios" */;
+			productName = whisper;
+		};
+		AAAA0000000000000000AA04 /* WhisperSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAAA0000000000000000AA01 /* XCRemoteSwiftPackageReference "whisper-ios" */;
+			productName = WhisperSupport;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
