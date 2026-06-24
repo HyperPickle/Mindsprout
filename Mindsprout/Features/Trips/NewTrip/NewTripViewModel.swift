@@ -4,9 +4,7 @@ import SwiftData
 @MainActor
 @Observable
 final class NewTripViewModel {
-    var destination = ""
-    var latitude: Double? = nil
-    var longitude: Double? = nil
+    var locationSelection: TripLocationSelection?
     var startDate: Date
     var endDate: Date
     var type: TripType? = nil
@@ -28,7 +26,7 @@ final class NewTripViewModel {
     }
 
     var canContinue: Bool {
-        !destination.trimmingCharacters(in: .whitespaces).isEmpty && endDate >= startDate && type != nil
+        locationSelection != nil && endDate >= startDate && type != nil
     }
 
     var expectations: [String] {
@@ -52,12 +50,13 @@ final class NewTripViewModel {
 
     @discardableResult
     func save(context: ModelContext) -> Trip? {
-        let parts = destination.split(separator: ",", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-        let city = parts.first ?? destination.trimmingCharacters(in: .whitespaces)
-        let country = parts.count > 1 ? parts[1] : ""
+        guard let locationSelection else { return nil }
+
         return try? TripRepository(context: context).create(
-            destination: city, country: country,
-            latitude: latitude, longitude: longitude,
+            destination: locationSelection.city,
+            country: locationSelection.country,
+            latitude: locationSelection.latitude,
+            longitude: locationSelection.longitude,
             startDate: startDate, endDate: endDate,
             type: type ?? .solo, expectations: expectations
         )

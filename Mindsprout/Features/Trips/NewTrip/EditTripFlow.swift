@@ -124,13 +124,7 @@ struct EditTripFlow: View {
     private var destinationField: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             sectionLabel("Where did you go?")
-            DestinationPickerView(
-                selectedCity: $viewModel.destination,
-                onCoordinateSelected: { lat, lng in
-                    viewModel.latitude = lat
-                    viewModel.longitude = lng
-                }
-            )
+            DestinationPickerView(selection: $viewModel.locationSelection)
         }
         .zIndex(999)
     }

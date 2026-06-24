@@ -6,9 +6,7 @@ import SwiftData
 final class EditTripViewModel {
     let tripID: UUID
 
-    var destination = ""
-    var latitude: Double? = nil
-    var longitude: Double? = nil
+    var locationSelection: TripLocationSelection?
     var startDate = Date()
     var endDate = Date()
     var type: TripType = .solo
@@ -33,7 +31,7 @@ final class EditTripViewModel {
     }
 
     var canSave: Bool {
-        !destination.trimmingCharacters(in: .whitespaces).isEmpty && endDate >= startDate
+        locationSelection != nil && endDate >= startDate
     }
 
     /// True when turning the active toggle on would displace a different active trip.
@@ -47,9 +45,12 @@ final class EditTripViewModel {
               let trip = trips.first(where: { $0.id == tripID }) else { return }
         self.trip = trip
 
-        destination = trip.country.isEmpty ? trip.destination : "\(trip.destination), \(trip.country)"
-        latitude = trip.latitude
-        longitude = trip.longitude
+        locationSelection = TripLocationNormalizer.selection(
+            city: trip.destination,
+            country: trip.country,
+            latitude: trip.latitude,
+            longitude: trip.longitude
+        )
         startDate = trip.startDate
         endDate = trip.endDate
         type = trip.type
@@ -90,12 +91,12 @@ final class EditTripViewModel {
     }
 
     func save(context: ModelContext) {
-        guard let trip else { return }
-        let parts = destination.split(separator: ",", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-        trip.destination = parts.first ?? destination.trimmingCharacters(in: .whitespaces)
-        trip.country = parts.count > 1 ? parts[1] : ""
-        trip.latitude = latitude
-        trip.longitude = longitude
+        guard let trip, let locationSelection else { return }
+
+        trip.destination = locationSelection.city
+        trip.country = locationSelection.country
+        trip.latitude = locationSelection.latitude
+        trip.longitude = locationSelection.longitude
         trip.startDate = startDate
         trip.endDate = endDate
         trip.type = type

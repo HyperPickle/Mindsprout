@@ -100,13 +100,7 @@ private struct NewTripBasicsView: View {
             Text("Where are we going?")
                 .font(AppFont.bodyEmphasized)
                 .foregroundStyle(AppColor.label)
-            DestinationPickerView(
-                selectedCity: $viewModel.destination,
-                onCoordinateSelected: { lat, lng in
-                    viewModel.latitude = lat
-                    viewModel.longitude = lng
-                }
-            )
+            DestinationPickerView(selection: $viewModel.locationSelection)
         }
         .zIndex(999)
     }
