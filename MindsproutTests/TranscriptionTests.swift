@@ -13,6 +13,13 @@ private struct FailingTranscriber: Transcribing {
     func transcribe(url: URL) async throws -> String { throw error }
 }
 
+private struct HangingTranscriber: Transcribing {
+    func transcribe(url: URL) async throws -> String {
+        try await Task.sleep(for: .seconds(60))
+        return "late text"
+    }
+}
+
 private struct FakeLocalizedTranscriptionError: LocalizedError {
     var errorDescription: String? { "Transcription failed in tests." }
 }
@@ -64,6 +71,18 @@ private final class CountingTranscriber: Transcribing, @unchecked Sendable {
         let service = FallbackTranscriptionService(
             primary: CountingTranscriber { "   " },
             fallback: CountingTranscriber { "apple speech text" }
+        )
+
+        let result = try await service.transcribe(url: url)
+        #expect(result == "apple speech text")
+    }
+
+    @Test func primaryTimeoutFallsBack() async throws {
+        let service = FallbackTranscriptionService(
+            primary: HangingTranscriber(),
+            fallback: CountingTranscriber { "apple speech text" },
+            primaryTimeoutSeconds: .milliseconds(10),
+            fallbackTimeoutSeconds: .seconds(1)
         )
 
         let result = try await service.transcribe(url: url)

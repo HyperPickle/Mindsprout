@@ -18,6 +18,7 @@ struct PhotoCommitStep: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: Spacing.md) {
+                    ActiveReflectionPromptCard(prompt: vm.affirmationHeadline)
                     photoCard
                 }
                 .padding(.horizontal, Spacing.screenEdge)

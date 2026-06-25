@@ -114,8 +114,8 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
             return colorScheme == .dark ? .white.opacity(0.05) : .white.opacity(0.10)
         case .selected:
             return colorScheme == .dark
-                ? AppColor.primary.opacity(0.30)
-                : AppColor.primary.opacity(0.22)
+                ? .white.opacity(0.10)
+                : AppColor.skyTop.opacity(0.26)
         case .cta(let isEnabled):
             return isEnabled
                 ? (colorScheme == .dark ? .white.opacity(0.16) : .white.opacity(0.20))
@@ -134,7 +134,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         case .cta(let isEnabled):
             return isEnabled ? .white : .clear
         case .selected:
-            return AppColor.primary
+            return colorScheme == .dark ? AppColor.skyTop : AppColor.skyBottom
         case .neutral, .subtle:
             return .clear
         }
@@ -143,7 +143,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
     private var tintOpacity: Double {
         switch style {
         case .selected:
-            return colorScheme == .dark ? 0.28 : 0.20
+            return colorScheme == .dark ? 0.16 : 0.26
         case .cta(let isEnabled):
             return isEnabled ? (colorScheme == .dark ? 0.08 : 0.12) : 0
         case .danger:
@@ -158,7 +158,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         case .neutral:
             return colorScheme == .dark ? 0.16 : 0.24
         case .selected:
-            return colorScheme == .dark ? 0.24 : 0.30
+            return colorScheme == .dark ? 0.22 : 0.34
         case .cta(let isEnabled):
             return isEnabled ? 0.30 : 0.16
         case .danger:
@@ -171,7 +171,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
     private var borderColor: Color {
         switch style {
         case .selected:
-            return AppColor.primaryEdge
+            return colorScheme == .dark ? .white : AppColor.graphite
         case .cta:
             return colorScheme == .dark ? .white : AppColor.graphite
         case .danger:
@@ -186,7 +186,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         case .neutral:
             return colorScheme == .dark ? 0.8 : 0
         case .selected:
-            return colorScheme == .dark ? 2 : 2.5
+            return 2
         case .cta(let isEnabled):
             return isEnabled ? 1.3 : (colorScheme == .dark ? 0.8 : 0)
         case .danger:
@@ -199,7 +199,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
     private var borderOpacity: Double {
         switch style {
         case .selected:
-            return colorScheme == .dark ? 0.95 : 0.90
+            return colorScheme == .dark ? 0.72 : 0.82
         case .cta(let isEnabled):
             return isEnabled ? (colorScheme == .dark ? 0.80 : 0.75) : 0.45
         case .danger:
@@ -216,7 +216,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         case .cta(let isEnabled):
             return isEnabled ? 16 : 10
         case .selected:
-            return 14
+            return 8
         case .danger:
             return 14
         case .neutral:
@@ -231,7 +231,7 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         case .cta(let isEnabled):
             return isEnabled ? 0.18 : 0.08
         case .selected:
-            return 0.14
+            return colorScheme == .dark ? 0.08 : 0.10
         case .danger:
             return 0.16
         case .neutral:
@@ -245,8 +245,10 @@ private struct TripGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
         switch style {
         case .cta(let isEnabled):
             return isEnabled ? 6 : 4
-        case .selected, .danger, .neutral, .subtle:
+        case .danger, .neutral, .subtle:
             return 4
+        case .selected:
+            return 2
         }
     }
 }

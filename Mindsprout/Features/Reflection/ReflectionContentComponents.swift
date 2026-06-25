@@ -24,6 +24,33 @@ enum ReflectionPromptResolver {
     }
 }
 
+// MARK: - Active prompt card
+
+/// Quiet reminder of the selected reflection prompt. Used across the middle
+/// steps so the prompt remains the thing being answered without crowding the
+/// navigation header.
+struct ActiveReflectionPromptCard: View {
+    let prompt: String
+
+    var body: some View {
+        let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !trimmedPrompt.isEmpty {
+            Text(trimmedPrompt)
+                .font(AppFont.bodyEmphasized)
+                .foregroundStyle(AppColor.label)
+                .multilineTextAlignment(.center)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
+                .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .accessibilityLabel("Selected prompt: \(trimmedPrompt)")
+        }
+    }
+}
+
 // MARK: - Paged photo carousel
 
 /// A paged hero carousel for a reflection's photos with page indicators. Tapping
@@ -131,6 +158,26 @@ struct ReflectionAudioPlayer: View {
     private var url: URL? {
         guard let path = MediaImage.relativePath(for: audioAssetID, in: context) else { return nil }
         return env.mediaStore.url(for: path)
+    }
+}
+
+// MARK: - Mood tag
+
+/// The deterministic mood tag capsule shown on a completed reflection. Shared by
+/// the Today's Reflection viewer and the trip-day detail screen so the tag
+/// surfaces consistently across text and audio reflections.
+struct ReflectionMoodTagChip: View {
+    let tag: String
+
+    var body: some View {
+        Text(tag)
+            .font(AppFont.caption)
+            .foregroundStyle(AppColor.label)
+            .lineLimit(1)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xs)
+            .readableLiquidGlass(in: Capsule())
+            .accessibilityLabel("Reflection tag: \(tag)")
     }
 }
 

@@ -56,18 +56,26 @@ private struct DetailHost: View {
 
     var body: some View {
         NavigationStack {
-            if let id = activeTripID {
-                TripDayDetailView(tripID: id, initialDayIndex: 2)
+            if let selection = activeTripSelection {
+                TripDayDetailView(
+                    tripID: selection.tripID,
+                    initialReflectionID: selection.initialReflectionID
+                )
             } else {
                 Text("No trips seeded")
             }
         }
     }
 
-    private var activeTripID: UUID? {
+    private var activeTripSelection: (tripID: UUID, initialReflectionID: UUID?)? {
         let context = ModelContext(container)
         let trips = (try? context.fetch(FetchDescriptor<Trip>())) ?? []
-        return TripResolver.active(in: trips)?.id
+        guard let trip = TripResolver.active(in: trips) else { return nil }
+        let reflections = (try? TripRepository(context: context).reflections(for: trip)) ?? []
+        return (
+            trip.id,
+            reflections.first { $0.dayIndex == 2 }?.id ?? reflections.first?.id
+        )
     }
 }
 #endif

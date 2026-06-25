@@ -21,6 +21,7 @@ struct EntryStep: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: Spacing.md) {
+                ActiveReflectionPromptCard(prompt: vm.affirmationHeadline)
                 typeRecordToggle
                 if vm.bodyKind == .text {
                     TypeEntryCard(vm: vm)
@@ -64,10 +65,25 @@ struct EntryStep: View {
     }
 
     private var continueButton: some View {
-        HomeCTAButton(title: "Continue", widthScale: 1) {
-            vm.step = .photos
+        VStack(spacing: Spacing.xs) {
+            if let message = vm.step2ValidationMessage {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(message)
+                        .font(AppFont.caption)
+                }
+                .foregroundStyle(AppColor.destructive)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .transition(.opacity)
+            }
+
+            HomeCTAButton(title: "Continue", widthScale: 1) {
+                vm.step = .photos
+            }
+            .disabled(!vm.canContinueStep2)
         }
-        .disabled(!vm.canContinueStep2)
+        .animation(.easeInOut(duration: 0.2), value: vm.step2ValidationMessage)
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.bottom, Spacing.md)
     }
@@ -79,7 +95,37 @@ private struct TypeEntryCard: View {
     @Bindable var vm: ReflectionViewModel
     @FocusState private var isEditorFocused: Bool
 
-    private let maxChars = 200
+    private var maxWords: Int { ReflectionViewModel.maximumWordCount }
+
+    private var wordCountLabel: String {
+        let count = vm.entryWordCount
+        if count < ReflectionViewModel.minimumWordCount {
+            return "\(count) / \(ReflectionViewModel.minimumWordCount) words"
+        }
+        return "\(count) / \(maxWords) words"
+    }
+
+    /// Caps `text` to `maxWords` words, keeping everything up to the end of the
+    /// last allowed word and dropping any trailing whitespace so the editor
+    /// simply stops accepting new words once the limit is reached.
+    private static func clampedToWordLimit(_ text: String, maxWords: Int) -> String {
+        var wordCount = 0
+        var inWord = false
+        var index = text.startIndex
+        while index < text.endIndex {
+            let isSeparator = text[index].isWhitespace || text[index].isNewline
+            if !isSeparator, !inWord {
+                wordCount += 1
+                inWord = true
+                if wordCount > maxWords { break }
+            } else if isSeparator {
+                inWord = false
+            }
+            index = text.index(after: index)
+        }
+        guard wordCount > maxWords else { return text }
+        return String(text[..<index]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -104,9 +150,7 @@ private struct TypeEntryCard: View {
                         }
                     }
                     .onChange(of: vm.entryText) { _, new in
-                        if new.count > maxChars {
-                            vm.entryText = String(new.prefix(maxChars))
-                        }
+                        vm.entryText = Self.clampedToWordLimit(new, maxWords: maxWords)
                     }
             }
             .frame(minHeight: 160)
@@ -115,7 +159,7 @@ private struct TypeEntryCard: View {
 
             HStack {
                 Spacer()
-                Text("\(vm.entryText.count)/\(maxChars)")
+                Text(wordCountLabel)
                     .font(AppFont.caption)
                     .foregroundStyle(ReflectionSurfaceStyle.cardTextColor.opacity(ReflectionSurfaceStyle.secondaryCardTextOpacity))
             }
@@ -132,6 +176,9 @@ private struct RecordEntryCard: View {
 
     @State private var recorder: AudioRecorderController = AudioRecorderController()
     @State private var player = AudioPlayerController()
+    @State private var isEditingTranscript = false
+    @State private var transcriptDraft = ""
+    @FocusState private var isTranscriptEditorFocused: Bool
 
     var body: some View {
         VStack(spacing: Spacing.md) {
@@ -179,6 +226,7 @@ private struct RecordEntryCard: View {
             Text("Please allow microphone access in Settings to record audio.")
         }
         .onDisappear {
+            commitTranscriptEdit()
             if recorder.hasInProgressRecording {
                 Task { await finalizeRecordingForDisappear() }
             }
@@ -296,14 +344,58 @@ private struct RecordEntryCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         } else if let transcript = vm.transcriptText, !transcript.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("Transcript")
-                    .font(AppFont.caption)
-                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor.opacity(ReflectionSurfaceStyle.secondaryCardTextOpacity))
-                Text(transcript)
-                    .font(AppFont.callout)
-                    .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: Spacing.xs) {
+                    Text("Transcript")
+                        .font(AppFont.caption)
+                        .foregroundStyle(ReflectionSurfaceStyle.cardTextColor.opacity(ReflectionSurfaceStyle.secondaryCardTextOpacity))
+                    Spacer()
+                    Button {
+                        beginTranscriptEdit(with: transcript)
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(ReflectionSurfaceStyle.cardTextColor.opacity(0.75))
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Edit transcript")
+                }
+
+                if isEditingTranscript {
+                    TextEditor(text: $transcriptDraft)
+                        .font(AppFont.callout)
+                        .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 96)
+                        .padding(.horizontal, -Spacing.xs)
+                        .focused($isTranscriptEditorFocused)
+                        .toolbar {
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                Button("Done") {
+                                    commitTranscriptEdit()
+                                    isTranscriptEditorFocused = false
+                                }
+                            }
+                        }
+                        .onChange(of: isTranscriptEditorFocused) { _, isFocused in
+                            if !isFocused {
+                                commitTranscriptEdit()
+                            }
+                        }
+                } else {
+                    Text(transcript)
+                        .font(AppFont.callout)
+                        .foregroundStyle(ReflectionSurfaceStyle.cardTextColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            beginTranscriptEdit(with: transcript)
+                        }
+                        .accessibilityAddTraits(.isButton)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Spacing.sm)
@@ -311,6 +403,11 @@ private struct RecordEntryCard: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .fill(AppColor.hairline.opacity(0.25))
             )
+            .onTapGesture {
+                if !isEditingTranscript {
+                    beginTranscriptEdit(with: transcript)
+                }
+            }
         } else if let errorMessage = vm.transcriptionErrorMessage {
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text("Transcript unavailable")
@@ -333,6 +430,18 @@ private struct RecordEntryCard: View {
                     .stroke(AppColor.destructive.opacity(0.2), lineWidth: 1)
             )
         }
+    }
+
+    private func beginTranscriptEdit(with transcript: String) {
+        transcriptDraft = transcript
+        isEditingTranscript = true
+        isTranscriptEditorFocused = true
+    }
+
+    private func commitTranscriptEdit() {
+        guard isEditingTranscript else { return }
+        vm.updateTranscriptText(transcriptDraft)
+        isEditingTranscript = false
     }
 
     private var stateButtonTitle: LocalizedStringKey {

@@ -16,6 +16,7 @@ enum ReflectionCompletion: Sendable, Equatable {
 
 struct ReflectionRewardState: Sendable, Equatable {
     var xpAwarded: Int
+    var tagLabel: String? = nil
     var milestonePresentation: LevelUpPresentation?
 
     var completion: ReflectionCompletion {
@@ -72,16 +73,53 @@ final class ReflectionViewModel {
         selectedPrompt != nil || !customPromptText.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    /// Minimum effort required before the entry step can continue.
+    static let minimumWordCount = 20
+    static let maximumWordCount = 150
+    static let minimumAudioSeconds = 8
+
+    /// Duration of the recorded audio in seconds, used to enforce the minimum
+    /// recording length. Recomputed whenever the audio draft changes.
+    var audioDurationSeconds: Double?
+
+    var entryWordCount: Int {
+        entryText.split { $0.isWhitespace || $0.isNewline }.count
+    }
+
     var canContinueStep2: Bool {
         switch bodyKind {
-        case .text: return !entryText.trimmingCharacters(in: .whitespaces).isEmpty
-        case .audio: return audioAssetID != nil
+        case .text:
+            return entryWordCount >= Self.minimumWordCount
+        case .audio:
+            return audioAssetID != nil && (audioDurationSeconds ?? 0) >= Double(Self.minimumAudioSeconds)
+        }
+    }
+
+    /// Inline message shown above the Continue button when the entry doesn't yet
+    /// meet the minimum length. `nil` when there's nothing to nudge about (empty
+    /// entry, or already long enough).
+    var step2ValidationMessage: String? {
+        switch bodyKind {
+        case .text:
+            let count = entryWordCount
+            guard count > 0, count < Self.minimumWordCount else { return nil }
+            return String(localized: "Needs to be at least \(Self.minimumWordCount) words.")
+        case .audio:
+            guard audioAssetID != nil,
+                  let duration = audioDurationSeconds,
+                  duration < Double(Self.minimumAudioSeconds) else { return nil }
+            return String(localized: "Needs to be at least \(Self.minimumAudioSeconds) seconds.")
         }
     }
 
     var affirmationHeadline: String {
         if let prompt = selectedPrompt { return prompt.title }
         return customPromptText
+    }
+
+    func updateTranscriptText(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        transcriptText = trimmed.isEmpty ? nil : text
     }
 
     private var draftReflection: Reflection?
@@ -195,6 +233,10 @@ final class ReflectionViewModel {
             entryText = existing.text ?? ""
             bodyKind = existing.bodyKind
             audioAssetID = existing.audioAssetID
+            if let id = existing.audioAssetID,
+               let path = MediaImage.relativePath(for: id, in: context) {
+                audioDurationSeconds = Self.audioDuration(at: mediaStore.url(for: path))
+            }
             transcriptText = existing.transcript
             moodTags = existing.moodTags
             if existing.isDraft {
@@ -292,6 +334,12 @@ final class ReflectionViewModel {
         let asset = MediaAsset(kind: .audio, relativePath: path)
         context.insert(asset)
         audioAssetID = asset.id
+        audioDurationSeconds = Self.audioDuration(at: mediaStore.url(for: path))
+    }
+
+    private static func audioDuration(at url: URL) -> Double? {
+        guard let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
+        return player.duration
     }
 
     /// Discards an in-progress reflection: removes the draft record and every
@@ -311,6 +359,7 @@ final class ReflectionViewModel {
         context.delete(r)
         draftReflection = nil
         audioAssetID = nil
+        audioDurationSeconds = nil
         transcriptText = nil
         transcriptionErrorMessage = nil
         isTranscribing = false
@@ -322,6 +371,7 @@ final class ReflectionViewModel {
         guard let audioAssetID else { return }
         deleteMediaAsset(id: audioAssetID)
         self.audioAssetID = nil
+        audioDurationSeconds = nil
         transcriptText = nil
         transcriptionErrorMessage = nil
         isTranscribing = false
@@ -370,9 +420,30 @@ final class ReflectionViewModel {
         r.bodyKind = bodyKind
         r.text = bodyKind == .text ? entryText : nil
         r.audioAssetID = bodyKind == .audio ? audioAssetID : nil
-        r.transcript = bodyKind == .audio ? transcriptText : nil
+        if bodyKind == .audio {
+            let trimmedTranscript = transcriptText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            r.transcript = trimmedTranscript?.isEmpty == false ? trimmedTranscript : nil
+        } else {
+            r.transcript = nil
+        }
         r.photoAssetIDs = photoAssetIDs
-        r.moodTags = moodTags
+        let generatedTagLabel = ReflectionTaggingService().label(
+            for: ReflectionTaggingInput(
+                text: bodyKind == .text ? entryText : transcriptText,
+                bodyKind: bodyKind,
+                audioDurationSeconds: audioDurationSeconds,
+                photoCount: photoAssetIDs.count,
+                promptText: selectedPrompt?.title ?? customPromptText
+            )
+        )
+        var updatedMoodTags = moodTags
+        if !updatedMoodTags.contains(where: {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                .caseInsensitiveCompare(generatedTagLabel) == .orderedSame
+        }) {
+            updatedMoodTags.append(generatedTagLabel)
+        }
+        r.moodTags = updatedMoodTags
         r.isDraft = false
 
         if r.xpAwarded == 0 {
@@ -412,10 +483,13 @@ final class ReflectionViewModel {
             throw error
         }
 
+        moodTags = updatedMoodTags
+
         guard newlyAwardedXP > 0 else { return nil }
 
         let rewardState = ReflectionRewardState(
             xpAwarded: newlyAwardedXP,
+            tagLabel: generatedTagLabel,
             milestonePresentation: pendingMilestoneReward.map { pending in
                 LevelUpPresentation.fallback(
                     destination: pending.destination,
@@ -489,6 +563,7 @@ final class ReflectionViewModel {
         guard self.rewardState?.milestonePresentation?.id == rewardPresentationID else { return }
         self.rewardState = ReflectionRewardState(
             xpAwarded: rewardState.xpAwarded,
+            tagLabel: rewardState.tagLabel,
             milestonePresentation: LevelUpPresentation(
                 id: fallbackPresentation.id,
                 destination: fallbackPresentation.destination,

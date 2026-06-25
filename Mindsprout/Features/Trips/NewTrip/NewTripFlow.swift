@@ -220,10 +220,24 @@ struct ExpectationRow: View {
 
     var body: some View {
         Button(action: action) {
-            Text(text)
-                .font(AppFont.button)
-                .foregroundStyle(AppColor.label)
-                .multilineTextAlignment(.center)
+            HStack(alignment: .center, spacing: Spacing.sm) {
+                Color.clear
+                    .frame(width: 24, height: 24)
+
+                Text(text)
+                    .font(AppFont.button)
+                    .foregroundStyle(AppColor.label)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.label)
+                    .frame(width: 24, height: 24)
+                    .opacity(isSelected ? 1 : 0)
+            }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.md)
                 .padding(.horizontal, Spacing.md)
@@ -276,6 +290,9 @@ struct TripTypeCell: View {
                 Text(option.title)
                     .font(AppFont.bodyEmphasized)
                     .foregroundStyle(AppColor.label)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, Spacing.sm)
@@ -286,6 +303,14 @@ struct TripTypeCell: View {
                         style: isSelected ? .selected : .neutral,
                         in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     )
+            }
+            .overlay(alignment: .topTrailing) {
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(AppColor.label)
+                        .padding(8)
+                }
             }
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }

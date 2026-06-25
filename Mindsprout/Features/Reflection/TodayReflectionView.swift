@@ -104,25 +104,31 @@ struct TodayReflectionView: View {
         switch reflection.bodyKind {
         case .text:
             if let text = reflection.text, !text.isEmpty {
-                Text(text)
-                    .font(AppFont.body)
-                    .lineSpacing(4)
-                    .foregroundStyle(AppColor.label)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(Spacing.lg)
-                    .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                TodayReflectionTextCard(
+                    text: text,
+                    tag: primaryTag(for: reflection)
+                )
             }
         case .audio:
-            VStack(spacing: Spacing.md) {
+            VStack(alignment: .trailing, spacing: Spacing.md) {
                 if let audioID = reflection.audioAssetID {
                     ReflectionAudioPlayer(audioAssetID: audioID)
+                        .frame(maxWidth: .infinity)
                 }
                 if let transcript = reflection.transcript, !transcript.isEmpty {
                     ReflectionTranscriptSection(transcript: transcript)
                 }
+                if let tag = primaryTag(for: reflection) {
+                    ReflectionMoodTagChip(tag: tag)
+                }
             }
         }
+    }
+
+    private func primaryTag(for reflection: Reflection) -> String? {
+        reflection.moodTags
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty }
     }
 
     private var unavailableState: some View {
@@ -162,6 +168,33 @@ struct TodayReflectionView: View {
     }
 }
 
+// MARK: - Text Card
+
+private struct TodayReflectionTextCard: View {
+    let text: String
+    let tag: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            if let tag {
+                ReflectionMoodTagChip(tag: tag)
+            }
+
+            Text(text)
+                .font(AppFont.body)
+                .lineSpacing(4)
+                .foregroundStyle(AppColor.label)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .fixedSize(horizontal: false, vertical: true)
+        .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+    }
+}
+
 // MARK: - Preference Key
 
 private struct ReflectionContentHeightKey: PreferenceKey {
@@ -181,7 +214,8 @@ private enum TodayReflectionPreviewData {
         photoCount: Int = 0,
         hasAudio: Bool = false,
         transcript: String? = nil,
-        highlightPrompt: String = "quiet-spot"
+        highlightPrompt: String = "quiet-spot",
+        moodTags: [String] = ["Honest"]
     ) -> (ModelContainer, UUID) {
         let container = PersistenceController.makeInMemoryContainer()
         let context = ModelContext(container)
@@ -195,6 +229,7 @@ private enum TodayReflectionPreviewData {
             text: text,
             isDraft: false
         )
+        reflection.moodTags = moodTags
 
         var photoIDs: [UUID] = []
         for _ in 0..<photoCount {

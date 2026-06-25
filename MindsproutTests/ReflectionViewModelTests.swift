@@ -123,11 +123,12 @@ struct ReflectionViewModelTests {
         vm.feedSprout()
 
         let reflection = try #require(context.fetch(FetchDescriptor<Reflection>()).first)
-        #expect(reflection.moodTags == ["Joyful"])
+        #expect(reflection.moodTags == ["Joyful", "Present"])
         #expect(reflection.isDraft == false)
         #expect(reflection.xpAwarded == 10)
         #expect(vm.step == .reward)
         #expect(vm.rewardState?.xpAwarded == 10)
+        #expect(vm.rewardState?.tagLabel == "Present")
         #expect(completions.isEmpty)
 
         let sprout = try #require(context.fetch(FetchDescriptor<Sprout>()).first)
@@ -187,8 +188,10 @@ struct ReflectionViewModelTests {
 
         let reflection = try #require(context.fetch(FetchDescriptor<Reflection>()).first)
         #expect(reflection.isDraft == true)
+        #expect(reflection.moodTags.isEmpty)
         #expect(reflection.xpAwarded == 0)
         #expect(vm.step == .photos)
+        #expect(vm.moodTags.isEmpty)
         #expect(vm.rewardState == nil)
         #expect(vm.submissionErrorMessage == "We couldn’t save this reflection. Try again.")
 
@@ -227,9 +230,33 @@ struct ReflectionViewModelTests {
         #expect(saveController.callCount == 2)
         #expect(reflection.isDraft == false)
         #expect(reflection.xpAwarded == 10)
+        #expect(reflection.moodTags == ["Present"])
         #expect(sprout.xp == 10)
         #expect(vm.step == .reward)
         #expect(vm.submissionErrorMessage == nil)
+    }
+
+    @Test func feedSproutDoesNotDuplicateExistingAutomaticTag() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let trip = try makeTrip(in: context)
+
+        let vm = makeViewModel(
+            context: context,
+            mediaStore: makeMediaStore(),
+            tripID: trip.id
+        )
+
+        vm.onAppear()
+        vm.step = .photos
+        vm.moodTags = ["present"]
+        vm.entryText = "A quiet tram ride."
+        vm.feedSprout()
+
+        let reflection = try #require(context.fetch(FetchDescriptor<Reflection>()).first)
+        #expect(reflection.moodTags == ["present"])
+        #expect(vm.moodTags == ["present"])
+        #expect(vm.rewardState?.tagLabel == "Present")
     }
 
     @Test func milestoneRewardUsesFallbackPresentationUntilAICompletes() throws {

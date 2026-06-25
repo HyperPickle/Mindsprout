@@ -17,6 +17,7 @@ enum TranscriptionError: Error {
     case localeNotSupported
     case modelUnavailable
     case inferenceFailed
+    case timedOut
 }
 
 extension TranscriptionError: LocalizedError {
@@ -28,6 +29,8 @@ extension TranscriptionError: LocalizedError {
             return String(localized: "The speech model couldn’t be installed. Connect to the internet and try again.")
         case .inferenceFailed:
             return String(localized: "Couldn’t transcribe this recording.")
+        case .timedOut:
+            return String(localized: "Transcription took too long. You can keep going without a transcript.")
         }
     }
 }

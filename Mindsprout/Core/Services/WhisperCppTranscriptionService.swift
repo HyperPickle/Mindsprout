@@ -5,8 +5,10 @@ import WhisperSupport
 /// On-device transcription using whisper.cpp (the official XCFramework, vendored
 /// through the `whisper-ios` SPM package). The default multilingual `tiny-q5_1`
 /// model ships inside that package and is loaded from its resource bundle, so no
-/// model/engine binaries live in the app repo. CoreML/Metal acceleration is used
-/// when available. Fully on-device — no network, no audio leaves the device.
+/// model/engine binaries live in the app repo. Metal acceleration is used on
+/// device builds. Simulator builds force CPU because current iOS 27 simulator
+/// Metal can assert inside ggml's residency-set path. Fully on-device — no
+/// network, no audio leaves the device.
 struct WhisperCppTranscriptionService: Transcribing {
 
     func transcribe(url: URL) async throws -> String {
@@ -31,7 +33,11 @@ struct WhisperCppTranscriptionService: Transcribing {
     /// Runs whisper.cpp inference synchronously over 16 kHz mono float samples and
     /// returns the joined, trimmed transcript text.
     private static func runWhisper(modelURL: URL, samples: [Float]) throws -> String {
-        let contextParams = whisper_context_default_params()
+        var contextParams = whisper_context_default_params()
+        #if targetEnvironment(simulator)
+        contextParams.use_gpu = false
+        #endif
+
         guard let context = modelURL.path.withCString({ path in
             whisper_init_from_file_with_params(path, contextParams)
         }) else {
@@ -45,7 +51,7 @@ struct WhisperCppTranscriptionService: Transcribing {
         params.print_timestamps = false
         params.print_special = false
         params.translate = false
-        params.n_threads = Int32(max(1, ProcessInfo.processInfo.activeProcessorCount - 1))
+        params.n_threads = Int32(Self.inferenceThreadCount)
 
         // "auto" lets the multilingual model detect the spoken language. The C
         // string must stay valid for the duration of whisper_full.
@@ -64,5 +70,14 @@ struct WhisperCppTranscriptionService: Transcribing {
             }
         }
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static var inferenceThreadCount: Int {
+        let available = max(1, ProcessInfo.processInfo.activeProcessorCount - 1)
+        #if targetEnvironment(simulator)
+        return min(2, available)
+        #else
+        return available
+        #endif
     }
 }

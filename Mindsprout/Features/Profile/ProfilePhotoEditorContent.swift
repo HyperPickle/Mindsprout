@@ -79,14 +79,15 @@ struct ProfilePhotoEditorContent: View {
 
     @ViewBuilder
     private var avatarPreview: some View {
-        if let path = user?.profilePhotoPath {
-            AsyncImage(url: env.mediaStore.url(for: path)) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                Circle().fill(.white.opacity(0.6))
-            }
-            .frame(width: style.avatarSize, height: style.avatarSize)
-            .clipShape(Circle())
+        if let path = user?.profilePhotoPath, let image = loadLocalImage(at: path) {
+            // Load synchronously rather than via AsyncImage: the photo is a local
+            // file, and AsyncImage's placeholder frame flashes white during the
+            // onboarding slide transition before the image resolves.
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: style.avatarSize, height: style.avatarSize)
+                .clipShape(Circle())
             .overlay {
                 if style == .onboarding {
                     Circle().stroke(Color.white, lineWidth: 4)
@@ -190,6 +191,10 @@ struct ProfilePhotoEditorContent: View {
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
+    }
+
+    private func loadLocalImage(at path: String) -> UIImage? {
+        UIImage(contentsOfFile: env.mediaStore.url(for: path).path)
     }
 
     private func requestCameraAndShow() async {

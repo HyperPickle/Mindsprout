@@ -17,6 +17,18 @@ final class TripViewModel {
     }
 }
 
+enum TripDaySelection {
+    static func initialIndex(in reflections: [Reflection], selectedReflectionID: UUID?) -> Int {
+        guard
+            let selectedReflectionID,
+            let selectedIndex = reflections.firstIndex(where: { $0.id == selectedReflectionID })
+        else {
+            return 0
+        }
+        return selectedIndex
+    }
+}
+
 // MARK: - Intermediate Trip Detail
 
 struct TripDetailView: View {
@@ -42,10 +54,13 @@ struct TripDetailView: View {
                     }
                     if !viewModel.reflections.isEmpty {
                         SectionDivider(title: "MOMENTS", color: AppColor.label)
-                        ForEach(Array(viewModel.reflections.enumerated()), id: \.element.id) { offset, reflection in
-                            NavigationLink(value: TripsRoute.tripDayDetail(tripID: tripID, initialDayIndex: offset)) {
+                        ForEach(viewModel.reflections, id: \.id) { reflection in
+                            NavigationLink(value: TripsRoute.tripDayDetail(tripID: tripID, initialReflectionID: reflection.id)) {
                                 DayCard(reflection: reflection)
+                                    .frame(maxWidth: .infinity)
+                                    .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                             }
+                            .id(reflection.id)
                             .buttonStyle(.plain)
                         }
                     }
@@ -130,9 +145,6 @@ private struct DayCard: View {
                         .font(AppFont.callout)
                         .foregroundStyle(AppColor.label)
                 }
-                if let text = reflection.text, !text.isEmpty {
-                    LabelBox(header: "MOMENT", text: String(text.prefix(200)), lineLimit: 6)
-                }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
@@ -159,7 +171,7 @@ private struct DayCard: View {
 
 struct TripDayDetailView: View {
     let tripID: UUID
-    var initialDayIndex = 0
+    var initialReflectionID: UUID?
     var onBack: (() -> Void)?
 
     @Environment(\.modelContext) private var context
@@ -199,7 +211,10 @@ struct TripDayDetailView: View {
         .task {
             viewModel.load(tripID: tripID, context: context)
             if !didSetInitial {
-                index = min(initialDayIndex, max(0, viewModel.reflections.count - 1))
+                index = TripDaySelection.initialIndex(
+                    in: viewModel.reflections,
+                    selectedReflectionID: initialReflectionID
+                )
                 didSetInitial = true
             }
         }
@@ -268,6 +283,12 @@ private struct DayContentView: View {
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Spacing.xs), count: 3)
 
+    private var primaryTag: String? {
+        reflection.moodTags
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty }
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.lg) {
@@ -309,6 +330,11 @@ private struct DayContentView: View {
                     Text("REFLECTION")
                         .font(AppFont.sectionTitle)
                         .foregroundStyle(AppColor.label)
+
+                    if let tag = primaryTag {
+                        Spacer(minLength: Spacing.sm)
+                        ReflectionMoodTagChip(tag: tag)
+                    }
                 }
 
                 if let text = reflection.text, !text.isEmpty {
@@ -317,6 +343,11 @@ private struct DayContentView: View {
                         .lineSpacing(4)
                         .foregroundStyle(AppColor.label)
                         .fixedSize(horizontal: false, vertical: true)
+                } else if reflection.bodyKind == .audio {
+                    Text("Reflected out loud. Listen below.")
+                        .font(AppFont.body)
+                        .italic()
+                        .foregroundStyle(AppColor.label)
                 } else {
                     Text("No words for this day, just memories.")
                         .font(AppFont.body)

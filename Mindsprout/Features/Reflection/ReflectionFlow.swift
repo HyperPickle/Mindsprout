@@ -113,8 +113,8 @@ struct ReflectionFlow: View {
     private func stepTitle(for vm: ReflectionViewModel) -> String {
         switch vm.step {
         case .highlight: return "Today's highlight?"
-        case .entry:     return vm.affirmationHeadline
-        case .photos:    return "Attach a Picture"
+        case .entry:     return "Capture"
+        case .photos:    return "Add photos"
         case .reward:    return ""
         }
     }

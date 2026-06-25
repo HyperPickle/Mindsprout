@@ -102,24 +102,28 @@ struct RootView: View {
                 ? .white
                 : UIColor(red: 4/255, green: 14/255, blue: 16/255, alpha: 1)
         }
-        switch reflectAction {
-        case .createTrip:
+        let presentation = RootFabRouteResolver.presentation(
+            for: selection,
+            reflectAction: reflectAction,
+            activeTripID: activeTrip?.id
+        )
+        if presentation == .newTrip {
             return FabBarAction(
                 systemImage: "plus",
-                accessibilityLabel: "Start a trip",
+                accessibilityLabel: "New Trip",
                 tintColor: nil,
                 iconTintColor: iconTintColor,
-                title: "Start"
-            ) { openReflectFlow() }
-        case .startReflection, .viewTodayReflection:
-            return FabBarAction(
-                systemImage: AppTab.reflect.systemImage,
-                accessibilityLabel: "Reflect",
-                tintColor: nil,
-                iconTintColor: iconTintColor,
-                title: "Reflect"
-            ) { openReflectFlow() }
+                title: selection == .trips ? "New" : "Start"
+            ) { openFabAction() }
         }
+
+        return FabBarAction(
+            systemImage: AppTab.reflect.systemImage,
+            accessibilityLabel: "Reflect",
+            tintColor: nil,
+            iconTintColor: iconTintColor,
+            title: "Reflect"
+        ) { openFabAction() }
     }
 
     private var fabBarTabs: [FabBarTab<AppTab>] {
@@ -166,20 +170,12 @@ struct RootView: View {
         return todaysCompletedReflection(for: activeTrip, in: context)?.id
     }
 
-    private func openReflectFlow() {
-        // Present the reflect flow over the current tab so that, once it
-        // dismisses, the user lands back on whichever screen they invoked the
-        // FAB action from — rather than being forced onto Home.
-        let modal: AppModal
-        switch reflectAction {
-        case .createTrip:
-            modal = .newTrip
-        case .startReflection:
-            guard let activeTrip else { return }
-            modal = .reflection(tripID: activeTrip.id)
-        case .viewTodayReflection(let reflectionID):
-            modal = .todayReflection(reflectionID: reflectionID)
-        }
+    private func openFabAction() {
+        guard let modal = RootFabRouteResolver.presentation(
+            for: selection,
+            reflectAction: reflectAction,
+            activeTripID: activeTrip?.id
+        ) else { return }
 
         Task { @MainActor in
             modalCoordinator.present(modal)
@@ -211,6 +207,27 @@ struct RootView: View {
             },
             set: { modalCoordinator.presented = $0 }
         )
+    }
+}
+
+enum RootFabRouteResolver {
+    static func presentation(
+        for selectedTab: AppTab,
+        reflectAction: HomeDashboardCTAAction,
+        activeTripID: UUID?
+    ) -> AppModal? {
+        // The FAB always offers "Reflect"; it only falls back to creating a
+        // trip when none exist yet (reflectAction == .createTrip), regardless
+        // of which tab is selected.
+        switch reflectAction {
+        case .createTrip:
+            return .newTrip
+        case .startReflection:
+            guard let activeTripID else { return nil }
+            return .reflection(tripID: activeTripID)
+        case .viewTodayReflection(let reflectionID):
+            return .todayReflection(reflectionID: reflectionID)
+        }
     }
 }
 

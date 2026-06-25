@@ -2,7 +2,7 @@ import SwiftUI
 
 enum TripsRoute: Hashable {
     case tripDetail(tripID: UUID)
-    case tripDayDetail(tripID: UUID, initialDayIndex: Int)
+    case tripDayDetail(tripID: UUID, initialReflectionID: UUID?)
 }
 
 struct TripsTab: View {
@@ -17,8 +17,8 @@ struct TripsTab: View {
                     switch route {
                     case .tripDetail(let tripID):
                         TripDetailView(tripID: tripID, onBack: { path.removeLast() })
-                    case .tripDayDetail(let tripID, let initialDayIndex):
-                        TripDayDetailView(tripID: tripID, initialDayIndex: initialDayIndex, onBack: { path.removeLast() })
+                    case .tripDayDetail(let tripID, let initialReflectionID):
+                        TripDayDetailView(tripID: tripID, initialReflectionID: initialReflectionID, onBack: { path.removeLast() })
                     }
                 }
         }

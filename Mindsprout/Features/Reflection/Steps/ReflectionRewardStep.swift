@@ -50,16 +50,30 @@ struct ReflectionRewardStep: View {
     var body: some View {
         VStack(spacing: Spacing.lg) {
             Text("A moment worth keeping")
-                .font(AppFont.screenTitle)
+                .font(AppFont.sectionTitle)
                 .foregroundStyle(AppColor.label)
                 .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, Spacing.lg)
                 .padding(.vertical, Spacing.md)
                 .liquidGlass(cornerRadius: 16)
+                // Extra clearance so the Sprout jump animation's head doesn't clip into the title
+                .padding(.bottom, Spacing.md)
+
+            if let tagLine {
+                Text(tagLine)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.label.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, Spacing.xs)
+                    .liquidGlass(cornerRadius: 14)
+            }
 
             sproutSection
                 .frame(maxWidth: .infinity)
-                .frame(height: 320)
+                .frame(height: 320, alignment: .bottom)
 
             Text(xpText)
                 .font(AppFont.metricLarge)
@@ -93,8 +107,12 @@ struct ReflectionRewardStep: View {
     @ViewBuilder
     private var sproutSection: some View {
         if animationPlan.shouldAnimateSprout {
+            // Constrain to a width narrower than the 320 frame height so the
+            // contained Rive artboard no longer fills the full height. This
+            // leaves headroom above the Sprout for the level-up jump so its
+            // head isn't clipped at the top frame edge.
             controller.riveVM.view()
-                           .frame(maxWidth: .infinity, maxHeight: .infinity)
+                           .frame(width: 240, height: 300)
                            .allowsHitTesting(false)
         } else {
             Image("sprout_stage0_idle")
@@ -107,6 +125,12 @@ struct ReflectionRewardStep: View {
 
     private var xpText: String {
         String(format: String(localized: "+%lld XP"), displayedXP)
+    }
+
+    private var tagLine: String? {
+        guard let tag = rewardState?.tagLabel?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !tag.isEmpty else { return nil }
+        return String(format: String(localized: "This reflection felt %@."), tag.lowercased())
     }
 
     private var callToActionTitle: String {
@@ -179,6 +203,7 @@ private func previewViewModel(isMilestone: Bool, xpAwarded: Int) -> ReflectionVi
     vm.step = .reward
     vm.rewardState = ReflectionRewardState(
         xpAwarded: xpAwarded,
+        tagLabel: "Insightful",
         milestonePresentation: isMilestone
             ? LevelUpPresentation.fallback(
                 destination: "Kyoto",
