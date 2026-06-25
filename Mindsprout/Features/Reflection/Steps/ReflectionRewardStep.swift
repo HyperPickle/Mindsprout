@@ -17,7 +17,10 @@ struct ReflectionRewardAnimationPlan: Equatable {
             shouldAnimateXP = false
             shouldAnimateSprout = false
         } else {
-            initialXP = 0
+            // The Sprout plays the same celebration in both cases; only the XP
+            // count-up is suppressed when no points were awarded (a repeat
+            // reflection for the day).
+            initialXP = finalXP > 0 ? 0 : finalXP
             shouldAnimateXP = finalXP > 0
             shouldAnimateSprout = true
         }
@@ -75,18 +78,33 @@ struct ReflectionRewardStep: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 320, alignment: .bottom)
 
-            Text(xpText)
-                .font(AppFont.metricLarge)
-                .foregroundStyle(AppColor.label)
-                .contentTransition(.numericText())
-                .padding(.horizontal, Spacing.lg)
-                .padding(.vertical, Spacing.sm)
-                .liquidGlass(cornerRadius: 22)
+            if awardsPoints {
+                Text(xpText)
+                    .font(AppFont.metricLarge)
+                    .foregroundStyle(AppColor.label)
+                    .contentTransition(.numericText())
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.sm)
+                    .liquidGlass(cornerRadius: 22)
 
-            Text("Your reflection helped \(sproutName) grow.")
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.label.opacity(0.9))
-                .multilineTextAlignment(.center)
+                Text("Your reflection helped \(sproutName) grow.")
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.label.opacity(0.9))
+                    .multilineTextAlignment(.center)
+            } else {
+                Text("XP already earned for today")
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.label)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.sm)
+                    .liquidGlass(cornerRadius: 22)
+
+                Text("Saved to today's reflections.")
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.label.opacity(0.9))
+                    .multilineTextAlignment(.center)
+            }
 
             Spacer()
 
@@ -121,6 +139,10 @@ struct ReflectionRewardStep: View {
                 .frame(maxHeight: 280)
                 .accessibilityHidden(true)
         }
+    }
+
+    private var awardsPoints: Bool {
+        (rewardState?.xpAwarded ?? 0) > 0
     }
 
     private var xpText: String {
@@ -179,6 +201,11 @@ struct ReflectionRewardStep: View {
 
 #Preview("Milestone") {
     ReflectionRewardStep(vm: previewViewModel(isMilestone: true, xpAwarded: 10))
+        .environment(\.appEnvironment, .preview)
+}
+
+#Preview("Saved · No Points") {
+    ReflectionRewardStep(vm: previewViewModel(isMilestone: false, xpAwarded: 0))
         .environment(\.appEnvironment, .preview)
 }
 

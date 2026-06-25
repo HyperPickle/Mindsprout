@@ -328,7 +328,10 @@ struct DestinationPickerView: View {
             )
             .foregroundStyle(AppColor.label)
             .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.md)
         .tripGlassSurface(
             style: .selected,

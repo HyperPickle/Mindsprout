@@ -84,14 +84,19 @@ struct TripMapHero: View {
     let coverAssetID: UUID?
 
     var body: some View {
-        if let lat = trip.latitude, let lng = trip.longitude {
+        if coverAssetID != nil {
+            // Photos take priority as the hero image.
+            TripMapFallback(assetID: coverAssetID)
+        } else if let lat = trip.latitude, let lng = trip.longitude {
+            // Fall back to a map snapshot when no photo is available.
             TripMapSnapshot(
                 tripID: trip.id,
                 coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng),
-                fallbackAssetID: coverAssetID
+                fallbackAssetID: nil
             )
         } else {
-            TripMapFallback(assetID: coverAssetID)
+            // Gradient placeholder when there is neither a photo nor a location.
+            TripMapFallback(assetID: nil)
         }
     }
 }

@@ -61,13 +61,28 @@ struct TripRepository {
         return try context.fetch(
             FetchDescriptor<Reflection>(
                 predicate: #Predicate { $0.tripID == tripID && $0.isDraft == false },
-                sortBy: [SortDescriptor(\.dayIndex)]
+                sortBy: [SortDescriptor(\.dayIndex), SortDescriptor(\.createdAt)]
             )
         )
     }
 
     func activeTrip(on date: Date = Date()) throws -> Trip? {
         TripResolver.active(in: try allTrips(), on: date)
+    }
+}
+
+enum TripHero {
+    /// Resolves the hero/cover photo for a trip, preferring photos over the map.
+    /// Resolution order: explicit cover override → featured reflection's first
+    /// photo → first photo across all reflections.
+    static func coverAssetID(for trip: Trip, reflections: [Reflection]) -> UUID? {
+        if let explicit = trip.coverAssetID { return explicit }
+        if let featuredID = trip.featuredReflectionID,
+           let featured = reflections.first(where: { $0.id == featuredID }),
+           let photo = featured.photoAssetIDs.first {
+            return photo
+        }
+        return reflections.flatMap(\.photoAssetIDs).first
     }
 }
 

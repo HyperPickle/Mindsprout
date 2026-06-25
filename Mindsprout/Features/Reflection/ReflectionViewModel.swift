@@ -220,9 +220,11 @@ final class ReflectionViewModel {
         isDiscardingDraft = false
         let pool = contentPack.prompts.highlights(for: tripType)
 
-        // Load or create today's draft
+        // Resume today's in-progress draft, if any. Completed reflections are
+        // left untouched so a fresh entry can be started — this is what allows
+        // multiple reflections per day.
         let trip = fetchTrip()
-        if let trip, let existing = todaysReflection(for: trip, in: context) {
+        if let trip, let existing = todaysDraftReflection(for: trip, in: context) {
             draftReflection = existing
             // Restore state from existing draft
             if let prompt = pool.first(where: { $0.id == existing.highlightPrompt }) {
@@ -239,13 +241,10 @@ final class ReflectionViewModel {
             }
             transcriptText = existing.transcript
             moodTags = existing.moodTags
-            if existing.isDraft {
-                for id in existing.photoAssetIDs { deleteMediaAsset(id: id) }
-                existing.photoAssetIDs = []
-                photoAssetIDs = []
-            } else {
-                photoAssetIDs = existing.photoAssetIDs
-            }
+            // Drafts never persist staged photos across sessions.
+            for id in existing.photoAssetIDs { deleteMediaAsset(id: id) }
+            existing.photoAssetIDs = []
+            photoAssetIDs = []
         } else if let trip {
             let idx = dayIndex(for: trip)
             let r = Reflection(tripID: tripID, dayIndex: idx, date: Date(), isDraft: true)
@@ -444,9 +443,14 @@ final class ReflectionViewModel {
             updatedMoodTags.append(generatedTagLabel)
         }
         r.moodTags = updatedMoodTags
+
+        // Only the first completed reflection of the day earns points. `r` is
+        // still a draft here, so it's excluded from this check.
+        let earnedToday = fetchTrip().map { todaysCompletedReflection(for: $0, in: context) != nil } ?? false
+
         r.isDraft = false
 
-        if r.xpAwarded == 0 {
+        if r.xpAwarded == 0 && !earnedToday {
             let (sprout, didCreate) = fetchOrCreateSprout()
             createdSprout = didCreate ? sprout : nil
             sproutSnapshot = SproutSnapshot(sprout: sprout)
@@ -485,8 +489,9 @@ final class ReflectionViewModel {
 
         moodTags = updatedMoodTags
 
-        guard newlyAwardedXP > 0 else { return nil }
-
+        // A reward state is always produced for a saved reflection so the flow
+        // can show a confirmation — even when no points were awarded (a calm
+        // "saved" screen for repeat reflections).
         let rewardState = ReflectionRewardState(
             xpAwarded: newlyAwardedXP,
             tagLabel: generatedTagLabel,

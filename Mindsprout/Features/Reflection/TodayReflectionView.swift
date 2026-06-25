@@ -11,18 +11,16 @@ struct TodayReflectionView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.appEnvironment) private var env
     @Environment(\.dismiss) private var dismiss
+    @Environment(ModalCoordinator.self) private var coordinator
 
-    @State private var reflection: Reflection?
+    @State private var reflections: [Reflection] = []
+    @State private var selectedID: UUID?
+    @State private var tripID: UUID?
     @State private var contentPack: ContentPack?
     @State private var lightboxAsset: UUID?
-    @State private var innerContentHeight: CGFloat = 0
 
-    private static let headerEstimate: CGFloat = 60
-    private static let bottomClearance: CGFloat = 28
-
-    private var modalHeight: CGFloat {
-        let total = Self.headerEstimate + innerContentHeight + Self.bottomClearance
-        return min(total, UIScreen.main.bounds.height * 0.88)
+    private var selectedReflection: Reflection? {
+        reflections.first { $0.id == selectedID }
     }
 
     var body: some View {
@@ -34,11 +32,11 @@ struct TodayReflectionView: View {
                 content
             }
         }
-        .presentationDetents(innerContentHeight == 0 ? [.medium] : [.height(modalHeight)])
+        .presentationDetents([.fraction(0.9)])
         .presentationDragIndicator(.visible)
         .task { load() }
         .overlay {
-            ReflectionLightbox(photos: reflection?.photoAssetIDs ?? [], selectedAsset: $lightboxAsset)
+            ReflectionLightbox(photos: selectedReflection?.photoAssetIDs ?? [], selectedAsset: $lightboxAsset)
                 .animation(.easeInOut(duration: 0.2), value: lightboxAsset)
         }
     }
@@ -46,49 +44,72 @@ struct TodayReflectionView: View {
     // MARK: - Header
 
     private var header: some View {
-        Text("Today's Reflection")
-            .font(AppFont.sectionTitle)
-            .foregroundStyle(AppColor.label)
-            .lineLimit(1)
-            .padding(.horizontal, Spacing.lg)
-            .padding(.vertical, Spacing.sm)
-            .readableLiquidGlass(in: Capsule())
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.horizontal, Spacing.screenEdge)
-            .padding(.top, Spacing.xl)
-            .padding(.bottom, Spacing.sm)
+        HStack(spacing: Spacing.xs) {
+            Text("Today's Reflection")
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                .padding(.horizontal, Spacing.lg)
+                .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+
+            Button {
+                startNewReflection()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.label)
+                    .frame(width: 56, height: 56)
+                    .contentShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            .accessibilityLabel("New reflection")
+        }
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.xl)
+        .padding(.bottom, Spacing.sm)
     }
 
     // MARK: - Content
 
     @ViewBuilder
     private var content: some View {
-        if let reflection {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.lg) {
-                    dateAndPrompt(reflection)
-
-                    if !reflection.photoAssetIDs.isEmpty {
-                        ReflectionPhotoCarousel(photos: reflection.photoAssetIDs) { tapped in
-                            lightboxAsset = tapped
-                        }
-                    }
-
-                    bodySection(reflection)
-                }
-                .padding(.horizontal, Spacing.screenEdge)
-                .padding(.top, Spacing.sm)
-                .padding(.bottom, Spacing.xl)
-                .background(
-                    GeometryReader { geo in
-                        Color.clear.preference(key: ReflectionContentHeightKey.self, value: geo.size.height)
-                    }
-                )
-            }
-            .onPreferenceChange(ReflectionContentHeightKey.self) { innerContentHeight = $0 }
-        } else {
+        if reflections.isEmpty {
             unavailableState
+        } else {
+            TabView(selection: $selectedID) {
+                ForEach(reflections, id: \.id) { reflection in
+                    pageBody(reflection)
+                        .tag(Optional(reflection.id))
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: reflections.count > 1 ? .always : .never))
         }
+    }
+
+    private func pageBody(_ reflection: Reflection) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                dateAndPrompt(reflection)
+
+                if !reflection.photoAssetIDs.isEmpty {
+                    ReflectionPhotoCarousel(photos: reflection.photoAssetIDs) { tapped in
+                        lightboxAsset = tapped
+                    }
+                }
+
+                bodySection(reflection)
+            }
+            .padding(.horizontal, Spacing.screenEdge)
+            .padding(.top, Spacing.sm)
+            .padding(.bottom, Spacing.xl)
+        }
+    }
+
+    private func startNewReflection() {
+        guard let tripID else { return }
+        coordinator.present(.reflection(tripID: tripID))
     }
 
     private func dateAndPrompt(_ reflection: Reflection) -> some View {
@@ -160,11 +181,23 @@ struct TodayReflectionView: View {
         var descriptor = FetchDescriptor<Reflection>(predicate: #Predicate { $0.id == reflectionID })
         descriptor.fetchLimit = 1
         // Only a submitted reflection may surface here; drafts must never appear.
-        if let found = try? context.fetch(descriptor).first, !found.isDraft {
-            reflection = found
-        } else {
-            reflection = nil
+        guard let found = try? context.fetch(descriptor).first, !found.isDraft else {
+            reflections = []
+            return
         }
+        tripID = found.tripID
+
+        let tID = found.tripID
+        var tripDescriptor = FetchDescriptor<Trip>(predicate: #Predicate { $0.id == tID })
+        tripDescriptor.fetchLimit = 1
+        if let trip = try? context.fetch(tripDescriptor).first {
+            reflections = todaysCompletedReflections(for: trip, in: context)
+        } else {
+            reflections = [found]
+        }
+        // Open on the passed reflection (the most recent), falling back to the
+        // newest available if it's somehow no longer in today's set.
+        selectedID = reflections.first { $0.id == reflectionID }?.id ?? reflections.first?.id
     }
 }
 
@@ -192,15 +225,6 @@ private struct TodayReflectionTextCard: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
         .readableLiquidGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-    }
-}
-
-// MARK: - Preference Key
-
-private struct ReflectionContentHeightKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
     }
 }
 
@@ -263,6 +287,7 @@ private enum TodayReflectionPreviewData {
             TodayReflectionView(reflectionID: id)
                 .modelContainer(container)
                 .environment(\.appEnvironment, .preview)
+                .environment(ModalCoordinator())
         }
 }
 
@@ -278,6 +303,7 @@ private enum TodayReflectionPreviewData {
             TodayReflectionView(reflectionID: id)
                 .modelContainer(container)
                 .environment(\.appEnvironment, .preview)
+                .environment(ModalCoordinator())
         }
 }
 
@@ -294,5 +320,6 @@ private enum TodayReflectionPreviewData {
             TodayReflectionView(reflectionID: id)
                 .modelContainer(container)
                 .environment(\.appEnvironment, .preview)
+                .environment(ModalCoordinator())
         }
 }

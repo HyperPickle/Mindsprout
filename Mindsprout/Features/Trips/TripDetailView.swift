@@ -48,7 +48,7 @@ struct TripDetailView: View {
                     if let trip = viewModel.trip {
                         TripHeroCard(
                             trip: trip,
-                            coverAssetID: trip.coverAssetID,
+                            coverAssetID: TripHero.coverAssetID(for: trip, reflections: viewModel.reflections),
                             memoryCount: viewModel.reflections.count
                         )
                     }

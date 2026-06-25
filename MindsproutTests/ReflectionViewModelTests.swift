@@ -165,6 +165,45 @@ struct ReflectionViewModelTests {
         #expect(vm.rewardState?.xpAwarded == 10)
     }
 
+    @Test func onlyFirstReflectionOfDayAwardsPoints() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let trip = try makeTrip(in: context)
+        let mediaStore = makeMediaStore()
+
+        // First reflection of the day earns points.
+        let first = makeViewModel(context: context, mediaStore: mediaStore, tripID: trip.id)
+        first.onAppear()
+        first.step = .photos
+        first.entryText = "A quiet tram ride."
+        first.feedSprout()
+        first.completeReward()
+
+        // A second reflection started fresh (a completed one already exists, so
+        // onAppear creates a new draft rather than resuming) earns nothing.
+        let second = makeViewModel(context: context, mediaStore: mediaStore, tripID: trip.id)
+        second.onAppear()
+        second.step = .photos
+        second.entryText = "Sunset over the river."
+        second.feedSprout()
+
+        let reflections = try context.fetch(FetchDescriptor<Reflection>())
+            .filter { !$0.isDraft }
+            .sorted { $0.createdAt < $1.createdAt }
+        #expect(reflections.count == 2)
+        #expect(reflections.first?.xpAwarded == 10)
+        #expect(reflections.last?.xpAwarded == 0)
+
+        // The repeat reflection still shows a (no-points) confirmation.
+        #expect(second.step == .reward)
+        #expect(second.rewardState?.xpAwarded == 0)
+
+        // Sprout gained points only once.
+        let sprout = try #require(context.fetch(FetchDescriptor<Sprout>()).first)
+        #expect(sprout.xp == 10)
+        #expect(sprout.currency == 10)
+    }
+
     @Test func failedSaveRollsBackReflectionAndSproutMutations() throws {
         let container = PersistenceController.makeInMemoryContainer()
         let context = ModelContext(container)

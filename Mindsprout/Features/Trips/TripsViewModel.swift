@@ -30,7 +30,7 @@ final class TripsViewModel {
         return TripSummary(
             trip: trip,
             memoryCount: (try? repo.memoryCount(for: trip)) ?? reflections.count,
-            coverAssetID: trip.coverAssetID ?? strip.first,
+            coverAssetID: TripHero.coverAssetID(for: trip, reflections: reflections),
             photoStripIDs: Array(strip.prefix(3))
         )
     }

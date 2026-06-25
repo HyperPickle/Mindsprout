@@ -14,33 +14,49 @@ struct ReflectionCadenceTests {
         Trip(destination: "Rome", country: "Italy", startDate: startDate, endDate: startDate.addingTimeInterval(7 * 86400))
     }
 
-    @Test func returnsNilWhenNoReflectionToday() throws {
+    @Test func draftLookupReturnsNilWhenNoDraftToday() throws {
         let context = makeContext()
         let t = trip()
         context.insert(t)
-        #expect(todaysReflection(for: t, in: context) == nil)
+        #expect(todaysDraftReflection(for: t, in: context) == nil)
     }
 
-    @Test func returnsSameDayDraft() throws {
+    @Test func draftLookupReturnsSameDayDraft() throws {
         let context = makeContext()
         let t = trip()
         context.insert(t)
         let r = Reflection(tripID: t.id, dayIndex: 1, date: Date(), isDraft: true)
         context.insert(r)
         try context.save()
-        let found = todaysReflection(for: t, in: context)
+        let found = todaysDraftReflection(for: t, in: context)
         #expect(found?.id == r.id)
     }
 
-    @Test func doesNotReturnYesterdaysReflection() throws {
+    @Test func draftLookupIgnoresCompletedReflection() throws {
         let context = makeContext()
         let t = trip()
         context.insert(t)
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
-        let r = Reflection(tripID: t.id, dayIndex: 1, date: yesterday, isDraft: false)
+        let r = Reflection(tripID: t.id, dayIndex: 1, date: Date(), isDraft: false)
         context.insert(r)
         try context.save()
-        #expect(todaysReflection(for: t, in: context) == nil)
+        #expect(todaysDraftReflection(for: t, in: context) == nil)
+    }
+
+    @Test func completedListReturnsAllTodaysReflectionsMostRecentFirst() throws {
+        let context = makeContext()
+        let t = trip()
+        context.insert(t)
+        let older = Reflection(tripID: t.id, dayIndex: 1, date: Date(), isDraft: false,
+                               createdAt: Date(timeIntervalSinceNow: -60))
+        let newer = Reflection(tripID: t.id, dayIndex: 1, date: Date(), isDraft: false,
+                               createdAt: Date())
+        context.insert(older)
+        context.insert(newer)
+        try context.save()
+        let all = todaysCompletedReflections(for: t, in: context)
+        #expect(all.map(\.id) == [newer.id, older.id])
+        // The singular accessor returns the most recent.
+        #expect(todaysCompletedReflection(for: t, in: context)?.id == newer.id)
     }
 
     @Test func completedLookupReturnsTodaysSubmittedReflection() throws {
