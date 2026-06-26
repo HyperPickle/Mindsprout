@@ -14,8 +14,6 @@
 
   <img src="https://img.shields.io/badge/SwiftData-FA7343" alt="SwiftData">
 
-  <a href="https://testflight.apple.com/join/wFEfRRnW"><img src="https://img.shields.io/badge/TestFlight-Try%20it-0D96F6?logo=apple&logoColor=white" alt="Try it on TestFlight"></a>
-
 </p>
 
 # Mindsprout
