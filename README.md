@@ -55,8 +55,7 @@ Mindsprout/
     Trips/         Trip list, detail, and the new-trip flow
     Reflection/    Daily reflection capture
     Sprout/        Home screen and the companion
-    Profile/       Placeholder
-    Shop/          Placeholder
+    Profile/       Account and user settings
     Onboarding/    First-run intro
   Resources/       Bundled content files and the string catalog
   Assets.xcassets/ Images and colors
