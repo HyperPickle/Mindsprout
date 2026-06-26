@@ -26,3 +26,34 @@ struct HomeDashboardStateTests {
         #expect(state.ctaAction == .viewTodayReflection(reflectionID: id))
     }
 }
+
+struct HomeHungryStateTests {
+    @Test func notHungryBeforeEveningBoundary() {
+        #expect(
+            HomeTab.hungryDisplayState(hour: 19, reflectedToday: false, baseState: .idle) == .idle
+        )
+    }
+
+    @Test func hungryAtAndAfterEveningBoundaryWhenNoReflection() {
+        #expect(
+            HomeTab.hungryDisplayState(hour: 20, reflectedToday: false, baseState: .idle) == .hungry
+        )
+        #expect(
+            HomeTab.hungryDisplayState(hour: 23, reflectedToday: false, baseState: .idle) == .hungry
+        )
+    }
+
+    @Test func neverHungryOnceReflectedToday() {
+        #expect(
+            HomeTab.hungryDisplayState(hour: 22, reflectedToday: true, baseState: .idle) == .idle
+        )
+    }
+
+    @Test func passesThroughBaseStateMappingWhenNotHungry() {
+        // Sleeping maps to idle on Home; the decision must defer to that mapping
+        // when the hungry condition is not met.
+        #expect(
+            HomeTab.hungryDisplayState(hour: 10, reflectedToday: false, baseState: .sleeping) == .idle
+        )
+    }
+}

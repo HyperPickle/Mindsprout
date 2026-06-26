@@ -11,17 +11,29 @@ struct HighlightPickerStep: View {
     @State private var promptAnimationVersion = 0
     @FocusState private var writeOwnFocused: Bool
 
+    private static let writeYourOwnID = "writeYourOwn"
+
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: Spacing.sm) {
-                    promptCards
-                    writeYourOwn
-                    diceRow
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: Spacing.sm) {
+                        promptCards
+                        writeYourOwn
+                            .id(Self.writeYourOwnID)
+                        diceRow
+                    }
+                    .padding(.horizontal, Spacing.screenEdge)
+                    .padding(.top, Spacing.md)
+                    .padding(.bottom, Spacing.xl)
                 }
-                .padding(.horizontal, Spacing.screenEdge)
-                .padding(.top, Spacing.md)
-                .padding(.bottom, Spacing.xl)
+                .scrollDismissesKeyboard(.interactively)
+                .onChange(of: writeOwnFocused) { _, focused in
+                    guard focused else { return }
+                    withAnimation {
+                        proxy.scrollTo(Self.writeYourOwnID, anchor: .bottom)
+                    }
+                }
             }
             continueButton
         }
@@ -81,6 +93,12 @@ struct HighlightPickerStep: View {
                     .focused($writeOwnFocused)
                     .padding(Spacing.md)
                     .lineLimit(3...6)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") { writeOwnFocused = false }
+                        }
+                    }
                     .onChange(of: customText) { _, new in
                         vm.customPromptText = new
                         if !new.isEmpty { vm.clearPromptSelection() }

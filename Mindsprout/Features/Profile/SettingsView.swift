@@ -109,13 +109,7 @@ struct SettingsView: View {
 
         savedSproutName = trimmed
 
-        if let sprout = sprouts.first {
-            sprout.name = trimmed
-        } else {
-            let sprout = Sprout()
-            sprout.name = trimmed
-            modelContext.insert(sprout)
-        }
+        Sprout.fetchOrCreate(in: modelContext).name = trimmed
 
         try? modelContext.save()
     }

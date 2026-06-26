@@ -32,3 +32,21 @@ final class Sprout {
         self.createdAt = createdAt
     }
 }
+
+extension Sprout {
+    /// The single global Sprout, creating it if absent. Optionally seeds the
+    /// name on first creation (used by onboarding). All call sites must use
+    /// this instead of inserting `Sprout()` directly.
+    @discardableResult
+    static func fetchOrCreate(name: String? = nil, in context: ModelContext) -> Sprout {
+        var descriptor = FetchDescriptor<Sprout>(sortBy: [SortDescriptor(\.createdAt)])
+        descriptor.fetchLimit = 1
+        if let existing = try? context.fetch(descriptor).first {
+            if let name, !name.isEmpty, existing.name.isEmpty { existing.name = name }
+            return existing
+        }
+        let sprout = Sprout(name: name?.trimmingCharacters(in: .whitespaces) ?? "")
+        context.insert(sprout)
+        return sprout
+    }
+}

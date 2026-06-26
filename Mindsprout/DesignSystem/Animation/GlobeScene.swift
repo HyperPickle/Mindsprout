@@ -9,14 +9,13 @@ import SwiftUI
 import Combine
 
 class GlobeScene: SKScene {
-    var globe: SKSpriteNode?  // ✅ Optional ? au lieu de !
+    var globe: SKSpriteNode?
     var currentSpeed: TimeInterval = 0.08
     var lastTouchX: CGFloat = 0
-    
-    
-    var isDarkMode: Bool = false {  // ✅ variable simple, pas computed
+
+
+    var isDarkMode: Bool = false {
             didSet {
-                // ✅ Se déclenche automatiquement quand isDarkMode change
                 rotateGlobe(speed: currentSpeed)
             }
         }
@@ -34,38 +33,33 @@ class GlobeScene: SKScene {
         scaleMode = .resizeFill
         
         guard UIImage(named: "\(globePrefix)1") != nil else {
-            print("❌ Image non trouvée : \(globePrefix)1")
             return
         }
-        
-        // ✅ Initialise globe ici
+
         let globeNode = SKSpriteNode(imageNamed: "\(globePrefix)1")
         globeNode.position = CGPoint(x: size.width/2, y: size.height/2)
         globeNode.size = CGSize(width: 800, height: 800)
         addChild(globeNode)
-        globe = globeNode  // ✅ assigne après addChild
+        globe = globeNode
         
         rotateGlobe(speed: currentSpeed)
     }
     
     func rotateGlobe(speed: TimeInterval) {
         guard let globe = globe else {
-            print("❌ globe est nil")
-            return  // ✅ sort proprement si globe n'existe pas
+            return
         }
-        
+
         globe.removeAllActions()
-        
+
         let frames = (1...20).compactMap { i -> SKTexture? in
             guard UIImage(named: "\(globePrefix)\(i)") != nil else {
-                print("❌ Image manquante : \(globePrefix)\(i)")
                 return nil
             }
             return SKTexture(imageNamed: "\(globePrefix)\(i)")
         }
-        
+
         guard !frames.isEmpty else {
-            print("❌ Aucune frame trouvée")
             return
         }
         
@@ -74,12 +68,12 @@ class GlobeScene: SKScene {
     }
     
     override func didChangeSize(_ oldSize: CGSize) {
-        guard globe != nil else { return }  // ✅
+        guard globe != nil else { return }
         rotateGlobe(speed: currentSpeed)
     }
-    
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard globe != nil else { return }  // ✅
+        guard globe != nil else { return }
         guard let touch = touches.first else { return }
         lastTouchX = touch.location(in: self).x
         globe?.removeAllActions()
@@ -87,7 +81,7 @@ class GlobeScene: SKScene {
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard globe != nil else { return }  // ✅
+        guard globe != nil else { return }
         guard let touch = touches.first else { return }
         let currentX = touch.location(in: self).x
         let deltaX = abs(currentX - lastTouchX)
@@ -101,12 +95,12 @@ class GlobeScene: SKScene {
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard globe != nil else { return }  // ✅
+        guard globe != nil else { return }
         slowDownGlobe()
     }
-    
+
     func slowDownGlobe() {
-        guard let globe = globe else { return }  // ✅
+        guard let globe = globe else { return }
         
         let steps = 20
         let duration = 2.0

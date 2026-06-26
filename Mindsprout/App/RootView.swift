@@ -15,12 +15,6 @@ struct RootView: View {
 
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
 
-    let featureFlags: FeatureFlags
-
-    init(featureFlags: FeatureFlags = .default) {
-        self.featureFlags = featureFlags
-    }
-
     var body: some View {
         Group {
             if !isLoggedIn {

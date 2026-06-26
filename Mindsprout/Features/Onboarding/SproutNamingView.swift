@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import RiveRuntime
 
 struct SproutNamingView: View {
@@ -17,6 +18,7 @@ struct SproutNamingView: View {
 
     @FocusState private var isFieldFocused: Bool
     @Environment(\.dismiss) var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     @State private var isTransforming = false
     @State private var showMeetText = false
@@ -106,6 +108,8 @@ struct SproutNamingView: View {
                     Button {
                         hasCompletedOnboarding = true
                         isLoggedIn = true
+                        Sprout.fetchOrCreate(name: savedSproutName, in: modelContext)
+                        try? modelContext.save()
                         onContinue()
                     } label: {
                         Text("Start my journey")

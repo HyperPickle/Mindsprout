@@ -5,7 +5,6 @@ struct OnboardingCoordinatorView: View {
         case welcome
         case profilePhoto(userID: String)
         case namingSprout(userID: String)
-        case transformation(userID: String)
     }
 
     @Environment(\.appEnvironment) private var env
@@ -50,17 +49,6 @@ struct OnboardingCoordinatorView: View {
                         }
                     }
                 )
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing),
-                    removal: .move(edge: .leading)
-                ))
-
-            case .transformation(let userID):
-                SproutTransformationView(onFinish: {
-                    withAnimation {
-                        env.auth.handleAuthorization(userID: userID)
-                    }
-                })
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing),
                     removal: .move(edge: .leading)

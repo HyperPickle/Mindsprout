@@ -17,6 +17,7 @@ struct HomeTab: View {
 
     @State private var bubbleOffset: CGFloat = 0
     @State private var showWardrobe = false
+    @State private var now: Date = .now
 
     @Environment(\.fabBarBottomSafeAreaPadding) private var fabBarBottomPadding
 
@@ -32,11 +33,22 @@ struct HomeTab: View {
     // MARK: - Hungry State
 
     private var sproutDisplayState: SproutState {
-        let hour = Calendar.current.component(.hour, from: Date())
-        if !reflectedToday() && hour >= 20 {
+        let hour = Calendar.current.component(.hour, from: now)
+        return Self.hungryDisplayState(
+            hour: hour,
+            reflectedToday: reflectedToday(),
+            baseState: displaySprout.state
+        )
+    }
+
+    /// Pure decision for the home Sprout state: the companion looks `.hungry`
+    /// once the evening boundary (20:00) passes with no reflection logged today;
+    /// otherwise it shows its persisted state mapped for Home.
+    static func hungryDisplayState(hour: Int, reflectedToday: Bool, baseState: SproutState) -> SproutState {
+        if !reflectedToday && hour >= 20 {
             return .hungry
         }
-        return displaySprout.state.homeDisplayState
+        return baseState.homeDisplayState
     }
 
     private func reflectedToday() -> Bool {
@@ -58,7 +70,8 @@ struct HomeTab: View {
             .task {
                 ensureSproutExists()
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(3600))
+                    now = .now
+                    try? await Task.sleep(for: .seconds(60))
                 }
             }
             .background(dashboardBackground)
@@ -109,7 +122,7 @@ struct HomeTab: View {
                     .padding(.bottom, fabBarBottomPadding > 0 ? fabBarBottomPadding + 46 : 50)
                 }
 
-                // ✅ DropBubble uniquement si hungry
+                // DropBubble only when the Sprout is hungry
                 if sproutDisplayState == .hungry {
                     Button {
                         if let activeTrip {
@@ -260,8 +273,7 @@ struct HomeTab: View {
     // MARK: - Helpers
 
     private func ensureSproutExists() {
-        guard sprouts.isEmpty else { return }
-        context.insert(Sprout())
+        Sprout.fetchOrCreate(in: context)
         try? context.save()
     }
 

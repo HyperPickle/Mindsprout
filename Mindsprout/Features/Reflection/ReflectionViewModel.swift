@@ -520,12 +520,9 @@ final class ReflectionViewModel {
     }
 
     private func fetchOrCreateSprout() -> (Sprout, Bool) {
-        if let existingSprout = try? fetchExistingSprout() {
-            return (existingSprout, false)
-        }
-        let sprout = Sprout()
-        context.insert(sprout)
-        return (sprout, true)
+        let existed = (try? fetchExistingSprout()) != nil
+        let sprout = Sprout.fetchOrCreate(in: context)
+        return (sprout, !existed)
     }
 
     private func deleteMediaAsset(id: UUID) {

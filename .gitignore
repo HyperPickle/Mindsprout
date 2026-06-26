@@ -17,6 +17,12 @@ REFLECTION-MODAL-MIGRATION-PLAN.md
 
 checklist.md
 
+# Local audit / planning docs (not for the repo)
+Mindsprout-Codebase-Audit.html
+Mindsprout-Bugfix-Plan.md
+Mindsprout-CloudSync-Plan.md
+Mindsprout-Comment-Cleanup-Plan.md
+
 # macOS
 .DS_Store
 .AppleDouble
