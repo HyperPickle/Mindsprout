@@ -376,6 +376,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Mindsprout;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_MSAppleRevokeEndpoint = "https://mindsprout-proxy.vercel.app/api/apple/revoke";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Mindsprout uses the camera so you can capture photos for your travel reflections.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Mindsprout uses the microphone so you can record audio reflections.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Mindsprout accesses your photo library so you can attach photos to your travel reflections.";
@@ -421,6 +422,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Mindsprout;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_MSAppleRevokeEndpoint = "https://mindsprout-proxy.vercel.app/api/apple/revoke";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Mindsprout uses the camera so you can capture photos for your travel reflections.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Mindsprout uses the microphone so you can record audio reflections.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Mindsprout accesses your photo library so you can attach photos to your travel reflections.";

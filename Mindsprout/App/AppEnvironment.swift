@@ -8,6 +8,7 @@ struct AppEnvironment {
     var contentPackLoader: any ContentPackProviding
     var analytics: any AnalyticsService
     var auth: any AuthService
+    var appleCredentialRevoker: any AppleCredentialRevoking
 
     static func live() -> AppEnvironment {
         AppEnvironment(
@@ -20,7 +21,8 @@ struct AppEnvironment {
             ),
             contentPackLoader: ContentPackLoader(),
             analytics: NoOpAnalyticsService(),
-            auth: AppleAuthService()
+            auth: AppleAuthService(),
+            appleCredentialRevoker: AppleCredentialRevocationService()
         )
     }
 
@@ -33,7 +35,8 @@ struct AppEnvironment {
             transcriber: SpeechTranscriptionService(),
             contentPackLoader: ContentPackLoader(),
             analytics: NoOpAnalyticsService(),
-            auth: LocalAuthService()
+            auth: LocalAuthService(),
+            appleCredentialRevoker: NoOpAppleCredentialRevocationService()
         )
     }
 }

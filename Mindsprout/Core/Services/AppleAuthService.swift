@@ -5,7 +5,7 @@ import AuthenticationServices
 final class AppleAuthService: AuthService {
     static let userIDKey = "apple_user_id"
     static let isLoggedInKey = "isLoggedIn"
-    private static let cachedProfileKeyPrefix = "apple_profile_"
+    static let cachedProfileKeyPrefix = "apple_profile_"
 
     private let keychain: any KeychainStoring
     private let defaults: UserDefaults
@@ -48,6 +48,18 @@ final class AppleAuthService: AuthService {
         keychain.delete(for: Self.userIDKey)
         state = .localOnly
         defaults.set(false, forKey: Self.isLoggedInKey)
+    }
+
+    func deleteLocalAccountIdentity() {
+        if let userID = keychain.read(for: Self.userIDKey) {
+            defaults.removeObject(forKey: profileKey(for: userID))
+        }
+        keychain.delete(for: Self.userIDKey)
+        defaults.removeObject(forKey: Self.isLoggedInKey)
+        defaults.dictionaryRepresentation().keys
+            .filter { $0.hasPrefix(Self.cachedProfileKeyPrefix) }
+            .forEach { defaults.removeObject(forKey: $0) }
+        state = .localOnly
     }
 
     func revalidate() async {

@@ -41,6 +41,21 @@ struct AuthTests {
         #expect(defaults.bool(forKey: AppleAuthService.isLoggedInKey) == false)
     }
 
+    @Test func deleteLocalAccountIdentityClearsCachedAppleProfile() {
+        let keychain = InMemoryKeychain()
+        let defaults = makeDefaults()
+        let service = AppleAuthService(keychain: keychain, defaults: defaults)
+        service.handleAuthorization(userID: "apple-123")
+        service.updateCachedProfile(for: "apple-123", displayName: "Ada", email: "ada@example.com")
+
+        service.deleteLocalAccountIdentity()
+
+        #expect(service.state == .localOnly)
+        #expect(keychain.read(for: AppleAuthService.userIDKey) == nil)
+        #expect(defaults.object(forKey: AppleAuthService.isLoggedInKey) == nil)
+        #expect(service.cachedProfile(for: "apple-123") == nil)
+    }
+
     @Test func initRestoresSignedInStateFromKeychain() {
         let keychain = InMemoryKeychain()
         keychain.save("apple-999", for: AppleAuthService.userIDKey)

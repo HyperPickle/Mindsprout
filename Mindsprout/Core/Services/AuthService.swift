@@ -23,6 +23,7 @@ protocol AuthService: AnyObject {
     func updateCachedProfile(for userID: String, displayName: String?, email: String?)
     func handleAuthorization(userID: String)
     func signOut()
+    func deleteLocalAccountIdentity()
     func revalidate() async
 }
 
@@ -32,5 +33,8 @@ final class LocalAuthService: AuthService {
     func updateCachedProfile(for userID: String, displayName: String?, email: String?) {}
     func handleAuthorization(userID: String) {}
     func signOut() {}
+    func deleteLocalAccountIdentity() {
+        state = .localOnly
+    }
     func revalidate() async {}
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import SwiftData
+import AuthenticationServices
 
 enum AppThemePreference: String, CaseIterable, Identifiable {
     case system = "System"
@@ -234,6 +235,12 @@ struct AccountModal: View {
     @State private var showPhotoOptions = false
     @State private var isEditingName = false
     @State private var editedName = ""
+    @State private var showDeleteIntro = false
+    @State private var showFinalDeleteConfirmation = false
+    @State private var showDeletionFailed = false
+    @State private var showAppleReauth = false
+    @State private var isDeletingAccount = false
+    @State private var didDeleteAccount = false
 
     private var user: User? { User.current(in: users, userID: env.auth.state.userID) }
 
@@ -247,26 +254,12 @@ struct AccountModal: View {
             style: .centered,
             onClose: { modalCoordinator.dismiss() }
         ) {
-            VStack(spacing: 24) {
-                Button {
-                    showPhotoOptions = true
-                } label: {
-                    avatar
-                }
-                .buttonStyle(.plain)
-                .contentShape(Circle())
-
-                VStack(spacing: 0) {
-                    AccountInfoRow(label: "Name", value: displayName) {
-                        editedName = user?.displayName ?? ""
-                        isEditingName = true
-                    }
-                }
-
-                Text("Click to edit.")
-                    .font(AppFont.bodyEmphasized)
-                    .foregroundStyle(AppColor.label.opacity(0.8))
-                    .multilineTextAlignment(.center)
+            if didDeleteAccount {
+                deletionSuccessContent
+            } else if showAppleReauth {
+                appleReauthContent
+            } else {
+                accountContent
             }
         }
         .sheet(isPresented: $showPhotoOptions) {
@@ -285,6 +278,188 @@ struct AccountModal: View {
                 }
             }
             Button("Cancel", role: .cancel) {}
+        }
+        .alert("Delete Account?", isPresented: $showDeleteIntro) {
+            Button("Continue", role: .destructive) {
+                Task { @MainActor in
+                    await Task.yield()
+                    showFinalDeleteConfirmation = true
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Deleting your account removes your profile, trips, reflections, photos, audio, and Sprout progress from this device.")
+        }
+        .alert("This Cannot Be Undone", isPresented: $showFinalDeleteConfirmation) {
+            Button("Delete Account", role: .destructive) {
+                beginAccountDeletion()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your Mindsprout account data will be permanently deleted, including local media files and cached Sign in with Apple identity data.")
+        }
+        .alert("Account Could Not Be Deleted", isPresented: $showDeletionFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Please try again. If this keeps happening, restart Mindsprout and delete the account again.")
+        }
+    }
+
+    @ViewBuilder
+    private var accountContent: some View {
+        VStack(spacing: 24) {
+            Button {
+                showPhotoOptions = true
+            } label: {
+                avatar
+            }
+            .buttonStyle(.plain)
+            .contentShape(Circle())
+
+            VStack(spacing: 0) {
+                AccountInfoRow(label: "Name", value: displayName) {
+                    editedName = user?.displayName ?? ""
+                    isEditingName = true
+                }
+            }
+
+            Text("Click to edit.")
+                .font(AppFont.bodyEmphasized)
+                .foregroundStyle(AppColor.label.opacity(0.8))
+                .multilineTextAlignment(.center)
+
+            VStack(spacing: 10) {
+                Divider()
+                    .padding(.vertical, 4)
+
+                Button(role: .destructive) {
+                    showDeleteIntro = true
+                } label: {
+                    Label("Delete Account", systemImage: "trash")
+                        .font(AppFont.bodyEmphasized)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+
+                Text("Removes your local account and all saved Mindsprout data from this device.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var appleReauthContent: some View {
+        VStack(spacing: 18) {
+            Image(systemName: "person.crop.circle.badge.checkmark")
+                .font(.system(size: 46, weight: .semibold))
+                .foregroundStyle(AppColor.label)
+
+            Text("Confirm with Apple")
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
+
+            Text("Apple requires a fresh sign-in before Mindsprout can revoke your Sign in with Apple credentials.")
+                .font(AppFont.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            SignInWithAppleButton(.continue, onRequest: { request in
+                request.requestedOperation = .operationRefresh
+            }, onCompletion: handleAppleReauthResult)
+            .signInWithAppleButtonStyle(.white)
+            .frame(height: 52)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            .disabled(isDeletingAccount)
+
+            if isDeletingAccount {
+                ProgressView()
+                    .controlSize(.small)
+            }
+
+            Button("Cancel", role: .cancel) {
+                showAppleReauth = false
+            }
+            .buttonStyle(.plain)
+            .disabled(isDeletingAccount)
+        }
+    }
+
+    @ViewBuilder
+    private var deletionSuccessContent: some View {
+        VStack(spacing: 18) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 52, weight: .semibold))
+                .foregroundStyle(.green)
+
+            Text("Account Deleted")
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.label)
+
+            Text("Your local Mindsprout account data has been removed from this device.")
+                .font(AppFont.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button("Done") {
+                modalCoordinator.dismiss()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func beginAccountDeletion() {
+        guard !isDeletingAccount else { return }
+        if case .signedIn = env.auth.state {
+            showAppleReauth = true
+        } else {
+            deleteLocalAccountAfterRevocation()
+        }
+    }
+
+    private func handleAppleReauthResult(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let codeData = credential.authorizationCode,
+                  let authorizationCode = String(data: codeData, encoding: .utf8),
+                  !authorizationCode.isEmpty
+            else {
+                showDeletionFailed = true
+                return
+            }
+
+            Task { @MainActor in
+                isDeletingAccount = true
+                defer { isDeletingAccount = false }
+                do {
+                    try await env.appleCredentialRevoker.revoke(authorizationCode: authorizationCode)
+                    showAppleReauth = false
+                    deleteLocalAccountAfterRevocation()
+                } catch {
+                    showDeletionFailed = true
+                }
+            }
+        case .failure(let error):
+            if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+                return
+            }
+            showDeletionFailed = true
+        }
+    }
+
+    private func deleteLocalAccountAfterRevocation() {
+        let service = AccountDeletionService(
+            mediaStore: env.mediaStore,
+            auth: env.auth
+        )
+        do {
+            try service.deleteAccount(in: modelContext)
+            didDeleteAccount = true
+        } catch {
+            showDeletionFailed = true
         }
     }
 

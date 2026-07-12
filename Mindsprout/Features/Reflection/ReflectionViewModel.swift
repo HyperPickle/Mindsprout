@@ -489,9 +489,10 @@ final class ReflectionViewModel {
 
         moodTags = updatedMoodTags
 
-        // A reward state is always produced for a saved reflection so the flow
-        // can show a confirmation — even when no points were awarded (a calm
-        // "saved" screen for repeat reflections).
+        guard newlyAwardedXP > 0 || pendingMilestoneReward != nil else {
+            return nil
+        }
+
         let rewardState = ReflectionRewardState(
             xpAwarded: newlyAwardedXP,
             tagLabel: generatedTagLabel,

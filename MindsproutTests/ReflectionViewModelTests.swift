@@ -194,9 +194,9 @@ struct ReflectionViewModelTests {
         #expect(reflections.first?.xpAwarded == 10)
         #expect(reflections.last?.xpAwarded == 0)
 
-        // The repeat reflection still shows a (no-points) confirmation.
-        #expect(second.step == .reward)
-        #expect(second.rewardState?.xpAwarded == 0)
+        // The repeat reflection saves immediately without a no-points reward screen.
+        #expect(second.step == .photos)
+        #expect(second.rewardState == nil)
 
         // Sprout gained points only once.
         let sprout = try #require(context.fetch(FetchDescriptor<Sprout>()).first)
