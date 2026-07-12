@@ -235,12 +235,12 @@ struct AccountModal: View {
     @State private var showPhotoOptions = false
     @State private var isEditingName = false
     @State private var editedName = ""
-    @State private var showDeleteIntro = false
     @State private var showFinalDeleteConfirmation = false
     @State private var showDeletionFailed = false
     @State private var showAppleReauth = false
     @State private var isDeletingAccount = false
     @State private var didDeleteAccount = false
+    @State private var pendingAppleAuthorizationCode: String?
 
     private var user: User? { User.current(in: users, userID: env.auth.state.userID) }
 
@@ -279,24 +279,13 @@ struct AccountModal: View {
             }
             Button("Cancel", role: .cancel) {}
         }
-        .alert("Delete Account?", isPresented: $showDeleteIntro) {
-            Button("Continue", role: .destructive) {
-                Task { @MainActor in
-                    await Task.yield()
-                    showFinalDeleteConfirmation = true
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Deleting your account removes your profile, trips, reflections, photos, audio, and Sprout progress from this device.")
-        }
         .alert("This Cannot Be Undone", isPresented: $showFinalDeleteConfirmation) {
             Button("Delete Account", role: .destructive) {
                 beginAccountDeletion()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Your Mindsprout account data will be permanently deleted, including local media files and cached Sign in with Apple identity data.")
+            Text("Your account data and local media will be permanently deleted from this device.")
         }
         .alert("Account Could Not Be Deleted", isPresented: $showDeletionFailed) {
             Button("OK", role: .cancel) {}
@@ -323,24 +312,21 @@ struct AccountModal: View {
                 }
             }
 
-            Text("Click to edit.")
-                .font(AppFont.bodyEmphasized)
-                .foregroundStyle(AppColor.label.opacity(0.8))
-                .multilineTextAlignment(.center)
-
             VStack(spacing: 10) {
                 Divider()
                     .padding(.vertical, 4)
 
                 Button(role: .destructive) {
-                    showDeleteIntro = true
+                    prepareFinalDeleteConfirmation()
                 } label: {
                     Label("Delete Account", systemImage: "trash")
                         .font(AppFont.bodyEmphasized)
+                        .foregroundStyle(AppColor.destructive)
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .tripGlassSurface(style: .danger, in: Capsule())
                 }
-                .buttonStyle(.bordered)
-                .tint(.red)
+                .buttonStyle(.plain)
 
                 Text("Removes your local account and all saved Mindsprout data from this device.")
                     .font(AppFont.caption)
@@ -357,11 +343,11 @@ struct AccountModal: View {
                 .font(.system(size: 46, weight: .semibold))
                 .foregroundStyle(AppColor.label)
 
-            Text("Confirm with Apple")
+            Text("Sign in with Apple")
                 .font(AppFont.sectionTitle)
                 .foregroundStyle(AppColor.label)
 
-            Text("Apple requires a fresh sign-in before Mindsprout can revoke your Sign in with Apple credentials.")
+            Text("Verify your identity before deleting your account.")
                 .font(AppFont.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -381,6 +367,7 @@ struct AccountModal: View {
 
             Button("Cancel", role: .cancel) {
                 showAppleReauth = false
+                pendingAppleAuthorizationCode = nil
             }
             .buttonStyle(.plain)
             .disabled(isDeletingAccount)
@@ -410,12 +397,34 @@ struct AccountModal: View {
         }
     }
 
-    private func beginAccountDeletion() {
-        guard !isDeletingAccount else { return }
-        if case .signedIn = env.auth.state {
+    private func prepareFinalDeleteConfirmation() {
+        if case .signedIn = env.auth.state, pendingAppleAuthorizationCode == nil {
             showAppleReauth = true
         } else {
-            deleteLocalAccountAfterRevocation()
+            showFinalDeleteConfirmation = true
+        }
+    }
+
+    private func beginAccountDeletion() {
+        guard !isDeletingAccount else { return }
+
+        Task { @MainActor in
+            isDeletingAccount = true
+            defer { isDeletingAccount = false }
+
+            do {
+                if case .signedIn = env.auth.state {
+                    guard let authorizationCode = pendingAppleAuthorizationCode else {
+                        showAppleReauth = true
+                        return
+                    }
+                    try await env.appleCredentialRevoker.revoke(authorizationCode: authorizationCode)
+                    pendingAppleAuthorizationCode = nil
+                }
+                deleteLocalAccountAfterRevocation()
+            } catch {
+                showDeletionFailed = true
+            }
         }
     }
 
@@ -431,17 +440,9 @@ struct AccountModal: View {
                 return
             }
 
-            Task { @MainActor in
-                isDeletingAccount = true
-                defer { isDeletingAccount = false }
-                do {
-                    try await env.appleCredentialRevoker.revoke(authorizationCode: authorizationCode)
-                    showAppleReauth = false
-                    deleteLocalAccountAfterRevocation()
-                } catch {
-                    showDeletionFailed = true
-                }
-            }
+            pendingAppleAuthorizationCode = authorizationCode
+            showAppleReauth = false
+            showFinalDeleteConfirmation = true
         case .failure(let error):
             if let authError = error as? ASAuthorizationError, authError.code == .canceled {
                 return
@@ -495,7 +496,7 @@ private struct AccountInfoRow: View {
 
     @ViewBuilder
     var body: some View {
-        let row = HStack {
+        let row = HStack(spacing: 8) {
             Text(label)
                 .font(AppFont.callout)
                 .foregroundStyle(.secondary)
@@ -504,6 +505,11 @@ private struct AccountInfoRow: View {
                 .font(AppFont.body)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.trailing)
+            if action != nil {
+                Image(systemName: "pencil")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.vertical, 12)
 
