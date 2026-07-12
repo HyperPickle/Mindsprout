@@ -67,7 +67,7 @@ struct SpeechTranscriptionService: Transcribing {
         if let lastSample = try await analyzer.analyzeSequence(from: audioFile) {
             try await analyzer.finalizeAndFinish(through: lastSample)
         } else {
-            try await analyzer.cancelAndFinishNow()
+            await analyzer.cancelAndFinishNow()
         }
 
         return try await collected

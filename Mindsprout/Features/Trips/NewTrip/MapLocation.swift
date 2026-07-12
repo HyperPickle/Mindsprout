@@ -316,18 +316,9 @@ struct DestinationPickerView: View {
             .foregroundStyle(AppColor.label)
             .frame(width: 22, height: 22)
 
-            (
-                Text("Trip location will be shown as")
-                    .font(AppFont.callout)
-                + Text(" ")
-                    .font(AppFont.callout)
-                + Text(selection.displayName)
-                    .font(AppFont.bodyEmphasized)
-                + Text(".")
-                    .font(AppFont.callout)
-            )
-            .foregroundStyle(AppColor.label)
-            .fixedSize(horizontal: false, vertical: true)
+            Text(locationConfirmationText(for: selection))
+                .foregroundStyle(AppColor.label)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
         }
@@ -337,6 +328,21 @@ struct DestinationPickerView: View {
             style: .selected,
             in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
         )
+    }
+
+    private func locationConfirmationText(for selection: TripLocationSelection) -> AttributedString {
+        var attributed = AttributedString("Trip location will be shown as ")
+        attributed.font = AppFont.callout
+
+        var name = AttributedString(selection.displayName)
+        name.font = AppFont.bodyEmphasized
+        attributed.append(name)
+
+        var period = AttributedString(".")
+        period.font = AppFont.callout
+        attributed.append(period)
+
+        return attributed
     }
 
     private func resolveLiveResults() {
@@ -397,8 +403,8 @@ private enum TripLocationMapResolver {
               let selection = TripLocationNormalizer.selection(
                 from: TripLocationCandidate(
                     title: item.name ?? completion.title,
-                    locality: item.placemark.locality,
-                    country: item.placemark.country
+                    locality: item.addressRepresentations?.cityName,
+                    country: item.addressRepresentations?.regionName
                 )
               ) else { return nil }
 
@@ -407,10 +413,9 @@ private enum TripLocationMapResolver {
 
     @MainActor
     private static func selectionWithCityCenterCoordinate(_ selection: TripLocationSelection) async -> TripLocationSelection {
-        let geocoder = CLGeocoder()
-        guard let placemarks = try? await geocoder.geocodeAddressString(selection.displayName),
-              let placemark = placemarks.first,
-              let coordinate = placemark.location?.coordinate else { return selection }
+        guard let request = MKGeocodingRequest(addressString: selection.displayName),
+              let items = try? await request.mapItems,
+              let coordinate = items.first?.location.coordinate else { return selection }
 
         return TripLocationSelection(
             city: selection.city,

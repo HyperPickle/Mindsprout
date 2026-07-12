@@ -15,8 +15,6 @@ final class SproutRiveController: ObservableObject {
     @Published private(set) var isWalking = false
     @Published var isFacingLeft = false
 
-    private let screenHalfWidth: CGFloat = UIScreen.main.bounds.width / 2 - 80
-
     private var tapCount = 0
     private var tapTimer: Timer?
     private var behaviorTimer: Timer?
@@ -65,7 +63,7 @@ final class SproutRiveController: ObservableObject {
 
     func applyGlasses(_ rawValue: Int) {
         guard isRiveReady else { return }
-        try? riveVM.setInput("Glass", value: Double(rawValue))
+        riveVM.setInput("Glass", value: Double(rawValue))
     }
 
     func updateState(_ state: SproutState) {
@@ -101,7 +99,7 @@ final class SproutRiveController: ObservableObject {
         behaviorTimer?.invalidate()
         let delay = Double.random(in: 10...30)
         behaviorTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
-            Task { @MainActor in self?.runRandomBehavior() }
+            Task { @MainActor [weak self] in self?.runRandomBehavior() }
         }
     }
 
@@ -275,7 +273,7 @@ final class SproutRiveController: ObservableObject {
         tapCount += 1
         tapTimer?.invalidate()
         tapTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 switch self.tapCount {
                 case 1: self.riveVM.triggerInput("triggerJump")

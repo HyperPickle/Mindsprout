@@ -129,7 +129,7 @@ struct SproutNamingView: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
-                Spacer().frame(height: UIScreen.main.bounds.height * 0.12)
+                Spacer().frame(height: (UIScreen.current?.bounds.height ?? 0) * 0.12)
             }
             .frame(maxHeight: .infinity)
             .animation(.easeOut(duration: 0.4), value: isTransforming)
@@ -206,7 +206,7 @@ struct SproutNamingView: View {
             return 0
         }
 
-        let screenHeight = UIScreen.main.bounds.height
+        let screenHeight = UIScreen.current?.bounds.height ?? 0
         return max(0, screenHeight - frame.minY)
     }
 }

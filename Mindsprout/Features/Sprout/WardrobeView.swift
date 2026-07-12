@@ -61,7 +61,7 @@ final class WardrobeRiveController: ObservableObject {
     func setGlasses(_ type: SproutGlasses) {
         guard isReady else { return }
         // Option A – number input named "Glass" in SproutHomeSM (0 = none, 1 = heart, 2 = round)
-        try? riveVM.setInput("Glass", value: Double(type.rawValue))
+        riveVM.setInput("Glass", value: Double(type.rawValue))
 
         // Option B – separate trigger inputs (uncomment and match your .riv input names)
         // let names = ["Empty", "Heart glass", "Round glass"]
