@@ -37,6 +37,7 @@ struct TripsOverviewView: View {
                 }
                 .padding(.horizontal, Spacing.screenEdge)
                 .padding(.bottom, Spacing.xl)
+                .contentColumn()
             }
         }
         .task { viewModel.load(context: context) }

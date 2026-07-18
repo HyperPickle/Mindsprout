@@ -15,8 +15,6 @@ struct ModalContainer: View {
             TodayReflectionView(reflectionID: reflectionID)
         case .levelUp(let presentation):
             LevelUpFlow(presentation: presentation)
-        case .shop:
-            ShopComingSoonModal()
         case .themeSettings:
             ThemeSettingsModal()
         case .aboutSettings:

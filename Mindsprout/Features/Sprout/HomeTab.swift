@@ -5,8 +5,6 @@ import UIKit
 import FabBar
 
 struct HomeTab: View {
-    @Binding var selection: AppTab
-
     @Environment(\.modelContext) private var context
     @Environment(ModalCoordinator.self) private var modalCoordinator
     @Environment(\.appEnvironment) private var env
@@ -20,6 +18,7 @@ struct HomeTab: View {
     @State private var now: Date = .now
 
     @Environment(\.fabBarBottomSafeAreaPadding) private var fabBarBottomPadding
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private var activeTrip: Trip? { TripResolver.active(in: trips) }
     private var sprout: Sprout? { sprouts.first }
@@ -98,9 +97,27 @@ struct HomeTab: View {
 
     // MARK: - Dashboard Content
 
+    /// The scene art fills the whole screen, but the interactive layer is laid out
+    /// inside a centered column capped at this width. Without the cap the iPad's
+    /// regular width stretches the dashboard away from its 402pt reference.
+    private static let maxStageWidth: CGFloat = 500
+
+    /// The regular-width canvas dwarfs the iPhone-tuned interactive layer, so
+    /// the sprout, pill, and buttons render 25% larger on iPad.
+    private var stageScale: CGFloat {
+        horizontalSizeClass == .regular ? 1.25 : 1.0
+    }
+
     private var dashboardContent: some View {
         GeometryReader { proxy in
-            let layout = HomeDashboardLayout(size: proxy.size)
+            let stageSize = CGSize(
+                width: min(proxy.size.width, Self.maxStageWidth),
+                height: proxy.size.height
+            )
+            let layout = HomeDashboardLayout(
+                size: stageSize,
+                isRegularWidth: horizontalSizeClass == .regular
+            )
 
             ZStack {
                 // Sprout
@@ -108,7 +125,8 @@ struct HomeTab: View {
 
                 // Top row: trip pill + day badge
                 tripPill(maxWidth: layout.tripGroupMaxWidth)
-                    .frame(width: layout.tripGroupMaxWidth, height: layout.tripPillHeight, alignment: .leading)
+                    .scaleEffect(stageScale)
+                    .frame(width: layout.tripGroupMaxWidth, height: layout.tripPillHeight, alignment: layout.tripPillAlignment)
                     .position(x: layout.tripGroupCenterX, y: layout.topRowCenterY)
 
                 // Style button - bottom left, above tab bar
@@ -116,6 +134,7 @@ struct HomeTab: View {
                     Spacer()
                     HStack {
                         styleButton
+                            .scaleEffect(stageScale, anchor: .bottomLeading)
                             .padding(.leading, 21)
                         Spacer()
                     }
@@ -132,7 +151,7 @@ struct HomeTab: View {
                         Image("DropBubble")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 60, height: 60)
+                            .frame(width: 60 * stageScale, height: 60 * stageScale)
                             .offset(y: bubbleOffset)
                             .onAppear {
                                 withAnimation(
@@ -148,8 +167,8 @@ struct HomeTab: View {
                     }
                     .buttonStyle(PressScaleButtonStyle())
                     .position(
-                        x: proxy.size.width / 2,
-                        y: proxy.size.height / 2 - 160
+                        x: stageSize.width / 2,
+                        y: stageSize.height / 2 - 160
                     )
                     .transition(.scale.combined(with: .opacity))
                     .animation(
@@ -158,6 +177,8 @@ struct HomeTab: View {
                     )
                 }
             }
+            .frame(width: stageSize.width, height: stageSize.height)
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -244,6 +265,7 @@ struct HomeTab: View {
     private func sproutStage(layout: HomeDashboardLayout) -> some View {
         SproutView(
             state: sproutDisplayState,
+            sproutSize: 300 * stageScale
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityHidden(true)
@@ -294,6 +316,7 @@ struct HomeDashboardLayout {
 
     let topRowCenterY: CGFloat
     let tripGroupCenterX: CGFloat
+    let tripPillAlignment: Alignment
     let tripGroupMaxWidth: CGFloat
     let tripPillHeight: CGFloat
     let sproutVerticalOffset: CGFloat
@@ -312,18 +335,30 @@ struct HomeDashboardLayout {
     let tripCardMinWidth: CGFloat
     let tripCardMaxWidth: CGFloat
 
-    init(size: CGSize) {
+    init(size: CGSize, isRegularWidth: Bool = false) {
         let referenceWidth: CGFloat = 402
         let referenceHeight: CGFloat = 874
         let scaleX = size.width / referenceWidth
         let scaleY = size.height / referenceHeight
 
-        // Trip pill
-        topRowCenterY = 50 * scaleY
+        // Trip pill. Regular width (iPad) centers the pill near the top of the
+        // stage; compact keeps the left-anchored, height-scaled iPhone layout.
         let tripGroupLeadingX = 8 * scaleX
         let screenSafeTripWidth = max(180, size.width - tripGroupLeadingX - 54)
         tripGroupMaxWidth = min(max(236, 340 * scaleX), screenSafeTripWidth)
-        tripGroupCenterX = tripGroupLeadingX + (tripGroupMaxWidth / 2)
+        if isRegularWidth {
+            // Hug the top of the screen: the rendered pill card (~80pt, drawn
+            // at 1.25x) is vertically centered in its design frame, and the
+            // stage geometry on iPad carries an extra top inset the negative
+            // offset compensates for (tuned against screenshots).
+            topRowCenterY = -10
+            tripGroupCenterX = size.width / 2
+            tripPillAlignment = .center
+        } else {
+            topRowCenterY = 50 * scaleY
+            tripGroupCenterX = tripGroupLeadingX + (tripGroupMaxWidth / 2)
+            tripPillAlignment = .leading
+        }
         tripPillHeight = 104 * scaleY
 
         // Sprout
@@ -390,7 +425,7 @@ private enum HomeTabPreviewData {
 // MARK: - Previews
 
 #Preview("Home - Active Trip") {
-    HomeTab(selection: .constant(.home))
+    HomeTab()
         .environment(ModalCoordinator())
         .environment(\.appEnvironment, .preview)
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: true, fedToday: false))
@@ -398,7 +433,7 @@ private enum HomeTabPreviewData {
 }
 
 #Preview("Home - Today's Reflection") {
-    HomeTab(selection: .constant(.home))
+    HomeTab()
         .environment(ModalCoordinator())
         .environment(\.appEnvironment, .preview)
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: true, fedToday: true))
@@ -406,7 +441,7 @@ private enum HomeTabPreviewData {
 }
 
 #Preview("Home - No Trip Small") {
-    HomeTab(selection: .constant(.home))
+    HomeTab()
         .environment(ModalCoordinator())
         .environment(\.appEnvironment, .preview)
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: false, fedToday: false))
@@ -414,7 +449,7 @@ private enum HomeTabPreviewData {
 }
 
 #Preview("Home - Hungry") {
-    HomeTab(selection: .constant(.home))
+    HomeTab()
         .environment(ModalCoordinator())
         .environment(\.appEnvironment, .preview)
         .modelContainer(HomeTabPreviewData.makeContainer(activeTrip: true, fedToday: false))

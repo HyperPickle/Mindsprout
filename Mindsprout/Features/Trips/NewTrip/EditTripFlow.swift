@@ -37,6 +37,7 @@ struct EditTripFlow: View {
                         }
                         .padding(Spacing.screenEdge)
                         .padding(.bottom, Spacing.lg)
+                        .contentColumn()
                     }
                     HStack {
                         Spacer()
@@ -57,6 +58,7 @@ struct EditTripFlow: View {
         }
         .presentationCornerRadius(36)
         .presentationDragIndicator(.visible)
+        .presentationSizing(.page)
         .task {
             // Loading swaps placeholder state (empty reflections, default dates)
             // for the trip's real data, which changes the form's content height.
@@ -116,6 +118,7 @@ struct EditTripFlow: View {
         .padding(.horizontal, Spacing.sm)
         .padding(.top, Spacing.xs + 20)
         .padding(.bottom, Spacing.xs)
+        .contentColumn()
         .transaction { $0.animation = nil }
     }
 

@@ -121,9 +121,14 @@ private extension View {
 
 struct ThemeSettingsModal: View {
     @AppStorage("appThemePreference") private var themePreference: AppThemePreference = .system
+    @Environment(ModalCoordinator.self) private var modalCoordinator
 
     var body: some View {
-        ModalScaffold(title: "Appearance") {
+        ModalScaffold(
+            title: "Appearance",
+            style: .centered,
+            onClose: { modalCoordinator.dismiss() }
+        ) {
             VStack(spacing: 0) {
                 ForEach(AppThemePreference.allCases) { theme in
                     Button {
@@ -148,24 +153,6 @@ struct ThemeSettingsModal: View {
                         Divider()
                     }
                 }
-            }
-        }
-    }
-}
-
-struct ShopComingSoonModal: View {
-    var body: some View {
-        ModalScaffold(title: "Shop") {
-            VStack(spacing: 12) {
-                Image(systemName: "bag")
-                    .font(.system(size: 64))
-                    .foregroundColor(.secondary)
-                Text("Shop Coming Soon")
-                    .font(AppFont.sectionTitle)
-                Text("We're working on bringing you the shop in a future update.")
-                    .font(AppFont.callout)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
             }
         }
     }

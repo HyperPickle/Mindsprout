@@ -21,6 +21,7 @@ struct NewTripFlow: View {
         }
         .presentationCornerRadius(36)
         .presentationDragIndicator(.visible)
+        .presentationSizing(.page)
     }
 }
 
@@ -62,6 +63,7 @@ struct NewTripHeader: View {
         .padding(.horizontal, Spacing.sm)
         .padding(.top, Spacing.xs + 20)
         .padding(.bottom, Spacing.xs)
+        .contentColumn()
         .transaction { $0.animation = nil }
     }
 }
@@ -84,11 +86,13 @@ private struct NewTripBasicsView: View {
                         typePicker
                     }
                     .padding(Spacing.screenEdge)
+                    .contentColumn()
                 }
                 Button("Continue", action: onContinue)
                     .buttonStyle(.tripGlassCTA)
                     .disabled(!viewModel.canContinue)
                     .padding(.horizontal, Spacing.screenEdge)
+                    .contentColumn()
                     .padding(.bottom, Spacing.xs)
             }
         }
@@ -187,10 +191,12 @@ struct NewTripExpectationsView: View {
                             )
                     }
                     .padding(Spacing.screenEdge)
+                    .contentColumn()
                 }
                 Button("Save", action: onSave)
                     .buttonStyle(.tripGlassCTA)
                     .padding(.horizontal, Spacing.screenEdge)
+                    .contentColumn()
                     .padding(.bottom, Spacing.xs)
             }
         }

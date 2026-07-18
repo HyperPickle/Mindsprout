@@ -76,6 +76,7 @@ struct SettingsView: View {
                     .padding(.horizontal, Spacing.screenEdge)
                     .padding(.top, Spacing.xl)
                     .padding(.bottom, Spacing.xxl)
+                    .contentColumn()
                 }
             }
         }

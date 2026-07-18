@@ -8,7 +8,6 @@ struct RootView: View {
 
     @Environment(\.appEnvironment) private var env
     @Environment(\.modelContext) private var context
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selection: AppTab = .home
     @State private var fabBarSelection: AppTab = .home
     @State private var modalCoordinator = ModalCoordinator()
@@ -44,14 +43,8 @@ struct RootView: View {
                     .toolbarVisibility(tabBarVisibility, for: .tabBar)
             }
 
-            Tab(AppTab.reflect.title, systemImage: AppTab.reflect.systemImage, value: AppTab.reflect) {
-                HomeTab(selection: $selection)
-                    .fabBarSafeAreaPadding()
-                    .toolbarVisibility(tabBarVisibility, for: .tabBar)
-            }
-
             Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
-                HomeTab(selection: $selection)
+                HomeTab()
                     .fabBarSafeAreaPadding()
                     .toolbarVisibility(tabBarVisibility, for: .tabBar)
             }
@@ -73,6 +66,9 @@ struct RootView: View {
         .sheet(item: bottomSheetBinding) { modal in
             ModalContainer(modal: modal)
                 .environment(modalCoordinator)
+                // Page sizing keeps iPad sheets full-height like New Trip
+                // instead of the small centered form sheet; no-op on iPhone.
+                .presentationSizing(.page)
         }
         .fullScreenCover(item: fullScreenCoverBinding, onDismiss: {
             modalCoordinator.presentPendingLevelUpIfNeeded()
@@ -86,9 +82,8 @@ struct RootView: View {
         .transition(.opacity)
     }
 
-    private var tabBarVisibility: Visibility {
-        horizontalSizeClass == .compact ? .hidden : .visible
-    }
+    /// The FabBar is the tab bar on every idiom, so the system bar stays hidden.
+    private let tabBarVisibility: Visibility = .hidden
 
     private var fabAction: FabBarAction {
         let iconTintColor = UIColor { traits in

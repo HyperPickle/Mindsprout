@@ -74,7 +74,7 @@ final class WardrobeRiveController: ObservableObject {
 struct WardrobeView: View {
     @Binding var isPresented: Bool
 
-    @Environment(ModalCoordinator.self) private var modalCoordinator
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @AppStorage("sproutGlassesChoice") private var savedGlasses: Int = 0
     @StateObject private var riveController = WardrobeRiveController()
@@ -82,17 +82,32 @@ struct WardrobeView: View {
     @State private var selectedCategory: WardrobeCategory = .all
     @State private var sproutScale: CGFloat = 0.88
 
+    /// Caps the Rive canvas so the sprout stays near its home-screen scale
+    /// instead of filling the iPad's much larger top half. iPad gets a larger
+    /// cap to match the home stage's 25% scale-up.
+    private var maxSproutSize: CGFloat {
+        horizontalSizeClass == .regular ? 420 : 360
+    }
+
     var body: some View {
         ZStack {
-            Image("HomeBackground")
-                .resizable()
-                .scaledToFill()
+            // Overlay-in-clear keeps the fill overflow out of layout — a bare
+            // scaledToFill image inflates the ZStack past the screen on iPad
+            // and pushes the header off-screen.
+            Color.clear
+                .overlay {
+                    Image("HomeBackground")
+                        .resizable()
+                        .scaledToFill()
+                }
+                .clipped()
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // ── Top half: Sprout ──────────────────────────────────
                 ZStack(alignment: .top) {
                     riveController.riveVM.view()
+                        .frame(maxWidth: maxSproutSize, maxHeight: maxSproutSize)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .scaleEffect(sproutScale)
                         .onAppear {
@@ -108,19 +123,23 @@ struct WardrobeView: View {
 
                     // Header buttons
                     HStack {
-                        shopButton
                         Spacer()
                         closeButton
                     }
-                    .padding(.top, 56)
+                    .padding(.top, Spacing.md)
                     .padding(.horizontal, Spacing.screenEdge)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 // ── Bottom half: Wardrobe panel ───────────────────────
+                // iPhone keeps the 50/50 split; on iPad the panel hugs its
+                // content so the bottom isn't a mostly-empty slab.
                 wardrobePanel
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: horizontalSizeClass == .regular ? 340 : .infinity)
             }
+            // The panel is the bottom edge of the design — let it run under
+            // the home indicator instead of leaving a background strip.
+            .ignoresSafeArea(edges: .bottom)
         }
         .onAppear {
             selectedGlasses = SproutGlasses(rawValue: savedGlasses) ?? .none
@@ -143,20 +162,6 @@ struct WardrobeView: View {
         .readableLiquidGlass(in: Circle())
     }
 
-    private var shopButton: some View {
-        Button {
-            modalCoordinator.present(.shop)
-        } label: {
-            Image(systemName: "bag.fill")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(AppColor.label)
-                .frame(width: 44, height: 44)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .readableLiquidGlass(in: Circle())
-    }
-
     // MARK: - Wardrobe Panel
 
     private var wardrobePanel: some View {
@@ -166,6 +171,7 @@ struct WardrobeView: View {
                 .padding(.horizontal, Spacing.screenEdge)
                 .padding(.top, Spacing.lg)
                 .padding(.bottom, Spacing.md)
+                .contentColumn()
 
             Divider().opacity(0.4)
 
@@ -174,10 +180,17 @@ struct WardrobeView: View {
                 glassesGrid
                     .padding(.horizontal, Spacing.screenEdge)
                     .padding(.vertical, Spacing.lg)
+                    .contentColumn()
             }
         }
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 28,
+                topTrailingRadius: 28,
+                style: .continuous
+            )
+        )
     }
 
     // MARK: - Category Bar

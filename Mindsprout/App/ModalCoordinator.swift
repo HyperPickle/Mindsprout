@@ -6,7 +6,6 @@ enum AppModal: Identifiable, Equatable {
     case reflection(tripID: UUID)
     case todayReflection(reflectionID: UUID)
     case levelUp(LevelUpPresentation)
-    case shop
     case themeSettings
     case aboutSettings
     case profilePhoto
@@ -20,7 +19,6 @@ enum AppModal: Identifiable, Equatable {
         case .reflection(let tripID): return "reflection-\(tripID.uuidString)"
         case .todayReflection(let reflectionID): return "todayReflection-\(reflectionID.uuidString)"
         case .levelUp(let presentation): return "levelUp-\(presentation.id.uuidString)"
-        case .shop: return "shop"
         case .themeSettings: return "themeSettings"
         case .aboutSettings: return "aboutSettings"
         case .profilePhoto: return "profilePhoto"
@@ -33,7 +31,7 @@ enum AppModal: Identifiable, Equatable {
     /// scale/fade) instead of a bottom sheet.
     var prefersCenteredPresentation: Bool {
         switch self {
-        case .account, .xpDetail: return true
+        case .account, .xpDetail, .themeSettings: return true
         default: return false
         }
     }

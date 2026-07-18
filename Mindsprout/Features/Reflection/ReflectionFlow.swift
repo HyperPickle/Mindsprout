@@ -36,6 +36,9 @@ struct ReflectionFlow: View {
                     }
                 }
             }
+            // Cap the header + step content to a readable column so the flow
+            // doesn't stretch edge-to-edge on iPad; the sky stays full-bleed.
+            .contentColumn()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea(.keyboard)

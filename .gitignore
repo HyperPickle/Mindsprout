@@ -13,11 +13,10 @@ $RECYCLE.BIN/
 .claude/
 Claude.md
 build.log
-REFLECTION-MODAL-MIGRATION-PLAN.md
 
 checklist.md
 
-# Local audit / planning docs (not for the repo)
+# Planning docs
 Mindsprout-Codebase-Audit.html
 Mindsprout-Bugfix-Plan.md
 Mindsprout-CloudSync-Plan.md

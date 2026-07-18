@@ -309,9 +309,10 @@ struct SproutView: View {
     @StateObject private var controller: SproutRiveController
     @AppStorage("sproutGlassesChoice") private var savedGlasses: Int = 0
 
-    init(state: SproutState, idleOnly: Bool = false, draggable: Bool = true) {
+    init(state: SproutState, idleOnly: Bool = false, draggable: Bool = true, sproutSize: CGFloat = 300) {
         self.state = state
         self.draggable = draggable
+        self.sproutSize = sproutSize
         _controller = StateObject(wrappedValue: SproutRiveController(idleOnly: idleOnly))
     }
 
@@ -319,7 +320,7 @@ struct SproutView: View {
     @State private var dragBaseOffset: CGSize = .zero
     @State private var lastDragX: CGFloat = 0
 
-    private let sproutSize: CGFloat = 300
+    private let sproutSize: CGFloat
     private let sproutAnchorY: CGFloat = 0.5
 
     private var totalOffset: CGSize {

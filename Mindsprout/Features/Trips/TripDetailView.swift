@@ -68,6 +68,7 @@ struct TripDetailView: View {
                 .padding(.horizontal, Spacing.screenEdge)
                 .padding(.top, Spacing.md)
                 .padding(.bottom, Spacing.xl)
+                .contentColumn()
             }
         }
         .background(BackgroundSky())
@@ -118,6 +119,7 @@ struct TripDetailView: View {
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)
+        .contentColumn()
     }
 
 }
@@ -251,6 +253,7 @@ struct TripDayDetailView: View {
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.md)
         .padding(.bottom, Spacing.sm)
+        .contentColumn()
     }
 
     private var dayTitle: String {
@@ -309,6 +312,7 @@ private struct DayContentView: View {
             .padding(.horizontal, Spacing.screenEdge)
             .padding(.top, Spacing.sm)
             .padding(.bottom, Spacing.xl)
+            .contentColumn()
         }
     }
 

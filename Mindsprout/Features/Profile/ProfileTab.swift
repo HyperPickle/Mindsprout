@@ -119,9 +119,6 @@ struct ProfileTab: View {
                         
                         // Action Buttons
                         VStack(spacing: 20) {
-                            ProfileActionButton(title: "Shop", icon: "bag") {
-                                modalCoordinator.present(.shop)
-                            }
                             ProfileActionButton(title: "Settings", icon: "gearshape") {
                                 showSettings = true
                             }
@@ -132,6 +129,7 @@ struct ProfileTab: View {
                         .padding(.horizontal, Spacing.screenEdge)
                         .padding(.bottom, Spacing.xxl)
                     }
+                    .contentColumn()
                 }
             }
             .navigationDestination(isPresented: $showSettings) {

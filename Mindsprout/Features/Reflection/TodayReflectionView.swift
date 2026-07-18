@@ -31,6 +31,8 @@ struct TodayReflectionView: View {
                 header
                 content
             }
+            // Keep the reader in a readable column on iPad; sky stays full-bleed.
+            .contentColumn()
         }
         .presentationDetents([.fraction(0.9)])
         .presentationDragIndicator(.visible)

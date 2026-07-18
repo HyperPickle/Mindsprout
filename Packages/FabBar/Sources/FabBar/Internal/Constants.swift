@@ -12,6 +12,11 @@ enum Constants {
     /// Matches the standard iOS tab bar height for visual consistency.
     static let barHeight: CGFloat = 62
 
+    /// Maximum width of the bar, inclusive of `horizontalPadding`.
+    /// Segments auto-distribute across the available width with 3+ tabs, so on a
+    /// regular-width iPad an uncapped bar spreads them across the whole screen.
+    static let maxBarWidth: CGFloat = 500
+
     /// Spacing between the segmented control and FAB.
     static let fabSpacing: CGFloat = 8
 

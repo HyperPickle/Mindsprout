@@ -6,7 +6,6 @@ import SwiftUI
 /// - Wraps in `.safeAreaBar(edge: .bottom)`
 /// - Applies appropriate padding
 /// - Ignores bottom safe area for manual positioning
-/// - Hides automatically on regular horizontal size class (iPad)
 /// - Injects calculated safe area padding into the environment
 @available(iOS 26.0, *)
 struct FabBarModifier<Value: Hashable>: ViewModifier {
@@ -15,14 +14,10 @@ struct FabBarModifier<Value: Hashable>: ViewModifier {
     let action: FabBarAction
     let isVisible: Bool
 
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var bottomSafeAreaInset: CGFloat = 0
 
     /// Whether the FabBar should be displayed.
-    /// Only shows on compact horizontal size class (iPhone) when visible.
-    private var showsFabBar: Bool {
-        horizontalSizeClass == .compact && isVisible
-    }
+    private var showsFabBar: Bool { isVisible }
 
     /// Total content margin needed to clear the FabBar.
     private var bottomContentMargin: CGFloat {
@@ -43,6 +38,7 @@ struct FabBarModifier<Value: Hashable>: ViewModifier {
                 if showsFabBar {
                     FabBar(selection: $selection, tabs: tabs, action: action)
                         .padding(.horizontal, Constants.horizontalPadding)
+                        .frame(maxWidth: Constants.maxBarWidth)
                         .padding(.bottom, Constants.bottomPadding)
                 }
             }
@@ -60,8 +56,8 @@ struct FabBarModifier<Value: Hashable>: ViewModifier {
 public extension View {
     /// Adds a FabBar to the bottom of the view.
     ///
-    /// This is the recommended way to use FabBar. It handles positioning,
-    /// safe area management, and automatically hides on iPad.
+    /// This is the recommended way to use FabBar. It handles positioning
+    /// and safe area management.
     ///
     /// ```swift
     /// TabView(selection: $selectedTab) {
