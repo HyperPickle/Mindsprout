@@ -30,7 +30,7 @@ Start a trip and set what you want out of it. Solo, friends, family, or work, ea
 
 ## Stack
 
-- Swift, iOS 26, iPhone only
+- Swift, iOS 26, iPhone and iPad (portrait-only)
 - SwiftData, offline first, media stored on disk
 - MVVM with Swift Observation
 - On-device transcription (whisper.cpp, Apple Speech fallback)
@@ -69,4 +69,3 @@ MindsproutTests/   Tests for the non-visual logic
 - Hiu Ying Lee (Ruby)
 - Nam Ng. (Louis)
 - Arshiya Banu Varada
-
