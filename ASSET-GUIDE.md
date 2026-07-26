@@ -123,6 +123,14 @@ These exist in the catalog but do not have a current code reference in the app s
 
 Treat these as parked or future assets. Check the code before spending time updating them.
 
+### 3.6 App icon
+
+The primary icon is `Mindsprout/AppIcon.icon`, an Icon Composer resource with the opaque
+`Assets/Logo7.png` source. The project intentionally has no alternate app icons. Keep the
+target's primary icon name set to `AppIcon`, and do not add names to the Alternate App Icon
+Sets build setting unless matching Icon Composer resources and an explicit in-app picker are
+also added.
+
 ## 4. How To Add Or Replace An Asset
 
 ### 4.1 Single static image

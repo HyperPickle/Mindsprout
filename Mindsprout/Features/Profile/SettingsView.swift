@@ -64,8 +64,10 @@ struct SettingsView: View {
                             showPrivacyPolicy = true
                         }
 
-                        SettingsActionButton(title: "Sign Out", icon: "arrow.right.square") {
-                            showSignOutConfirm = true
+                        if case .signedIn = env.auth.state {
+                            SettingsActionButton(title: "Sign Out", icon: "arrow.right.square") {
+                                showSignOutConfirm = true
+                            }
                         }
 
                         Text("Version 1.0.0")

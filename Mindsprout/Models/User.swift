@@ -5,6 +5,8 @@ import SwiftData
 final class User {
     var appleUserID: String = ""
     var displayName: String = ""
+    /// Legacy schema field. Mindsprout no longer requests or uses Apple email.
+    /// Keeping it avoids a destructive change to the versioned V1 schema.
     var email: String = ""
     var createdAt: Date = Date()
     var profilePhotoPath: String? = nil
@@ -27,7 +29,6 @@ final class User {
     static func upsert(
         appleUserID: String,
         displayName: String?,
-        email: String?,
         in context: ModelContext
     ) -> User {
         let descriptor = FetchDescriptor<User>(
@@ -35,14 +36,13 @@ final class User {
         )
         if let existing = try? context.fetch(descriptor).first {
             if let displayName, !displayName.isEmpty { existing.displayName = displayName }
-            if let email, !email.isEmpty { existing.email = email }
+            existing.email = ""
             try? context.save()
             return existing
         }
         let user = User(
             appleUserID: appleUserID,
-            displayName: displayName ?? "",
-            email: email ?? ""
+            displayName: displayName ?? ""
         )
         context.insert(user)
         try? context.save()
@@ -50,8 +50,35 @@ final class User {
     }
 
     static func current(in users: [User], userID: String?) -> User? {
-        guard let userID, !userID.isEmpty else { return users.first }
+        guard let userID, !userID.isEmpty else {
+            return users.first(where: { $0.appleUserID.isEmpty }) ?? users.first
+        }
         return users.first(where: { $0.appleUserID == userID })
+    }
+
+    @discardableResult
+    static func fetchOrCreateLocal(in context: ModelContext) -> User {
+        let descriptor = FetchDescriptor<User>(
+            predicate: #Predicate { $0.appleUserID == "" }
+        )
+        if let existing = try? context.fetch(descriptor).first {
+            existing.email = ""
+            try? context.save()
+            return existing
+        }
+
+        let user = User()
+        context.insert(user)
+        try? context.save()
+        return user
+    }
+
+    static func removeLegacyEmails(in context: ModelContext) {
+        guard let users = try? context.fetch(FetchDescriptor<User>()) else { return }
+        let usersWithEmail = users.filter { !$0.email.isEmpty }
+        guard !usersWithEmail.isEmpty else { return }
+        usersWithEmail.forEach { $0.email = "" }
+        try? context.save()
     }
 
     var resolvedDisplayName: String {

@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 import SwiftData
 import AuthenticationServices
 
@@ -18,25 +17,6 @@ enum AppThemePreference: String, CaseIterable, Identifiable {
         }
     }
 
-    // nil = primary AppIcon, which adapts to the system appearance on its own.
-    var alternateIconName: String? {
-        switch self {
-        case .system: return nil
-        case .light: return "AppIconLight"
-        case .dark: return "AppIconDark"
-        }
-    }
-}
-
-@MainActor
-enum AppIconManager {
-    static func apply(_ preference: AppThemePreference) {
-        let app = UIApplication.shared
-        guard app.supportsAlternateIcons else { return }
-        let target = preference.alternateIconName
-        guard app.alternateIconName != target else { return }
-        app.setAlternateIconName(target)
-    }
 }
 
 private struct ModalScaffold<Content: View>: View {
@@ -263,9 +243,6 @@ struct AccountModal: View {
                 let trimmed = editedName.trimmingCharacters(in: .whitespaces)
                 if !trimmed.isEmpty {
                     user?.displayName = trimmed
-                    if let appleUserID = user?.appleUserID, !appleUserID.isEmpty {
-                        env.auth.updateCachedProfile(for: appleUserID, displayName: trimmed, email: nil)
-                    }
                     try? modelContext.save()
                 }
             }
@@ -424,6 +401,8 @@ struct AccountModal: View {
         switch result {
         case .success(let authorization):
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  case .signedIn(let currentUserID) = env.auth.state,
+                  credential.user == currentUserID,
                   let codeData = credential.authorizationCode,
                   let authorizationCode = String(data: codeData, encoding: .utf8),
                   !authorizationCode.isEmpty

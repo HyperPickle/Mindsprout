@@ -1,14 +1,13 @@
 import SwiftUI
-import SwiftData
 import AuthenticationServices
+import SwiftData
 
 struct WelcomeView: View {
-    @Environment(\.appEnvironment) private var env
     @Environment(\.modelContext) private var modelContext
 
     @State private var authError: String?
     
-    var onSignIn: ((String) -> Void)?
+    var onContinue: ((String?) -> Void)?
 
     var body: some View {
         ZStack {
@@ -24,15 +23,25 @@ struct WelcomeView: View {
                     .offset(y: -75)
                 Spacer()
 
-                SignInWithAppleButton(.signIn, onRequest: { request in
-                    request.requestedScopes = [.fullName, .email]
-                }, onCompletion: { result in
-                    handleResult(result)
-                })
-                .signInWithAppleButtonStyle(.white)
-                .frame(width: 260, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-                .shadow(color: .black.opacity(0.3), radius: 16, y: 8)
+                VStack(spacing: 12) {
+                    Button("Continue on this device") {
+                        User.fetchOrCreateLocal(in: modelContext)
+                        authError = nil
+                        onContinue?(nil)
+                    }
+                    .buttonStyle(.primaryWhiteSentenceCase)
+                    .frame(width: 260, height: 56)
+
+                    SignInWithAppleButton(.signIn, onRequest: { _ in
+                        // Authentication is optional and needs no profile scopes.
+                    }, onCompletion: { result in
+                        handleResult(result)
+                    })
+                    .signInWithAppleButtonStyle(.white)
+                    .frame(width: 260, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                    .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+                }
 
                 if let authError {
                     Text(authError)
@@ -72,27 +81,13 @@ struct WelcomeView: View {
             return
         }
 
-        let displayName = credential.fullName.flatMap { components -> String? in
-            let formatted = PersonNameComponentsFormatter.localizedString(from: components, style: .default)
-            return formatted.isEmpty ? nil : formatted
-        }
-        let cachedProfile = env.auth.cachedProfile(for: credential.user)
-        let resolvedDisplayName = displayName ?? cachedProfile?.displayName
-        let resolvedEmail = credential.email ?? cachedProfile?.email
-
-        env.auth.updateCachedProfile(
-            for: credential.user,
-            displayName: resolvedDisplayName,
-            email: resolvedEmail
-        )
         User.upsert(
             appleUserID: credential.user,
-            displayName: resolvedDisplayName,
-            email: resolvedEmail,
+            displayName: nil,
             in: modelContext
         )
         authError = nil
-        onSignIn?(credential.user)
+        onContinue?(credential.user)
     }
 }
 

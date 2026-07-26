@@ -3,8 +3,8 @@ import SwiftUI
 struct OnboardingCoordinatorView: View {
     enum OnboardingStep {
         case welcome
-        case profilePhoto(userID: String)
-        case namingSprout(userID: String)
+        case profilePhoto(userID: String?)
+        case namingSprout(userID: String?)
     }
 
     @Environment(\.appEnvironment) private var env
@@ -25,15 +25,15 @@ struct OnboardingCoordinatorView: View {
                 ))
 
             case .profilePhoto(let userID):
-                            ProfilePhotoOnboardingView(userID: userID) {
-                                withAnimation {
-                                    currentStep = .namingSprout(userID: userID)
-                                }
-                            }
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .trailing),
-                                removal: .move(edge: .leading)
-                            ))
+                ProfilePhotoOnboardingView(userID: userID) {
+                    withAnimation {
+                        currentStep = .namingSprout(userID: userID)
+                    }
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .leading)
+                ))
 
             case .namingSprout(let userID):
                 SproutNamingView(
@@ -44,8 +44,10 @@ struct OnboardingCoordinatorView: View {
                         }
                     },
                     onContinue: {
-                        withAnimation {
-                            env.auth.handleAuthorization(userID: userID)
+                        if let userID {
+                            withAnimation {
+                                env.auth.handleAuthorization(userID: userID)
+                            }
                         }
                     }
                 )

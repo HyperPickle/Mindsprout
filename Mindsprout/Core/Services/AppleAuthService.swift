@@ -4,7 +4,9 @@ import AuthenticationServices
 @Observable
 final class AppleAuthService: AuthService {
     static let userIDKey = "apple_user_id"
+    /// Retained only so upgrades and account deletion can remove old auth state.
     static let isLoggedInKey = "isLoggedIn"
+    /// Retained only to purge pre-1.0 cached names and email addresses.
     static let cachedProfileKeyPrefix = "apple_profile_"
 
     private let keychain: any KeychainStoring
@@ -20,45 +22,25 @@ final class AppleAuthService: AuthService {
         } else {
             state = .localOnly
         }
-    }
-
-    func cachedProfile(for userID: String) -> CachedAppleProfile? {
-        guard let data = defaults.data(forKey: profileKey(for: userID)) else { return nil }
-        return try? JSONDecoder().decode(CachedAppleProfile.self, from: data)
-    }
-
-    func updateCachedProfile(for userID: String, displayName: String?, email: String?) {
-        let existing = cachedProfile(for: userID)
-        let mergedProfile = CachedAppleProfile(
-            displayName: nonEmpty(displayName) ?? existing?.displayName,
-            email: nonEmpty(email) ?? existing?.email
-        )
-        guard mergedProfile.displayName != nil || mergedProfile.email != nil else { return }
-        guard let data = try? JSONEncoder().encode(mergedProfile) else { return }
-        defaults.set(data, forKey: profileKey(for: userID))
+        purgeLegacyProfileCache()
+        defaults.removeObject(forKey: Self.isLoggedInKey)
     }
 
     func handleAuthorization(userID: String) {
         keychain.save(userID, for: Self.userIDKey)
         state = .signedIn(userID: userID)
-        defaults.set(true, forKey: Self.isLoggedInKey)
     }
 
     func signOut() {
         keychain.delete(for: Self.userIDKey)
         state = .localOnly
-        defaults.set(false, forKey: Self.isLoggedInKey)
+        defaults.removeObject(forKey: Self.isLoggedInKey)
     }
 
     func deleteLocalAccountIdentity() {
-        if let userID = keychain.read(for: Self.userIDKey) {
-            defaults.removeObject(forKey: profileKey(for: userID))
-        }
         keychain.delete(for: Self.userIDKey)
         defaults.removeObject(forKey: Self.isLoggedInKey)
-        defaults.dictionaryRepresentation().keys
-            .filter { $0.hasPrefix(Self.cachedProfileKeyPrefix) }
-            .forEach { defaults.removeObject(forKey: $0) }
+        purgeLegacyProfileCache()
         state = .localOnly
     }
 
@@ -76,14 +58,9 @@ final class AppleAuthService: AuthService {
         }
     }
 
-    private func profileKey(for userID: String) -> String {
-        "\(Self.cachedProfileKeyPrefix)\(userID)"
-    }
-
-    private func nonEmpty(_ value: String?) -> String? {
-        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
-            return nil
-        }
-        return trimmed
+    private func purgeLegacyProfileCache() {
+        defaults.dictionaryRepresentation().keys
+            .filter { $0.hasPrefix(Self.cachedProfileKeyPrefix) }
+            .forEach { defaults.removeObject(forKey: $0) }
     }
 }

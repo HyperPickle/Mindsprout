@@ -1,4 +1,4 @@
-# Xcode
+# Xcode build artifacts
 build/
 .build/
 .derivedData/
@@ -9,20 +9,22 @@ DerivedData/
 *.xcworkspace/xcshareddata/SwiftPM/configuration/control-cache
 *.xcworkspace/xcshareddata/SwiftPM/configuration/remote-cache
 UserInterfaceState.xcuserstate
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
 $RECYCLE.BIN/
+
+# Agent tooling
 .claude/
 Claude.md
 build.log
-
 checklist.md
+screenshot-reports/
 
 # Planning docs
 Mindsprout-Codebase-Audit.html
 Mindsprout-Bugfix-Plan.md
 Mindsprout-CloudSync-Plan.md
 Mindsprout-Comment-Cleanup-Plan.md
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride

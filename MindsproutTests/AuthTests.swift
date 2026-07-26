@@ -25,7 +25,7 @@ struct AuthTests {
 
         #expect(service.state == .signedIn(userID: "apple-123"))
         #expect(keychain.read(for: AppleAuthService.userIDKey) == "apple-123")
-        #expect(defaults.bool(forKey: AppleAuthService.isLoggedInKey) == true)
+        #expect(defaults.object(forKey: AppleAuthService.isLoggedInKey) == nil)
     }
 
     @Test func signOutClearsState() {
@@ -38,22 +38,20 @@ struct AuthTests {
 
         #expect(service.state == .localOnly)
         #expect(keychain.read(for: AppleAuthService.userIDKey) == nil)
-        #expect(defaults.bool(forKey: AppleAuthService.isLoggedInKey) == false)
+        #expect(defaults.object(forKey: AppleAuthService.isLoggedInKey) == nil)
     }
 
-    @Test func deleteLocalAccountIdentityClearsCachedAppleProfile() {
+    @Test func initPurgesLegacyAppleProfileAndLoginDefaults() {
         let keychain = InMemoryKeychain()
         let defaults = makeDefaults()
-        let service = AppleAuthService(keychain: keychain, defaults: defaults)
-        service.handleAuthorization(userID: "apple-123")
-        service.updateCachedProfile(for: "apple-123", displayName: "Ada", email: "ada@example.com")
+        defaults.set(true, forKey: AppleAuthService.isLoggedInKey)
+        defaults.set(Data("legacy".utf8), forKey: "\(AppleAuthService.cachedProfileKeyPrefix)apple-123")
 
-        service.deleteLocalAccountIdentity()
+        let service = AppleAuthService(keychain: keychain, defaults: defaults)
 
         #expect(service.state == .localOnly)
-        #expect(keychain.read(for: AppleAuthService.userIDKey) == nil)
         #expect(defaults.object(forKey: AppleAuthService.isLoggedInKey) == nil)
-        #expect(service.cachedProfile(for: "apple-123") == nil)
+        #expect(defaults.object(forKey: "\(AppleAuthService.cachedProfileKeyPrefix)apple-123") == nil)
     }
 
     @Test func initRestoresSignedInStateFromKeychain() {
@@ -69,36 +67,38 @@ struct AuthTests {
         let container = PersistenceController.makeInMemoryContainer()
         let context = ModelContext(container)
 
-        User.upsert(appleUserID: "u1", displayName: "Ada Lovelace", email: "ada@example.com", in: context)
+        User.upsert(appleUserID: "u1", displayName: "Ada Lovelace", in: context)
 
         let users = try context.fetch(FetchDescriptor<User>())
         #expect(users.count == 1)
         #expect(users.first?.displayName == "Ada Lovelace")
-        #expect(users.first?.email == "ada@example.com")
+        #expect(users.first?.email.isEmpty == true)
     }
 
     @Test func upsertPreservesNameWhenSubsequentSignInOmitsIt() throws {
         let container = PersistenceController.makeInMemoryContainer()
         let context = ModelContext(container)
 
-        User.upsert(appleUserID: "u1", displayName: "Ada Lovelace", email: "ada@example.com", in: context)
-        // Apple returns name/email only on first authorization; subsequent sign-ins pass nil.
-        User.upsert(appleUserID: "u1", displayName: nil, email: nil, in: context)
+        User.upsert(appleUserID: "u1", displayName: "Ada Lovelace", in: context)
+        User.upsert(appleUserID: "u1", displayName: nil, in: context)
 
         let users = try context.fetch(FetchDescriptor<User>())
         #expect(users.count == 1)
         #expect(users.first?.displayName == "Ada Lovelace")
-        #expect(users.first?.email == "ada@example.com")
     }
 
-    @Test func cachedProfilePersistsAcrossSubsequentAuthorizations() {
-        let service = AppleAuthService(keychain: InMemoryKeychain(), defaults: makeDefaults())
+    @Test func fetchOrCreateLocalReusesTheLocalSwiftDataUser() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = ModelContext(container)
 
-        service.updateCachedProfile(for: "u1", displayName: "Ada Lovelace", email: "ada@example.com")
-        service.updateCachedProfile(for: "u1", displayName: nil, email: nil)
+        let first = User.fetchOrCreateLocal(in: context)
+        first.displayName = "Local Traveler"
+        try context.save()
+        let second = User.fetchOrCreateLocal(in: context)
 
-        #expect(service.cachedProfile(for: "u1")?.displayName == "Ada Lovelace")
-        #expect(service.cachedProfile(for: "u1")?.email == "ada@example.com")
+        #expect(try context.fetch(FetchDescriptor<User>()).count == 1)
+        #expect(first.persistentModelID == second.persistentModelID)
+        #expect(second.displayName == "Local Traveler")
     }
 
     @Test func currentUserPrefersSignedInAppleUserID() {
@@ -109,5 +109,26 @@ struct AuthTests {
 
         #expect(current?.appleUserID == "u2")
         #expect(current?.displayName == "Second")
+    }
+
+    @Test func currentUserPrefersLocalUserWithoutAuthentication() {
+        let apple = User(appleUserID: "u1", displayName: "Apple")
+        let local = User(displayName: "Local")
+
+        let current = User.current(in: [apple, local], userID: nil)
+
+        #expect(current?.appleUserID.isEmpty == true)
+        #expect(current?.displayName == "Local")
+    }
+
+    @Test func removeLegacyEmailsClearsExistingSwiftDataValues() throws {
+        let container = PersistenceController.makeInMemoryContainer()
+        let context = ModelContext(container)
+        context.insert(User(displayName: "Traveler", email: "legacy@example.com"))
+        try context.save()
+
+        User.removeLegacyEmails(in: context)
+
+        #expect(try context.fetch(FetchDescriptor<User>()).first?.email.isEmpty == true)
     }
 }

@@ -11,7 +11,6 @@ struct SproutNamingView: View {
 
     @State private var sproutName = ""
     @AppStorage("sproutName") var savedSproutName = ""
-    @AppStorage("isLoggedIn") private var isLoggedIn = false
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
 
     @StateObject private var riveController = SeedRiveController()
@@ -107,7 +106,6 @@ struct SproutNamingView: View {
                 if showStartButton {
                     Button {
                         hasCompletedOnboarding = true
-                        isLoggedIn = true
                         Sprout.fetchOrCreate(name: savedSproutName, in: modelContext)
                         try? modelContext.save()
                         onContinue()

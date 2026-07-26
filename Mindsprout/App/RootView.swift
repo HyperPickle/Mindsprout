@@ -4,7 +4,7 @@ import SwiftData
 import UIKit
 
 struct RootView: View {
-    @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     @Environment(\.appEnvironment) private var env
     @Environment(\.modelContext) private var context
@@ -16,17 +16,16 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if !isLoggedIn {
+            if !hasCompletedOnboarding {
                 authFlow
             } else {
                 appShell
             }
         }
-        .animation(.spring(duration: 0.5), value: isLoggedIn)
+        .animation(.spring(duration: 0.5), value: hasCompletedOnboarding)
         .task {
-            if isLoggedIn {
-                await env.auth.revalidate()
-            }
+            User.removeLegacyEmails(in: context)
+            await env.auth.revalidate()
         }
     }
 

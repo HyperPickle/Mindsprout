@@ -124,7 +124,7 @@ struct AccountDeletionServiceTests {
         let defaults = makeDefaults()
         let auth = AppleAuthService(keychain: keychain, defaults: defaults)
         auth.handleAuthorization(userID: "apple-123")
-        auth.updateCachedProfile(for: "apple-123", displayName: "Ada", email: "ada@example.com")
+        defaults.set(Data("legacy".utf8), forKey: "\(AppleAuthService.cachedProfileKeyPrefix)apple-123")
 
         let container = PersistenceController.makeInMemoryContainer()
         let context = ModelContext(container)
@@ -135,7 +135,7 @@ struct AccountDeletionServiceTests {
         #expect(auth.state == .localOnly)
         #expect(keychain.read(for: AppleAuthService.userIDKey) == nil)
         #expect(defaults.object(forKey: AppleAuthService.isLoggedInKey) == nil)
-        #expect(auth.cachedProfile(for: "apple-123") == nil)
+        #expect(defaults.object(forKey: "\(AppleAuthService.cachedProfileKeyPrefix)apple-123") == nil)
     }
 
     @Test func mediaDeletionFailurePreventsModelDefaultsAndAuthCleanup() throws {

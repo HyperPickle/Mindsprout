@@ -21,10 +21,6 @@ struct MindsproutApp: App {
             rootContent
                 .environment(\.appEnvironment, appEnvironment)
                 .preferredColorScheme(themePreference.colorScheme)
-                .task { AppIconManager.apply(themePreference) }
-                .onChange(of: themePreference) { _, newValue in
-                    AppIconManager.apply(newValue)
-                }
         }
         .modelContainer(modelContainer)
     }

@@ -4,7 +4,7 @@ import SwiftData
 struct ProfilePhotoOnboardingView: View {
     @Query private var users: [User]
 
-    let userID: String
+    let userID: String?
     var onComplete: () -> Void
 
     private var user: User? { User.current(in: users, userID: userID) }
@@ -44,6 +44,6 @@ struct ProfilePhotoOnboardingView: View {
 }
 
 #Preview {
-    ProfilePhotoOnboardingView(userID: "preview-user", onComplete: {})
+    ProfilePhotoOnboardingView(userID: nil, onComplete: {})
         .environment(\.appEnvironment, .preview)
 }
