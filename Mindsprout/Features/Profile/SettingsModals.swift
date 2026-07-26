@@ -161,9 +161,14 @@ struct ThemeSettingsModal: View {
 struct AboutSettingsModal: View {
     private let heroLogoSize: CGFloat = 92
     private var heroLogoCornerRadius: CGFloat { heroLogoSize * 0.224 }
+    @Environment(ModalCoordinator.self) private var modalCoordinator
 
     var body: some View {
-        ModalScaffold(title: "About") {
+        ModalScaffold(
+            title: "About",
+            style: .centered,
+            onClose: { modalCoordinator.dismiss() }
+        ) {
             VStack(spacing: 20) {
                 Image("AppLogo")
                     .resizable()

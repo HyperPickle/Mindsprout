@@ -31,7 +31,7 @@ enum AppModal: Identifiable, Equatable {
     /// scale/fade) instead of a bottom sheet.
     var prefersCenteredPresentation: Bool {
         switch self {
-        case .account, .xpDetail, .themeSettings: return true
+        case .account, .xpDetail, .themeSettings, .aboutSettings: return true
         default: return false
         }
     }

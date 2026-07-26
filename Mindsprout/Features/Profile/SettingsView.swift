@@ -81,7 +81,7 @@ struct SettingsView: View {
             }
         }
         .navigationBarHidden(true)
-        .sheet(isPresented: $showPrivacyPolicy) {
+        .fullScreenCover(isPresented: $showPrivacyPolicy) {
             if let url = URL(string: "https://mindsprout-website.vercel.app/privacy.html") {
                 SafariView(url: url)
                     .ignoresSafeArea()
